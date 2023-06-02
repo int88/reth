@@ -66,6 +66,7 @@ const MAX_INVALID_HEADERS: u32 = 512u32;
 
 /// A _shareable_ beacon consensus frontend. Used to interact with the spawned beacon consensus
 /// engine.
+/// 一个可共享的beacon consensus frontend。用于与生成的beacon consensus engine交互。
 ///
 /// See also [`BeaconConsensusEngine`].
 #[derive(Clone, Debug)]
@@ -133,9 +134,11 @@ impl BeaconConsensusEngineHandle {
 }
 
 /// The beacon consensus engine is the driver that switches between historical and live sync.
+/// beacon consensus engine是驱动程序，它在历史和实时同步之间切换。
 ///
 /// The beacon consensus engine is itself driven by messages from the Consensus Layer, which are
 /// received by Engine API.
+/// beacon consensus engine自己是由来自Consensus Layer的消息驱动的，这些消息由Engine API接收。
 ///
 /// The consensus engine is idle until it receives the first
 /// [BeaconEngineMessage::ForkchoiceUpdated] message from the CL which would initiate the sync. At
@@ -144,6 +147,9 @@ impl BeaconConsensusEngineHandle {
 /// that are currently available. In case the restoration is successful, the consensus engine would
 /// run in a live sync mode, which mean it would solemnly rely on the messages from Engine API to
 /// construct the chain forward.
+/// consensus engine在收到第一个BeaconEngineMessage::ForkchoiceUpdated消息之前处于空闲状态，该消息来自CL，该消息将启动同步。
+/// 首先，共识引擎将运行Pipeline，直到最新的已知块哈希。之后，它将尝试从当前可用的块创建/恢复BlockchainTreeEngine。
+/// 万一恢复成功，共识引擎将以实时同步模式运行，这意味着它将仅仅依赖于来自Engine API的消息来构建链向前。
 ///
 /// # Panics
 ///
@@ -156,23 +162,32 @@ where
     BT: BlockchainTreeEngine + BlockProvider + CanonChainTracker + StageCheckpointProvider,
 {
     /// Controls syncing triggered by engine updates.
+    /// 控制由引擎更新触发的同步。
     sync: EngineSyncController<DB, Client>,
     /// The type we can use to query both the database and the blockchain tree.
+    /// 我们可以用来查询数据库和区块链树的类型。
     blockchain: BT,
     /// Used for emitting updates about whether the engine is syncing or not.
+    /// 用于发出有关引擎是否正在同步的更新。
     sync_state_updater: Box<dyn NetworkSyncUpdater>,
     /// The Engine API message receiver.
+    /// Engine API消息接收器。
     engine_message_rx: UnboundedReceiverStream<BeaconEngineMessage>,
     /// A clone of the handle
+    /// handle的一个clone
     handle: BeaconConsensusEngineHandle,
     /// Tracks the received forkchoice state updates received by the CL.
+    /// CL接收到的跟踪接收到的forkchoice状态更新。
     forkchoice_state_tracker: ForkchoiceStateTracker,
     /// The payload store.
+    /// payload store的类型。
     payload_builder: PayloadBuilderHandle,
     /// Listeners for engine events.
+    /// engine events的listeners。
     listeners: EventListeners<BeaconConsensusEngineEvent>,
     /// Tracks the header of invalid payloads that were rejected by the engine because they're
     /// invalid.
+    /// 追踪引擎拒绝的无效负载的标头，因为它们是无效的。
     invalid_headers: InvalidHeaderCache,
     /// Consensus engine metrics.
     metrics: Metrics,

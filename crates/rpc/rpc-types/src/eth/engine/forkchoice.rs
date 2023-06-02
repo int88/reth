@@ -16,6 +16,7 @@ pub const INVALID_FORK_CHOICE_STATE_ERROR_MSG: &str = "Invalid forkchoice state"
 pub const INVALID_PAYLOAD_ATTRIBUTES_ERROR_MSG: &str = "Invalid payload attributes";
 
 /// Represents possible variants of a processed forkchoice update.
+/// 代表处理forkchoice更新的可能变体
 pub type ForkChoiceUpdateResult = Result<ForkchoiceUpdated, ForkchoiceUpdateError>;
 
 /// This structure encapsulates the fork choice state
@@ -82,8 +83,10 @@ impl From<ForkchoiceUpdateError> for jsonrpsee_types::error::ErrorObject<'static
 pub struct ForkchoiceUpdated {
     /// Represents the outcome of the validation of the payload, independently of the payload being
     /// valid or not.
+    /// 代表独立于payload是否有效的payload验证的结果
     pub payload_status: PayloadStatus,
     /// The identifier of the payload build process that was successfully initiated.
+    /// 标识成功启动的payload构建过程
     pub payload_id: Option<PayloadId>,
 }
 

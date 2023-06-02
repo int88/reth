@@ -427,6 +427,7 @@ impl From<AllGenesisFormats> for ChainSpec {
 }
 
 /// A helper to build custom chain specs
+/// 一个helper来构建自定义的chain specs
 #[derive(Debug, Default)]
 pub struct ChainSpecBuilder {
     chain: Option<Chain>,

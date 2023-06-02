@@ -7,11 +7,14 @@ use std::{
 };
 
 /// Combines multiple [`Stage`]s into a single unit.
+/// 组合多个Stage成一个单元
 ///
 /// A [`StageSet`] is a logical chunk of stages that depend on each other. It is up to the
 /// individual stage sets to determine what kind of configuration they expose.
+/// 一个StageSet是一个逻辑上的stages块，这些stages相互依赖。由各个stage sets决定暴露什么样的配置
 ///
 /// Individual stages in the set can be added, removed and overridden using [`StageSetBuilder`].
+/// 单个stages可以使用StageSetBuilder添加，删除和覆盖
 pub trait StageSet<DB: Database>: Sized {
     /// Configures the stages in the set.
     fn builder(self) -> StageSetBuilder<DB>;

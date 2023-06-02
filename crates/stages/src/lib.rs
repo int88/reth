@@ -6,15 +6,19 @@
 ))]
 #![allow(clippy::result_large_err)]
 //! Staged syncing primitives for reth.
+//! 对于reth的分阶段同步原语
 //!
 //! This crate contains the syncing primitives [`Pipeline`] and [`Stage`], as well as all stages
 //! that reth uses to sync.
+//! 这个create包含了同步原语Pipeline和Stage，以及reth用来同步的所有stages
 //!
 //! A pipeline can be configured using [`Pipeline::builder()`].
+//! 一个pipeline可以使用Pipeline::builder()来配置
 //!
 //! For ease of use, this crate also exposes a set of [`StageSet`]s, which are collections of stages
 //! that perform specific functions during sync. Stage sets can be customized; it is possible to
 //! add, disable and replace stages in the set.
+//! 为了方便使用，这个crate也暴露了一系列的StageSet，这些是在同步期间执行特定功能的stages集合。Stage sets可以被定制，可以添加，禁用和替换stages
 //!
 //! # Examples
 //!

@@ -38,14 +38,18 @@ pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineErr
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// A staged sync pipeline.
+/// 一个阶段性的sync pipeline
 ///
 /// The pipeline executes queued [stages][Stage] serially. An external component determines the tip
 /// of the chain and the pipeline then executes each stage in order from the current local chain tip
 /// and the external chain tip. When a stage is executed, it will run until it reaches the chain
 /// tip.
+/// pipeline按顺序执行每个stage，从当前本地链的tip和外部链的tip开始。当一个stage被执行时，它将一直运行直到它达到链的tip。
+/// 当一个stage执行的时候，它会一直运行直到它达到链的tip。
 ///
 /// After the entire pipeline has been run, it will run again unless asked to stop (see
 /// [Pipeline::set_max_block]).
+/// 在整个pipeline运行完之后，它会再次运行，除非被要求停止。
 ///
 /// ```mermaid
 /// graph TB
@@ -86,6 +90,7 @@ pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineErr
 /// In case of a validation error (as determined by the consensus engine) in one of the stages, the
 /// pipeline will unwind the stages in reverse order of execution. It is also possible to
 /// request an unwind manually (see [Pipeline::unwind]).
+/// 万一在一个stage中发生了验证错误（由共识引擎决定），pipeline将按照执行的相反顺序解开stage。也可以手动请求解开（见Pipeline::unwind）。
 ///
 /// # Defaults
 ///
@@ -94,14 +99,18 @@ pub struct Pipeline<DB: Database> {
     /// The Database
     db: DB,
     /// All configured stages in the order they will be executed.
+    /// 所有配置的stages，按照它们将被执行的顺序。
     stages: Vec<BoxedStage<DB>>,
     /// The maximum block number to sync to.
     max_block: Option<BlockNumber>,
     /// All listeners for events the pipeline emits.
+    /// 所有listeners监听pipeline发出的事件。
     listeners: EventListeners<PipelineEvent>,
     /// Keeps track of the progress of the pipeline.
+    /// 监听pipeline的进度。
     progress: PipelineProgress,
     /// A receiver for the current chain tip to sync to.
+    /// 一个receiver，用于同步到当前链的tip。
     tip_tx: Option<watch::Sender<H256>>,
     metrics: Metrics,
 }

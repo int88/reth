@@ -55,6 +55,7 @@ use reth_provider::ExecutorFactory;
 use std::sync::Arc;
 
 /// A set containing all stages to run a fully syncing instance of reth.
+/// 一个集合包含所有的stages来运行一个完全同步的实例
 ///
 /// A combination of (in order)
 ///
@@ -128,9 +129,11 @@ where
 }
 
 /// A set containing all stages that require network access by default.
+/// 一个集合包含所有的stages默认需要网络访问
 ///
 /// These stages *can* be run without network access if the specified downloaders are
 /// themselves offline.
+/// 这些stages可以在没有网络访问的情况下运行，如果指定的下载器本身是离线的。
 #[derive(Debug)]
 pub struct OnlineStages<H, B> {
     /// The sync mode for the headers stage.
@@ -201,6 +204,7 @@ where
 }
 
 /// A set containing all stages that do not require network access.
+/// 一个集合，包含所有的stages不需要网络访问
 ///
 /// A combination of (in order)
 ///

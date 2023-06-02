@@ -135,24 +135,33 @@ impl Future for PendingPayloadId {
 
 /// A message for the beacon engine from other components of the node (engine RPC API invoked by the
 /// consensus layer).
+/// 来自一个节点的其他组件的beacon engine消息（由共识层调用的engine RPC API）
 #[derive(Debug)]
 pub enum BeaconEngineMessage {
     /// Message with new payload.
+    /// 新的payload的message
     NewPayload {
         /// The execution payload received by Engine API.
+        /// Engine API接收到的执行payload
         payload: ExecutionPayload,
         /// The sender for returning payload status result.
+        /// 负责返回payload status result的sender
         tx: oneshot::Sender<Result<PayloadStatus, BeaconOnNewPayloadError>>,
     },
     /// Message with updated forkchoice state.
+    /// 更新的forkchoice state的message
     ForkchoiceUpdated {
         /// The updated forkchoice state.
+        /// 更新的forkchoice state
         state: ForkchoiceState,
         /// The payload attributes for block building.
+        /// 用于block building的payload attributes
         payload_attrs: Option<PayloadAttributes>,
         /// The sender for returning forkchoice updated result.
+        /// 用于返回forkchoice updated result的sender
         tx: oneshot::Sender<Result<OnForkChoiceUpdated, reth_interfaces::Error>>,
     },
     /// Add a new listener for [`BeaconEngineMessage`].
+    /// 添加一个新的listener到[`BeaconEngineMessage`]
     EventListener(UnboundedSender<BeaconConsensusEngineEvent>),
 }

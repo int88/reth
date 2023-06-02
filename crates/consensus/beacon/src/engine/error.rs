@@ -36,9 +36,11 @@ impl From<reth_interfaces::db::DatabaseError> for BeaconConsensusEngineError {
 }
 
 /// Represents error cases for an applied forkchoice update.
+/// 代表应用forkchoice更新的错误情况
 ///
 /// This represents all possible error cases, that must be returned as JSON RCP errors back to the
 /// beacon node.
+/// 这表示所有可能的错误情况，必须作为JSON RCP错误返回给beacon node
 #[derive(Debug, thiserror::Error)]
 pub enum BeaconForkChoiceUpdateError {
     /// Thrown when a forkchoice update resulted in an error.

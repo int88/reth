@@ -31,6 +31,7 @@ pub struct ExecutionStageMetrics {
 
 /// The execution stage executes all transactions and
 /// update history indexes.
+/// execution stage执行所有的transactions并且更新history indexes
 ///
 /// Input tables:
 /// - [tables::CanonicalHeaders] get next block to execute.

@@ -20,6 +20,7 @@ use tracing::*;
 /// The body stage downloads block bodies.
 ///
 /// The body stage downloads block bodies for all block headers stored locally in the database.
+/// body stage下载block bodies，对于所有存储在数据库中的block headers
 ///
 /// # Empty blocks
 ///

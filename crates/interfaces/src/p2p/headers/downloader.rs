@@ -6,10 +6,12 @@ use futures::Stream;
 use reth_primitives::{BlockHashOrNumber, SealedHeader, H256};
 
 /// A downloader capable of fetching and yielding block headers.
+/// 一个downloader可以获取和产生区块头
 ///
 /// A downloader represents a distinct strategy for submitting requests to download block headers,
 /// while a [HeadersClient][crate::p2p::headers::client::HeadersClient] represents a client capable
 /// of fulfilling these requests.
+/// 一个downloader代表一个不同的策略来提交下载区块头的请求，而一个HeadersClient代表一个客户端能够满足这些请求
 ///
 /// A [HeaderDownloader] is a [Stream] that returns batches of headers.
 pub trait HeaderDownloader: Send + Sync + Stream<Item = Vec<SealedHeader>> + Unpin {
@@ -22,12 +24,15 @@ pub trait HeaderDownloader: Send + Sync + Stream<Item = Vec<SealedHeader>> + Unp
     }
 
     /// Updates the block number of the local database
+    /// 更新本地数据库的block number
     fn update_local_head(&mut self, head: SealedHeader);
 
     /// Updates the target we want to sync to
+    /// 更新我们想要同步的目标
     fn update_sync_target(&mut self, target: SyncTarget);
 
     /// Sets the headers batch size that the Stream should return.
+    /// 设置Stream应该返回的headers batch size
     fn set_batch_size(&mut self, limit: usize);
 }
 

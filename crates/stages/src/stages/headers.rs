@@ -23,9 +23,11 @@ use tracing::*;
 pub enum HeaderSyncMode {
     /// A sync mode in which the stage continuously requests the downloader for
     /// next blocks.
+    /// 一种sync模式，在这个stage中，stage不断地请求downloader获取下一个block。
     Continuous,
     /// A sync mode in which the stage polls the receiver for the next tip
     /// to download from.
+    /// 一种sync模式，在这个stage中，stage轮询receiver获取下一个tip来下载。
     Tip(watch::Receiver<H256>),
 }
 
@@ -33,6 +35,7 @@ pub enum HeaderSyncMode {
 ///
 /// The headers stage downloads all block headers from the highest block in the local database to
 /// the perceived highest block on the network.
+/// headers stage下载所有的block headers，从本地数据库中的最高block到网络中感知到的最高block。
 ///
 /// The headers are processed and data is inserted into these tables:
 ///
@@ -42,11 +45,14 @@ pub enum HeaderSyncMode {
 ///
 /// NOTE: This stage downloads headers in reverse. Upon returning the control flow to the pipeline,
 /// the stage checkpoint is not updated until this stage is done.
+/// 注意：这个stage反向下载headers。在将控制流返回到pipeline之后，stage checkpoint不会更新，直到这个stage完成。
 #[derive(Debug)]
 pub struct HeaderStage<D: HeaderDownloader> {
     /// Strategy for downloading the headers
+    /// 下载headers的策略
     downloader: D,
     /// The sync mode for the stage.
+    /// 这个stage的sync mode
     mode: HeaderSyncMode,
 }
 
@@ -57,6 +63,7 @@ where
     D: HeaderDownloader,
 {
     /// Create a new header stage
+    /// 创建一个新的header stage
     pub fn new(downloader: D, mode: HeaderSyncMode) -> Self {
         Self { downloader, mode }
     }
@@ -188,6 +195,7 @@ where
 
     /// Download the headers in reverse order (falling block numbers)
     /// starting from the tip of the chain
+    /// 按照相反的顺序下载headers（下降的block numbers），从链的tip开始
     async fn execute(
         &mut self,
         tx: &mut Transaction<'_, DB>,

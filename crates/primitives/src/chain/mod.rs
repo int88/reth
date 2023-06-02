@@ -23,8 +23,10 @@ pub use info::ChainInfo;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Chain {
     /// Contains a known chain
+    /// 包含一个已知的chain
     Named(ethers_core::types::Chain),
     /// Contains the id of a chain
+    /// 包含chain的id
     Id(u64),
 }
 

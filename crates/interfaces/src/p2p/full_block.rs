@@ -13,6 +13,7 @@ use std::{
 use tracing::debug;
 
 /// A Client that can fetch full blocks from the network.
+/// 一个客户端可以从网络中获取完整的区块
 #[derive(Debug, Clone)]
 pub struct FullBlockClient<Client> {
     client: Client,
@@ -30,11 +31,13 @@ where
     Client: BodiesClient + HeadersClient + Clone,
 {
     /// Returns a future that fetches the [SealedBlock] for the given hash.
+    /// 返回一个future，用给定的hash获取SealedBlock
     ///
     /// Note: this future is cancel safe
     ///
     /// Caution: This does no validation of body (transactions) response but guarantees that the
     /// [SealedHeader] matches the requested hash.
+    /// 注意：这不会对body（transactions）响应进行验证，但是保证SealedHeader与请求的hash匹配
     pub fn get_full_block(&self, hash: H256) -> FetchFullBlockFuture<Client> {
         let client = self.client.clone();
         FetchFullBlockFuture {

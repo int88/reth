@@ -336,11 +336,13 @@ impl From<PayloadError> for PayloadStatusEnum {
 #[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PayloadStatusEnum {
     /// VALID is returned by the engine API in the following calls:
+    /// VALID在以下调用中由engine API返回：
     ///   - newPayloadV1:       if the payload was already known or was just validated and executed
     ///   - forkchoiceUpdateV1: if the chain accepted the reorg (might ignore if it's stale)
     Valid,
 
     /// INVALID is returned by the engine API in the following calls:
+    /// INVALID在以下调用中由engine API返回：
     ///   - newPayloadV1:       if the payload failed to execute on top of the local chain
     ///   - forkchoiceUpdateV1: if the new head is unknown, pre-merge, or reorg to it fails
     Invalid {
@@ -349,12 +351,15 @@ pub enum PayloadStatusEnum {
     },
 
     /// SYNCING is returned by the engine API in the following calls:
+    /// SYNCING在以下调用中由engine API返回：
     ///   - newPayloadV1:       if the payload was accepted on top of an active sync
     ///   - forkchoiceUpdateV1: if the new head was seen before, but not part of the chain
     Syncing,
 
     /// ACCEPTED is returned by the engine API in the following calls:
+    /// ACCEPTED在以下调用中由engine API返回：
     ///   - newPayloadV1: if the payload was accepted, but not processed (side chain)
+    ///   - newPayloadV1: 如果payload被接受，但未处理（侧链）
     Accepted,
     InvalidBlockHash {
         #[serde(rename = "validationError")]

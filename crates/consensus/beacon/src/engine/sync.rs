@@ -18,34 +18,44 @@ use tokio::sync::oneshot;
 use tracing::trace;
 
 /// Manages syncing under the control of the engine.
+/// 在engine的控制下管理同步
 ///
 /// This type controls the [Pipeline] and supports (single) full block downloads.
+/// 这个类型控制Pipeline并支持（单个）完整的区块下载
 ///
 /// Caution: If the pipeline is running, this type will not emit blocks downloaded from the network
 /// [EngineSyncEvent::FetchedFullBlock] until the pipeline is idle to prevent commits to the
 /// database while the pipeline is still active.
+/// 注意：如果pipeline正在运行，这个类型将不会从网络中发出下载的区块，直到pipeline空闲为止，以防止在pipeline仍然活动时对数据库的提交
 pub(crate) struct EngineSyncController<DB, Client>
 where
     DB: Database,
     Client: HeadersClient + BodiesClient,
 {
     /// A downloader that can download full blocks from the network.
+    /// 一个downloader，可以从网络中下载完整的区块
     full_block_client: FullBlockClient<Client>,
     /// The type that can spawn the pipeline task.
+    /// 可以生成pipeline task的类型
     pipeline_task_spawner: Box<dyn TaskSpawner>,
     /// The current state of the pipeline.
     /// The pipeline is used for large ranges.
+    /// pipeline的当前状态。pipeline用于大范围
     pipeline_state: PipelineState<DB>,
     /// Pending target block for the pipeline to sync
+    /// pipeline同步的pending target block
     pending_pipeline_target: Option<H256>,
     /// In requests in progress.
+    /// 在处理过程中的请求
     inflight_full_block_requests: Vec<FetchFullBlockFuture<Client>>,
     /// Buffered events until the manager is polled and the pipeline is idle.
+    /// 缓存的events，直到manager被轮询并且pipeline空闲
     queued_events: VecDeque<EngineSyncEvent>,
     /// If enabled, the pipeline will be triggered continuously, as soon as it becomes idle
     run_pipeline_continuously: bool,
     /// Max block after which the consensus engine would terminate the sync. Used for debugging
     /// purposes.
+    /// 最大的block，之后共识引擎将终止同步。用于调试目的
     max_block: Option<BlockNumber>,
 }
 
@@ -55,6 +65,7 @@ where
     Client: HeadersClient + BodiesClient + Clone + Unpin + 'static,
 {
     /// Create a new instance
+    /// 创建一个新的实例
     pub(crate) fn new(
         pipeline: Pipeline<DB>,
         client: Client,

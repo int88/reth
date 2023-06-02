@@ -56,10 +56,13 @@ use tokio::sync::mpsc::{self, error::TrySendError};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tracing::{debug, error, info, trace};
 /// Manages the _entire_ state of the network.
+/// 管理network的整个状态
 ///
 /// This is an endless [`Future`] that consistently drives the state of the entire network forward.
+/// 这是一个无尽的[`Future`]，它不断地推动整个网络的状态向前发展。
 ///
 /// The [`NetworkManager`] is the container type for all parts involved with advancing the network.
+/// [`NetworkManager`]是推进网络的所有部分的容器类型。
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// ```mermaid
 ///  graph TB

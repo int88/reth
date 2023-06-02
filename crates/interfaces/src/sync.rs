@@ -1,8 +1,10 @@
 //! Traits used when interacting with the sync status of the network.
+//! 用于和network的sync status进行交互的trait
 use reth_primitives::Head;
 
 /// A type that provides information about whether the node is currently syncing and the network is
 /// currently serving syncing related requests.
+/// 一个类型，提供关于node是否正在syncing和network是否正在提供syncing相关请求的信息
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait SyncStateProvider: Send + Sync {
     /// Returns `true` if the network is undergoing sync.
