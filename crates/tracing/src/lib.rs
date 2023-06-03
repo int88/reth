@@ -102,12 +102,15 @@ where
 }
 
 /// Initializes a tracing subscriber for tests.
+/// 初始化一个tracing subscriber，用于测试
 ///
 /// The filter is configurable via `RUST_LOG`.
+/// filter通过`RUST_LOG`可配置
 ///
 /// # Note
 ///
 /// The subscriber will silently fail if it could not be installed.
+/// subscriber会静默失败，如果不能被安装
 pub fn init_test_tracing() {
     let _ = tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())

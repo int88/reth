@@ -24,10 +24,13 @@ pub type ForkChoiceUpdateResult = Result<ForkchoiceUpdated, ForkchoiceUpdateErro
 #[serde(rename_all = "camelCase")]
 pub struct ForkchoiceState {
     /// Hash of the head block.
+    /// head block的哈希值
     pub head_block_hash: H256,
     /// Hash of the safe block.
+    /// safe block的哈希值
     pub safe_block_hash: H256,
     /// Hash of finalized block.
+    /// finalized block的哈希值
     pub finalized_block_hash: H256,
 }
 
@@ -39,14 +42,18 @@ pub struct ForkchoiceState {
 pub enum ForkchoiceUpdateError {
     /// The forkchoice update has been processed, but the requested contained invalid
     /// [PayloadAttributes](crate::engine::PayloadAttributes).
+    /// forkchoice update已经被处理，但是请求的包含无效的PayloadAttributes
     ///
     /// This is returned as an error because the payload attributes are invalid and the payload is not valid, See <https://github.com/ethereum/execution-apis/blob/6709c2a795b707202e93c4f2867fa0bf2640a84f/src/engine/paris.md#engine_forkchoiceupdatedv1>
+    /// 这被返回为错误，因为payload属性无效，payload无效
     #[error("Invalid payload attributes")]
     UpdatedInvalidPayloadAttributes,
     /// The given [ForkchoiceState] is invalid or inconsistent.
+    /// 给定的ForkchoiceState无效或不一致
     #[error("Invalid forkchoice state")]
     InvalidState,
     /// Thrown when a forkchoice final block does not exist in the database.
+    /// 被抛出的forkchoice final block在数据库中不存在
     #[error("final block not available in database")]
     UnknownFinalBlock,
 }

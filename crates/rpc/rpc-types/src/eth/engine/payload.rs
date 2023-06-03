@@ -58,6 +58,7 @@ impl ExecutionPayloadEnvelope {
 }
 
 /// This structure maps on the ExecutionPayload structure of the beacon chain spec.
+/// 这个结构映射在beacon chain spec的ExecutionPayload结构上
 ///
 /// See also: <https://github.com/ethereum/execution-apis/blob/6709c2a795b707202e93c4f2867fa0bf2640a84f/src/engine/paris.md#executionpayloadv1>
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -254,12 +255,14 @@ pub struct PayloadAttributes {
 }
 
 /// This structure contains the result of processing a payload or fork choice update.
+/// 这个结构包含了处理一个paylaod或者fork choice update的结果
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayloadStatus {
     #[serde(flatten)]
     pub status: PayloadStatusEnum,
     /// Hash of the most recent valid block in the branch defined by payload and its ancestors
+    /// 最近合法的block的哈希值，由payload和它的祖先定义的分支
     pub latest_valid_hash: Option<H256>,
 }
 
@@ -283,6 +286,7 @@ impl PayloadStatus {
     }
 
     /// Returns true if the payload status is syncing.
+    /// 如果payload的状态是syncing，返回true
     pub fn is_syncing(&self) -> bool {
         self.status.is_syncing()
     }
@@ -338,13 +342,17 @@ pub enum PayloadStatusEnum {
     /// VALID is returned by the engine API in the following calls:
     /// VALID在以下调用中由engine API返回：
     ///   - newPayloadV1:       if the payload was already known or was just validated and executed
+    ///   - newPayloadV1:      如果payload已经被知道或者刚刚被验证和执行
     ///   - forkchoiceUpdateV1: if the chain accepted the reorg (might ignore if it's stale)
+    ///   - forkchoiceUpdateV1: 如果链接受了reorg（如果它过时了，可能会忽略）
     Valid,
 
     /// INVALID is returned by the engine API in the following calls:
     /// INVALID在以下调用中由engine API返回：
     ///   - newPayloadV1:       if the payload failed to execute on top of the local chain
+    ///   - newPayloadV1:      如果payload在本地链上执行失败
     ///   - forkchoiceUpdateV1: if the new head is unknown, pre-merge, or reorg to it fails
+    ///   - forkchoiceUpdateV1: 如果新的head是未知的，pre-merge，或者reorg失败
     Invalid {
         #[serde(rename = "validationError")]
         validation_error: String,
@@ -353,7 +361,9 @@ pub enum PayloadStatusEnum {
     /// SYNCING is returned by the engine API in the following calls:
     /// SYNCING在以下调用中由engine API返回：
     ///   - newPayloadV1:       if the payload was accepted on top of an active sync
+    ///   - newPayloadV1:      如果payload在活动同步的顶部被接受
     ///   - forkchoiceUpdateV1: if the new head was seen before, but not part of the chain
+    ///   - forkchoiceUpdateV1: 如果新的head之前已经看到过，但不是链的一部分
     Syncing,
 
     /// ACCEPTED is returned by the engine API in the following calls:

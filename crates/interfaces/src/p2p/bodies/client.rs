@@ -11,12 +11,14 @@ use reth_primitives::{BlockBody, H256};
 pub type BodiesFut = Pin<Box<dyn Future<Output = PeerRequestResult<Vec<BlockBody>>> + Send + Sync>>;
 
 /// A client capable of downloading block bodies.
+/// 一个client，能够下载block bodies
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait BodiesClient: DownloadClient {
     /// The output of the request future for querying block bodies.
     type Output: Future<Output = PeerRequestResult<Vec<BlockBody>>> + Sync + Send + Unpin;
 
     /// Fetches the block body for the requested block.
+    /// 对于请求的block获取block body
     fn get_block_bodies(&self, hashes: Vec<H256>) -> Self::Output {
         self.get_block_bodies_with_priority(hashes, Priority::Normal)
     }

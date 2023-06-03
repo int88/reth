@@ -144,12 +144,15 @@ impl Display for EntitiesCheckpoint {
 }
 
 /// Saves the progress of a stage.
+/// 保存一个stage的进度
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct StageCheckpoint {
     /// The maximum block processed by the stage.
+    /// 这个stage处理的最大的block数目
     pub block_number: BlockNumber,
     /// Stage-specific checkpoint. None if stage uses only block-based checkpoints.
+    /// Stage特定的checkpoint，如果stage只使用基于block的checkpoint，那么为None
     pub stage_checkpoint: Option<StageUnitCheckpoint>,
 }
 
@@ -224,12 +227,16 @@ impl Display for StageCheckpoint {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum StageUnitCheckpoint {
     /// Saves the progress of transaction-indexed stages.
+    /// 保存transaction-indexed stages的进度
     Transaction(TxNumber),
     /// Saves the progress of AccountHashing stage.
+    /// 保存AccountHashing stage的进度
     Account(AccountHashingCheckpoint),
     /// Saves the progress of StorageHashing stage.
+    /// 保存StorageHashing stage的进度
     Storage(StorageHashingCheckpoint),
     /// Saves the progress of abstract stage iterating over or downloading entities.
+    /// 保存抽象stage的进度，这个stage迭代或者下载entities
     Entities(EntitiesCheckpoint),
 }
 

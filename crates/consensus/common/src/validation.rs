@@ -1,4 +1,5 @@
 //! Collection of methods for block validation.
+//! 一系列的方法用于block validation
 use reth_interfaces::{consensus::ConsensusError, Result as RethResult};
 use reth_primitives::{
     constants, BlockNumber, ChainSpec, Hardfork, Header, InvalidTransactionError, SealedBlock,
@@ -11,11 +12,13 @@ use std::{
 };
 
 /// Validate header standalone
+/// 单独校验header
 pub fn validate_header_standalone(
     header: &SealedHeader,
     chain_spec: &ChainSpec,
 ) -> Result<(), ConsensusError> {
     // Gas used needs to be less then gas limit. Gas used is going to be check after execution.
+    // 使用的gas应该小于gas limit, 使用的gas应该在execution之后检查
     if header.gas_used > header.gas_limit {
         return Err(ConsensusError::HeaderGasUsedExceedsGasLimit {
             gas_used: header.gas_used,
@@ -24,6 +27,7 @@ pub fn validate_header_standalone(
     }
 
     // Check if timestamp is in future. Clock can drift but this can be consensus issue.
+    // 检查是否是未来的时间戳，时钟可能会漂移，但这可能是共识问题
     let present_timestamp =
         SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
     if header.timestamp > present_timestamp {
@@ -41,6 +45,7 @@ pub fn validate_header_standalone(
     }
 
     // EIP-4895: Beacon chain push withdrawals as operations
+    // EIP-4895: Beacon chain将withdrawals作为operations推送
     if chain_spec.fork(Hardfork::Shanghai).active_at_timestamp(header.timestamp) &&
         header.withdrawals_root.is_none()
     {
@@ -171,11 +176,16 @@ pub fn validate_all_transaction_regarding_block_and_nonces<
 }
 
 /// Validate a block without regard for state:
+/// 校验一个block，不考虑state
 ///
 /// - Compares the ommer hash in the block header to the block body
+/// - 比较block header中的ommer hash和block body
 /// - Compares the transactions root in the block header to the block body
+/// - 比较block header中的transactions root和block body
 /// - Pre-execution transaction validation
+/// - 提前执行transaction validation
 /// - (Optionally) Compares the receipts root in the block header to the block body
+/// - (可选)比较block header中的receipts root和block body
 pub fn validate_block_standalone(
     block: &SealedBlock,
     chain_spec: &ChainSpec,

@@ -260,6 +260,7 @@ impl HeadersClient for TestHeadersClient {
 #[derive(Debug)]
 pub struct TestConsensus {
     /// Flag whether the header validation should purposefully fail
+    /// Flag表示header validation是否故意失败
     fail_validation: AtomicBool,
 }
 

@@ -43,6 +43,7 @@ use std::{
 // lifetime of the `TXMut` and having a nice API for re-opening a new transaction after `commit`
 pub struct Transaction<'this, DB: Database> {
     /// A handle to the DB.
+    /// 对于DB的一个handle
     pub(crate) db: &'this DB,
     tx: Option<<DB as DatabaseGAT<'this>>::TXMut>,
 }
@@ -496,10 +497,12 @@ where
     }
 
     /// Insert full block and make it canonical.
+    /// 插入完整的block并且使其成为canonical
     ///
     /// This inserts the block and builds history related indexes. Once all blocks in a chain have
     /// been committed, the state root needs to be inserted separately with
     /// [`Transaction::insert_hashes`].
+    /// 这插入block并且构建history相关的索引。一旦chain中的所有block都被提交，state root需要单独插入
     ///
     /// # Note
     ///

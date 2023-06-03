@@ -107,6 +107,7 @@ where
     }
 
     /// Returns `true` if the pipeline is idle.
+    /// 返回`true`，如果pipeline是空闲的
     pub(crate) fn is_pipeline_idle(&self) -> bool {
         self.pipeline_state.is_idle()
     }
@@ -184,6 +185,7 @@ where
 
     /// This will spawn the pipeline if it is idle and a target is set or if the pipeline is set to
     /// run continuously.
+    /// 这会在pipeline空闲且设置了target或者pipeline设置为连续运行时，生成pipeline
     fn try_spawn_pipeline(&mut self) -> Option<EngineSyncEvent> {
         match &mut self.pipeline_state {
             PipelineState::Idle(pipeline) => {
@@ -217,8 +219,10 @@ where
     }
 
     /// Advances the sync process.
+    /// 推进同步进程
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<EngineSyncEvent> {
         // try to spawn a pipeline if a target is set
+        // 试着生成一个pipeline，如果设置了target
         if let Some(event) = self.try_spawn_pipeline() {
             return Poll::Ready(event)
         }
@@ -256,34 +260,47 @@ where
 }
 
 /// The event type emitted by the [EngineSyncController].
+/// [EngineSyncController]发出的事件类型
 #[derive(Debug)]
 pub(crate) enum EngineSyncEvent {
     /// A full block has been downloaded from the network.
+    /// 已经从network下载了一个完整的区块
     FetchedFullBlock(SealedBlock),
     /// Pipeline started syncing
+    /// Pipeline开始同步
     ///
     /// This is none if the pipeline is triggered without a specific target.
+    /// 如果pipeline被触发，没有特定的target，这个是none
     PipelineStarted(Option<H256>),
     /// Pipeline finished
+    /// Pipeline结束了
     ///
     /// If this is returned, the pipeline is idle.
+    /// 如果返回了，pipeline是空闲的
     PipelineFinished {
         /// Final result of the pipeline run.
+        /// Pipeline运行的最终结果
         result: Result<ControlFlow, PipelineError>,
         /// Whether the pipeline reached the configured `max_block`.
+        /// pipeline是否dao达到了配置的`max_block`
         ///
         /// Note: this is only relevant in debugging scenarios.
+        /// 注意：这只在调试场景中有用
         reached_max_block: bool,
     },
     /// Pipeline task was dropped after it was started, unable to receive it because channel
     /// closed. This would indicate a panicked pipeline task
+    /// Pipeline task被丢弃了，因为它已经开始了，无法接收它，因为channel关闭了。这表明了一个恐慌的pipeline task
     PipelineTaskDropped,
 }
 
 /// The possible pipeline states within the sync controller.
+/// sync controller内可能的pipeline状态
 ///
 /// [PipelineState::Idle] means that the pipeline is currently idle.
+/// [PipelineState::Idle]意味着pipeline当前处于空闲状态
 /// [PipelineState::Running] means that the pipeline is currently running.
+/// [PipelineState::Running]意味着pipeline当前正在运行
 ///
 /// NOTE: The differentiation between these two states is important, because when the pipeline is
 /// running, it acquires the write lock over the database. This means that we cannot forward to the

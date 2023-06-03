@@ -65,26 +65,34 @@ use tracing::{debug, error, info, instrument, trace};
 /// main functions:
 /// * [BlockchainTree::insert_block]: Connect block to chain, execute it and if valid insert block
 ///   inside tree.
+/// * [BlockchainTree::insert_block]: 连接block到chain，执行它，如果有效，将block插入到tree中
 /// * [BlockchainTree::finalize_block]: Remove chains that join to now finalized block, as chain
 ///   becomes invalid.
+/// * [BlockchainTree::finalize_block]: 移除已经加入到现在finalized block的chain，因为chain变得无效
 /// * [BlockchainTree::make_canonical]: Check if we have the hash of block that we want to finalize
 ///   and commit it to db. If we don't have the block, pipeline syncing should start to fetch the
 ///   blocks from p2p. Do reorg in tables if canonical chain if needed.
+/// * [BlockchainTree::make_canonical]: 检查我们是否有我们想要finalized的block的hash，并将其提交到db
+///  如果我们没有这个block，pipeline syncing应该开始从p2p获取block。如果需要，对tables进行reorg
 #[derive(Debug)]
 pub struct BlockchainTree<DB: Database, C: Consensus, EF: ExecutorFactory> {
     /// The tracked chains and their current data.
     chains: HashMap<BlockChainId, AppendableChain>,
     /// Unconnected block buffer.
+    /// 没有连接的block buffer
     buffered_blocks: BlockBuffer,
     /// Static blockchain ID generator
     block_chain_id_generator: u64,
     /// Indices to block and their connection to the canonical chain.
+    /// 到block的索引及其与canonical chain的连接
     block_indices: BlockIndices,
     /// External components (the database, consensus engine etc.)
+    /// 扩展的组件（database，consensus engine等）
     externals: TreeExternals<DB, C, EF>,
     /// Tree configuration
     config: BlockchainTreeConfig,
     /// Broadcast channel for canon state changes notifications.
+    /// 广播通道，用于canon state changes notifications
     canon_state_notification_sender: CanonStateNotificationSender,
 }
 
@@ -661,6 +669,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Insert a block (with senders recovered) in the tree.
+    /// 插入一个block到tree中
     ///
     /// Returns the [BlockStatus] on success:
     ///
@@ -674,6 +683,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     ///
     /// This means that if the block becomes canonical, we need to fetch the missing blocks over
     /// P2P.
+    /// 这意味着如果block变成canonical，我们需要通过P2P获取丢失的blocks
     ///
     /// # Note
     ///

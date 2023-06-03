@@ -12,18 +12,24 @@ pub trait SyncStateProvider: Send + Sync {
 }
 
 /// An updater for updating the [SyncState] and status of the network.
+/// 一个updater，用于更新[SyncState]和network的status
 ///
 /// The node is either syncing, or it is idle.
+/// node要么在syncing，要么是idle
 /// While syncing, the node will download data from the network and process it. The processing
 /// consists of several stages, like recovering senders, executing the blocks and indexing.
 /// Eventually the node reaches the `Finish` stage and will transition to [`SyncState::Idle`], it
 /// which point the node is considered fully synced.
+/// 当处于syncing状态时，node会从network下载数据并处理它。处理包括几个阶段，比如恢复senders，执行blocks和索引。
+/// 最终node到达`Finish`阶段，并且会转换到[`SyncState::Idle`]，此时node被认为是完全synced的。
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait NetworkSyncUpdater: std::fmt::Debug + Send + Sync + 'static {
     /// Notifies about an [SyncState] update.
+    /// 通知关于[SyncState]的更新
     fn update_sync_state(&self, state: SyncState);
 
     /// Updates the status of the p2p node
+    /// 更新p2p node的状态
     fn update_status(&self, head: Head);
 }
 
@@ -31,10 +37,13 @@ pub trait NetworkSyncUpdater: std::fmt::Debug + Send + Sync + 'static {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum SyncState {
     /// Node sync is complete.
+    /// Node同步已经完成
     ///
     /// The network just serves requests to keep up of the chain.
+    /// network只是提供了chain的keep up请求
     Idle,
     /// Network is syncing
+    /// Network正在同步
     Syncing,
 }
 
@@ -48,6 +57,7 @@ impl SyncState {
 }
 
 /// A [NetworkSyncUpdater] implementation that does nothing.
+/// 一个什么都不做的[NetworkSyncUpdater]实现
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive]
 pub struct NoopSyncStateUpdater;

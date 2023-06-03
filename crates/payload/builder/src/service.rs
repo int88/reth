@@ -57,11 +57,14 @@ impl From<PayloadBuilderHandle> for PayloadStore {
 }
 
 /// A communication channel to the [PayloadBuilderService].
+/// 和[PayloadBuilderService]通信的通道
 ///
 /// This is the API used to create new payloads and to get the current state of existing ones.
+/// 这个API用于创建新的payloads和获取现有的payloads的当前状态。
 #[derive(Debug, Clone)]
 pub struct PayloadBuilderHandle {
     /// Sender half of the message channel to the [PayloadBuilderService].
+    /// 发送消息到[PayloadBuilderService]的通道的一半
     to_service: mpsc::UnboundedSender<PayloadServiceCommand>,
 }
 

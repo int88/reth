@@ -39,9 +39,11 @@ impl BlockSource {
 }
 
 /// Api trait for fetching `Block` related data.
+/// Api trait用于获取`Block`相关的数据
 ///
 /// If not requested otherwise, implementers of this trait should prioritize fetching blocks from
 /// the database.
+/// 如果没有请求，实现这个trait的类型应该优先从数据库中获取blocks
 #[auto_impl::auto_impl(&, Arc)]
 pub trait BlockProvider:
     BlockNumProvider + HeaderProvider + TransactionsProvider + ReceiptProvider + Send + Sync

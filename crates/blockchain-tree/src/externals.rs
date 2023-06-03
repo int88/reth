@@ -6,14 +6,20 @@ use reth_provider::ShareableDatabase;
 use std::sync::Arc;
 
 /// A container for external components.
+/// 用于外部组件的容器
 ///
 /// This is a simple container for external components used throughout the blockchain tree
 /// implementation:
+/// 这是一个简单的容器，用于整个blockchain tree实现中使用的外部组件：
 ///
 /// - A handle to the database
+/// - 数据库的handle
 /// - A handle to the consensus engine
+/// - 共识引擎的handle
 /// - The executor factory to execute blocks with
+/// - 用于执行blocks的executor factory
 /// - The chain spec
+/// - 链的spec
 #[derive(Debug)]
 pub struct TreeExternals<DB, C, EF> {
     /// The database, used to commit the canonical chain, or unwind it.

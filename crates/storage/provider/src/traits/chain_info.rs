@@ -3,6 +3,7 @@ use reth_primitives::SealedHeader;
 use std::time::Instant;
 
 /// A type that can track updates related to fork choice updates.
+/// 一个类型，追踪与fork choice updates相关的更新
 pub trait CanonChainTracker: Send + Sync {
     /// Notify the tracker about a received fork choice update.
     fn on_forkchoice_update_received(&self, update: &ForkchoiceState);

@@ -78,23 +78,27 @@ pub struct BeaconConsensusEngineHandle {
 
 impl BeaconConsensusEngineHandle {
     /// Creates a new beacon consensus engine handle.
+    /// 创建一个新的beacon consensus engine handle
     pub fn new(to_engine: UnboundedSender<BeaconEngineMessage>) -> Self {
         Self { to_engine }
     }
 
     /// Sends a new payload message to the beacon consensus engine and waits for a response.
+    /// 发送一个新的payload message到beacon consensus engine并且等待一个response
     ///
     ///See also <https://github.com/ethereum/execution-apis/blob/8db51dcd2f4bdfbd9ad6e4a7560aac97010ad063/src/engine/specification.md#engine_newpayloadv2>
     pub async fn new_payload(
         &self,
         payload: ExecutionPayload,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
+        // 获得一个oneshot::channel
         let (tx, rx) = oneshot::channel();
         let _ = self.to_engine.send(BeaconEngineMessage::NewPayload { payload, tx });
         rx.await.map_err(|_| BeaconOnNewPayloadError::EngineUnavailable)?
     }
 
     /// Sends a forkchoice update message to the beacon consensus engine and waits for a response.
+    /// 发送一个forkchoice update message到beacon consensus engine并且等待一个response
     ///
     /// See also <https://github.com/ethereum/execution-apis/blob/main/src/engine/specification.md#engine_forkchoiceupdatedv2>
     pub async fn fork_choice_updated(
@@ -111,6 +115,7 @@ impl BeaconConsensusEngineHandle {
 
     /// Sends a forkchoice update message to the beacon consensus engine and returns the receiver to
     /// wait for a response.
+    /// 发送一个forkchoice update message到beacon consensus engine并且返回一个receiver来等待一个response。
     fn send_fork_choice_updated(
         &self,
         state: ForkchoiceState,
@@ -204,6 +209,7 @@ where
     Client: HeadersClient + BodiesClient + Clone + Unpin + 'static,
 {
     /// Create a new instance of the [BeaconConsensusEngine].
+    /// 创建一个新的[BeaconConsensusEngine]实例。
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         client: Client,
@@ -234,6 +240,7 @@ where
 
     /// Create a new instance of the [BeaconConsensusEngine] using the given channel to configure
     /// the [BeaconEngineMessage] communication channel.
+    /// 创建一个新的[BeaconConsensusEngine]实例，使用给定的通道来配置[BeaconEngineMessage]通信通道。
     #[allow(clippy::too_many_arguments)]
     pub fn with_channel(
         client: Client,
@@ -326,8 +333,10 @@ where
 
     /// Checks if the given `head` points to an invalid header, which requires a specific response
     /// to a forkchoice update.
+    /// 检查是否给定的head指向一个无效的header，这需要一个特定的response来forkchoice update。
     fn check_invalid_ancestor(&mut self, head: H256) -> Option<PayloadStatus> {
         // check if the head was previously marked as invalid
+        // 检查是否head之前被标记为无效
         let (parent_hash, parent_number) = {
             let header = self.invalid_headers.get(&head)?;
             (header.parent_hash, header.number.saturating_sub(1))
@@ -351,9 +360,11 @@ where
     }
 
     /// Invoked when we receive a new forkchoice update message.
+    /// 当我们收到一个新的forkchoice update message时调用。
     ///
     /// Returns `true` if the engine now reached its maximum block number, See
     /// [EngineSyncController::has_reached_max_block].
+    /// 返回true，如果引擎现在达到了它的最大块数，参见EngineSyncController::has_reached_max_block。
     fn on_forkchoice_updated(
         &mut self,
         state: ForkchoiceState,
@@ -371,6 +382,7 @@ where
         };
 
         // update the forkchoice state tracker
+        // 更新forkchoice state tracker
         self.forkchoice_state_tracker.set_latest(state, on_updated.forkchoice_status());
 
         let is_valid_response = on_updated.is_valid_update();
@@ -378,6 +390,7 @@ where
 
         // Terminate the sync early if it's reached the maximum user
         // configured block.
+        // 尽早结束同步，如果它达到了最大的用户配置块。
         if is_valid_response {
             let tip_number = self.blockchain.canonical_tip().number;
             if self.sync.has_reached_max_block(tip_number) {
@@ -390,11 +403,13 @@ where
 
     /// Called to resolve chain forks and ensure that the Execution layer is working with the latest
     /// valid chain.
+    /// 被调用来解决链分叉，并确保执行层正在使用最新的有效链。
     ///
     /// These responses should adhere to the [Engine API Spec for
     /// `engine_forkchoiceUpdated`](https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#specification-1).
     ///
     /// Returns an error if an internal error occurred like a database error.
+    /// 返回一个error，如果发生了内部错误，比如一个数据库错误。
     fn forkchoice_updated(
         &mut self,
         state: ForkchoiceState,
@@ -417,6 +432,7 @@ where
         let status = if self.sync.is_pipeline_idle() {
             // We can only process new forkchoice updates if the pipeline is idle, since it requires
             // exclusive access to the database
+            // 我们只能处理新的forkchoice updates，如果pipeline是空闲的，因为它需要独占访问数据库
             match self.blockchain.make_canonical(&state.head_block_hash) {
                 Ok(outcome) => {
                     let header = outcome.into_header();
@@ -465,10 +481,12 @@ where
                 }
             }
         } else {
+            // pipeline正在同步，跳过forkchoice update
             trace!(target: "consensus::engine", "Pipeline is syncing, skipping forkchoice update");
             PayloadStatus::from_status(PayloadStatusEnum::Syncing)
         };
 
+        // 通知listeners
         self.listeners.notify(BeaconConsensusEngineEvent::ForkchoiceUpdated(state));
 
         trace!(target: "consensus::engine", ?status, ?state, "Returning forkchoice status");
@@ -663,12 +681,16 @@ where
     /// state in the block header, then passes validation data back to Consensus layer, that
     /// adds the block to the head of its own blockchain and attests to it. The block is then
     /// broadcast over the consensus p2p network in the form of a "Beacon block".
+    /// 当Consensus layer通过consensus gossip protocol接收到一个新的block时，block中的transactions以[`ExecutionPayload`]的形式发送到execution layer。
+    /// Execution layer执行transactions并验证block header中的state，然后将验证数据传递回Consensus layer，Consensus layer将block添加到自己的blockchain的head中并对其进行attest。
+    /// 然后以“Beacon block”的形式通过consensus p2p网络广播block。
     ///
     /// These responses should adhere to the [Engine API Spec for
     /// `engine_newPayload`](https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#specification).
     ///
     /// This returns a [`PayloadStatus`] that represents the outcome of a processed new payload and
     /// returns an error if an internal error occurred.
+    /// 这返回一个[`PayloadStatus`]，表示处理新负载的结果，并在发生内部错误时返回错误。
     #[instrument(level = "trace", skip(self, payload), fields(block_hash= ?payload.block_hash, block_number = %payload.block_number.as_u64()), target = "consensus::engine")]
     fn on_new_payload(
         &mut self,
@@ -676,6 +698,7 @@ where
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
         trace!(target: "consensus::engine", "Received new payload");
 
+        // 是不是well formed payload
         let block = match self.ensure_well_formed_payload(payload) {
             Ok(block) => block,
             Err(status) => return Ok(status),
@@ -691,8 +714,10 @@ where
         let res = if self.sync.is_pipeline_idle() {
             // we can only insert new payloads if the pipeline is _not_ running, because it holds
             // exclusive access to the database
+            // 我们只能插入新的payloads，如果pipeline不运行，因为它持有独占访问数据库
             self.try_insert_new_payload(block)
         } else {
+            // 缓存payload
             self.try_buffer_payload(block)
         };
 
@@ -701,6 +726,7 @@ where
                 if status.is_valid() {
                     // block was successfully inserted, so we can cancel the full block request, if
                     // any exists
+                    // block被成功插入了，因此我们可以取消full block request，如果有的话
                     self.sync.cancel_full_block_request(block_hash);
                 }
                 Ok(status)
@@ -748,13 +774,16 @@ where
 
     /// When the pipeline is actively syncing the tree is unable to commit any additional blocks
     /// since the pipeline holds exclusive access to the database.
+    /// 当pipeline正在积极地同步时，tree无法提交任何额外的block，因为pipeline持有对数据库的独占访问权限。
     ///
     /// In this scenario we buffer the payload in the tree if the payload is valid, once the
     /// pipeline finished syncing the tree is then able to also use the buffered payloads to commit
     /// to a (newer) canonical chain.
+    /// 在这种情况下，如果payload是有效的，我们将payload缓冲到tree中，一旦pipeline完成同步，tree也可以使用缓冲的payloads来提交到（新的）canonical chain。
     ///
     /// This will return `SYNCING` if the block was buffered successfully, and an error if an error
     /// occurred while buffering the block.
+    /// 这会返回`SYNCING`，如果block成功缓冲，如果在缓冲block时发生错误，则返回错误。
     #[instrument(level = "trace", skip_all, target = "consensus::engine", ret)]
     fn try_buffer_payload(
         &mut self,
@@ -765,8 +794,10 @@ where
     }
 
     /// Attempts to insert a new payload into the tree.
+    /// 试着插入一个新的payload到tree中。
     ///
     /// Caution: This expects that the pipeline is idle.
+    /// 注意：这需要pipeline是空闲的。
     #[instrument(level = "trace", skip_all, target = "consensus::engine", ret)]
     fn try_insert_new_payload(
         &mut self,
@@ -775,16 +806,19 @@ where
         debug_assert!(self.sync.is_pipeline_idle(), "pipeline must be idle");
 
         let block_hash = block.hash;
+        // 插入block
         let status = self.blockchain.insert_block_without_senders(block.clone())?;
         let mut latest_valid_hash = None;
         let block = Arc::new(block);
         let status = match status {
             BlockStatus::Valid => {
                 latest_valid_hash = Some(block_hash);
+                // block被添加到canonical chain
                 self.listeners.notify(BeaconConsensusEngineEvent::CanonicalBlockAdded(block));
                 PayloadStatusEnum::Valid
             }
             BlockStatus::Accepted => {
+                // block被添加到fork chain
                 self.listeners.notify(BeaconConsensusEngineEvent::ForkBlockAdded(block));
                 PayloadStatusEnum::Accepted
             }
@@ -852,8 +886,10 @@ where
     }
 
     /// Event handler for events emitted by the [EngineSyncController].
+    /// 对于[EngineSyncController]发出的事件的事件处理程序。
     ///
     /// This returns a result to indicate whether the engine future should resolve (fatal error).
+    /// 这返回一个结果，以指示引擎future是否应该解析（致命错误）。
     fn on_sync_event(
         &mut self,
         ev: EngineSyncEvent,
@@ -986,11 +1022,14 @@ where
 
 /// On initialization, the consensus engine will poll the message receiver and return
 /// [Poll::Pending] until the first forkchoice update message is received.
+/// 在初始化的时候，共识引擎将轮询消息接收器，并返回Poll::Pending，直到收到第一个forkchoice更新消息。
 ///
 /// As soon as the consensus engine receives the first forkchoice updated message and updates the
 /// local forkchoice state, it will launch the pipeline to sync to the head hash.
 /// While the pipeline is syncing, the consensus engine will keep processing messages from the
 /// receiver and forwarding them to the blockchain tree.
+/// 一旦共识引擎收到第一个forkchoice更新消息并更新本地forkchoice状态，它将启动pipeline以同步到头哈希。
+/// 当pipeline正在同步时，共识引擎将继续处理来自接收器的消息并将其转发到区块链树。
 impl<DB, BT, Client> Future for BeaconConsensusEngine<DB, BT, Client>
 where
     DB: Database + Unpin + 'static,
@@ -1008,14 +1047,17 @@ where
         let this = self.get_mut();
 
         // Process all incoming messages first.
+        // 处理所有接收到的messages
         while let Poll::Ready(Some(msg)) = this.engine_message_rx.poll_next_unpin(cx) {
             match msg {
                 BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, tx } => {
+                    // fork choice更新
                     if this.on_forkchoice_updated(state, payload_attrs, tx) {
                         return Poll::Ready(Ok(()))
                     }
                 }
                 BeaconEngineMessage::NewPayload { payload, tx } => {
+                    // 有新的payload
                     this.metrics.new_payload_messages.increment(1);
                     let res = this.on_new_payload(payload);
                     let _ = tx.send(res);
@@ -1027,6 +1069,7 @@ where
         }
 
         // poll sync controller
+        // 轮询sync controller
         while let Poll::Ready(sync_event) = this.sync.poll(cx) {
             if let Some(res) = this.on_sync_event(sync_event) {
                 return Poll::Ready(res)
@@ -1102,6 +1145,7 @@ mod tests {
     struct TestEnv<DB> {
         db: DB,
         // Keep the tip receiver around, so it's not dropped.
+        // 保持tip接收器，这样它就不会被丢弃。
         #[allow(dead_code)]
         tip_rx: watch::Receiver<H256>,
         engine_handle: BeaconConsensusEngineHandle,
@@ -1125,6 +1169,7 @@ mod tests {
 
         /// Sends the `ExecutionPayload` message to the consensus engine and retries if the engine
         /// is syncing.
+        /// 发送“ExecutionPayload”消息到共识引擎，并在引擎同步时重试。
         async fn send_new_payload_retry_on_syncing(
             &self,
             payload: ExecutionPayload,
@@ -1146,6 +1191,7 @@ mod tests {
 
         /// Sends the `ForkchoiceUpdated` message to the consensus engine and retries if the engine
         /// is syncing.
+        /// 发送“ForkchoiceUpdated”消息到共识引擎，并在引擎同步时重试。
         async fn send_forkchoice_retry_on_syncing(
             &self,
             state: ForkchoiceState,
@@ -1173,13 +1219,16 @@ mod tests {
         executor_factory.extend(executor_results);
 
         // Setup pipeline
+        // 设置pipeline
         let (tip_tx, tip_rx) = watch::channel(H256::default());
         let pipeline = Pipeline::builder()
+            // 添加stages
             .add_stages(TestStages::new(pipeline_exec_outputs, Default::default()))
             .with_tip_sender(tip_tx)
             .build(db.clone());
 
         // Setup blockchain tree
+        // 设置blockchain tree
         let externals =
             TreeExternals::new(db.clone(), consensus, executor_factory, chain_spec.clone());
         let config = BlockchainTreeConfig::new(1, 2, 3, 2);
@@ -1188,9 +1237,11 @@ mod tests {
             BlockchainTree::new(externals, canon_state_notification_sender, config)
                 .expect("failed to create tree"),
         );
+        // 共享的db
         let shareable_db = ShareableDatabase::new(db.clone(), chain_spec.clone());
         let latest = chain_spec.genesis_header().seal_slow();
         let blockchain_provider = BlockchainProvider::with_latest(shareable_db, tree, latest);
+        // 创建BeaconConsensusEngine
         let (engine, handle) = BeaconConsensusEngine::new(
             NoopFullBlockClient::default(),
             pipeline,
@@ -1212,14 +1263,17 @@ mod tests {
         let (tx, rx) = oneshot::channel();
         tokio::spawn(async move {
             let result = engine.await;
+            // 转发consensus engine结果失败
             tx.send(result).expect("failed to forward consensus engine result");
         });
         rx
     }
 
     // Pipeline error is propagated.
+    // Pipeline错误被传播。
     #[tokio::test]
     async fn pipeline_error_is_propagated() {
+        // 构建chain spec
         let chain_spec = Arc::new(
             ChainSpecBuilder::default()
                 .chain(MAINNET.chain)
@@ -1227,6 +1281,7 @@ mod tests {
                 .paris_activated()
                 .build(),
         );
+        // 设置conensus engine
         let (consensus_engine, env) = setup_consensus_engine(
             chain_spec,
             VecDeque::from([Err(StageError::ChannelClosed)]),
@@ -1247,6 +1302,7 @@ mod tests {
     }
 
     // Test that the consensus engine is idle until first forkchoice updated is received.
+    // 测试consensus engine为idle，直到收到第一个forkchoice更新。
     #[tokio::test]
     async fn is_idle_until_forkchoice_is_set() {
         let chain_spec = Arc::new(
@@ -1264,14 +1320,17 @@ mod tests {
         let mut rx = spawn_consensus_engine(consensus_engine);
 
         // consensus engine is idle
+        // consensus engine处于idle状态
         std::thread::sleep(Duration::from_millis(100));
         assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
 
         // consensus engine is still idle
+        // coneensus engine仍然处于idle状态
         let _ = env.send_new_payload(SealedBlock::default().into()).await;
         assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
 
         // consensus engine receives a forkchoice state and triggers the pipeline
+        // consensus engine接收到forkchoice状态并触发pipeline
         let _ = env
             .send_forkchoice_updated(ForkchoiceState {
                 head_block_hash: H256::random(),
@@ -1287,6 +1346,7 @@ mod tests {
     // Test that the consensus engine runs the pipeline again if the tree cannot be restored.
     // The consensus engine will propagate the second result (error) only if it runs the pipeline
     // for the second time.
+    // 测试consensus engine会再次运行pipeline，如果树无法恢复。consensus engine会传播第二个结果（错误），只有当它第二次运行pipeline时。
     #[tokio::test]
     async fn runs_pipeline_again_if_tree_not_restored() {
         let chain_spec = Arc::new(
@@ -1350,10 +1410,12 @@ mod tests {
     }
 
     fn insert_blocks<'a, DB: Database>(db: &DB, mut blocks: impl Iterator<Item = &'a SealedBlock>) {
+        // 构建transaction
         let mut transaction = Transaction::new(db).unwrap();
         blocks
             .try_for_each(|b| {
                 transaction
+                    // 插入block
                     .insert_block(SealedBlockWithSenders::new(b.clone(), Vec::default()).unwrap())
             })
             .expect("failed to insert");
@@ -1417,6 +1479,7 @@ mod tests {
 
             let genesis = random_block(0, None, None, Some(0));
             let block1 = random_block(1, Some(genesis.hash), None, Some(0));
+            // 插入blocks
             insert_blocks(env.db.as_ref(), [&genesis, &block1].into_iter());
             env.db
                 .update(|tx| {
@@ -1437,6 +1500,7 @@ mod tests {
             };
 
             let result = env.send_forkchoice_updated(forkchoice).await.unwrap();
+            // 期望的结果
             let expected_result = ForkchoiceUpdated::new(PayloadStatus::new(
                 PayloadStatusEnum::Valid,
                 Some(block1.hash),
@@ -1472,21 +1536,25 @@ mod tests {
             let next_head = random_block(2, Some(block1.hash), None, Some(0));
             let next_forkchoice_state = ForkchoiceState {
                 head_block_hash: next_head.hash,
+                // 设置finalized hash
                 finalized_block_hash: block1.hash,
                 ..Default::default()
             };
 
             // if we `await` in the assert, the forkchoice will poll after we've inserted the block,
             // and it will return VALID instead of SYNCING
+            // 如果我们在断言中等待，forkchoice将在我们插入块之后进行轮询，它将返回VALID而不是SYNCING
             let invalid_rx = env.send_forkchoice_updated(next_forkchoice_state).await;
 
             // Insert next head immediately after sending forkchoice update
+            // 在发送forkchoice更新后立即插入下一个头
             insert_blocks(env.db.as_ref(), [&next_head].into_iter());
 
             let expected_result = ForkchoiceUpdated::from_status(PayloadStatusEnum::Syncing);
             assert_matches!(invalid_rx, Ok(result) => assert_eq!(result, expected_result));
 
             let result = env.send_forkchoice_retry_on_syncing(next_forkchoice_state).await.unwrap();
+            // 期望的result
             let expected_result = ForkchoiceUpdated::from_status(PayloadStatusEnum::Valid)
                 .with_latest_valid_hash(next_head.hash);
             assert_eq!(result, expected_result);
@@ -1520,6 +1588,7 @@ mod tests {
 
             let res = env
                 .send_forkchoice_updated(ForkchoiceState {
+                    // head block hash是随机的
                     head_block_hash: H256::random(),
                     finalized_block_hash: block1.hash,
                     ..Default::default()
@@ -1650,11 +1719,14 @@ mod tests {
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send new payload
+            // 发送新的payload
             let res = env.send_new_payload(random_block(0, None, None, Some(0)).into()).await;
             // Invalid, because this is a genesis block
+            // 非法，因为这是一个genesis block
             assert_matches!(res, Ok(result) => assert_matches!(result.status, PayloadStatusEnum::Invalid { .. }));
 
             // Send new payload
+            // 发送新的payload
             let res = env.send_new_payload(random_block(1, None, None, Some(0)).into()).await;
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Syncing);
             assert_matches!(res, Ok(result) => assert_eq!(result, expected_result));
@@ -1688,6 +1760,7 @@ mod tests {
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send forkchoice
+            // 发送fork choice update
             let res = env
                 .send_forkchoice_updated(ForkchoiceState {
                     head_block_hash: block1.hash,
@@ -1700,6 +1773,7 @@ mod tests {
             assert_matches!(res, Ok(ForkchoiceUpdated { payload_status, .. }) => assert_eq!(payload_status, expected_result));
 
             // Send new payload
+            // 发送新的payload
             let result =
                 env.send_new_payload_retry_on_syncing(block2.clone().into()).await.unwrap();
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Valid)
@@ -1745,6 +1819,7 @@ mod tests {
             assert_matches!(res, Ok(ForkchoiceUpdated { payload_status, .. }) => assert_eq!(payload_status, expected_result));
 
             // Send new payload
+            // 发送新的payload
             let block = random_block(2, Some(H256::random()), None, Some(0));
             let res = env.send_new_payload(block.into()).await;
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Syncing);
@@ -1757,6 +1832,7 @@ mod tests {
         async fn payload_pre_merge() {
             let data = BlockChainTestData::default();
             let mut block1 = data.blocks[0].0.block.clone();
+            // 设置block header的difficulty为MERGE之前的难度
             block1.header.difficulty = MAINNET.fork(Hardfork::Paris).ttd().unwrap() - U256::from(1);
             block1 = block1.unseal().seal_slow();
             let (block2, exec_result2) = data.blocks[1].clone();
@@ -1804,6 +1880,7 @@ mod tests {
             assert_matches!(res, Ok(ForkchoiceUpdated { payload_status, .. }) => assert_eq!(payload_status, expected_result));
 
             // Send new payload
+            // 发送新的payload
             let result =
                 env.send_new_payload_retry_on_syncing(block2.clone().into()).await.unwrap();
 

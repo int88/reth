@@ -120,6 +120,7 @@ where
     DB: Database + 'static,
 {
     /// Construct a pipeline using a [`PipelineBuilder`].
+    /// 使用[`PipelineBuilder`]构建一个pipeline。
     pub fn builder() -> PipelineBuilder<DB> {
         PipelineBuilder::default()
     }

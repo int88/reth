@@ -66,15 +66,19 @@ impl From<reth_interfaces::db::DatabaseError> for BeaconForkChoiceUpdateError {
 }
 
 /// Represents all error cases when handling a new payload.
+/// 代表所有的error cases，当处理一个新的payload时
 ///
 /// This represents all possible error cases that must be returned as JSON RCP errors back to the
 /// beacon node.
+/// 这代表所有可能的error cases，必须作为JSON RCP错误返回给beacon node
 #[derive(Debug, thiserror::Error)]
 pub enum BeaconOnNewPayloadError {
     /// Thrown when the engine task is unavailable/stopped.
+    /// 当engine task不可用/停止时抛出
     #[error("beacon consensus engine task stopped")]
     EngineUnavailable,
     /// An internal error occurred, not necessarily related to the payload.
+    /// 发生了一个内部错误，不一定和payload相关
     #[error(transparent)]
     Internal(Box<dyn std::error::Error + Send + Sync>),
 }

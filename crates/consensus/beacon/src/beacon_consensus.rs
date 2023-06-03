@@ -1,4 +1,5 @@
 //! Consensus for ethereum network
+//! ethereum网络的共识
 use reth_consensus_common::validation;
 use reth_interfaces::consensus::{Consensus, ConsensusError};
 use reth_primitives::{
@@ -10,6 +11,7 @@ use std::sync::Arc;
 /// Ethereum beacon consensus
 ///
 /// This consensus engine does basic checks as outlined in the execution specs.
+/// 这个consensus engine做了基本的检查，如执行规范中所述。
 #[derive(Debug)]
 pub struct BeaconConsensus {
     /// Configuration
@@ -18,6 +20,7 @@ pub struct BeaconConsensus {
 
 impl BeaconConsensus {
     /// Create a new instance of [BeaconConsensus]
+    /// 创建一个新的[BeaconConsensus]实例
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { chain_spec }
     }

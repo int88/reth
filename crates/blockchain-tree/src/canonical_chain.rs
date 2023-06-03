@@ -2,12 +2,15 @@ use reth_primitives::{BlockHash, BlockNumHash, BlockNumber};
 use std::collections::BTreeMap;
 
 /// This keeps track of all blocks of the canonical chain.
+/// 这追踪canonical chain的所有block
 ///
 /// This is a wrapper type around an ordered set of block numbers and hashes that belong to the
 /// canonical chain.
+/// 这是一个wrapper类型，包含属于canonical chain的block number和hash的有序集合
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CanonicalChain {
     /// All blocks of the canonical chain in order.
+    /// 所有的canonical chain中的block按顺序排列
     chain: BTreeMap<BlockNumber, BlockHash>,
 }
 

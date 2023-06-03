@@ -29,11 +29,15 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 /// The latest state can be found in `accounts`, `storage`, and `bytecode`. The receipts for the
 /// transactions that lead to these changes can be found in `receipts`, and each change leading to
 /// this state can be found in `changes`.
+/// 最新的state，可以在`accounts`、`storage`和`bytecode`中找到。导致这些变化的交易的收据可以在`receipts`中找到，
+/// 导致这些变化的每个变化都可以在`changes`中找到。
 ///
 /// # Wiped Storage
+/// # 擦除存储
 ///
 /// The [Storage] type has a field, `wiped` which denotes whether the pre-existing storage in the
 /// database should be cleared or not.
+/// [Storage]类型中有一个字段`wiped`，它表示数据库中的预先存在的存储是否应该被清除。
 ///
 /// If `wiped` is true, then the account was selfdestructed at some point, and the values contained
 /// in `storage` should be the only values written to the database.

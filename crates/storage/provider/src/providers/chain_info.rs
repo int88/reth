@@ -9,6 +9,7 @@ use std::{
 };
 
 /// Tracks the chain info: canonical head, safe block, finalized block.
+/// 追踪chain信息：canonical head, safe block以及finalized block
 #[derive(Debug, Clone)]
 pub(crate) struct ChainInfoTracker {
     inner: Arc<ChainInfoInner>,
@@ -109,6 +110,7 @@ impl ChainInfoTracker {
 }
 
 /// Container type for all chain info fields
+/// 所有chain info字段的容器类型
 #[derive(Debug)]
 struct ChainInfoInner {
     /// Timestamp when we received the last fork choice update.
@@ -120,7 +122,9 @@ struct ChainInfoInner {
     /// The canonical head of the chain.
     canonical_head: RwLock<SealedHeader>,
     /// The block that the beacon node considers safe.
+    /// beacon node认为是安全的block
     safe_block: RwLock<Option<SealedHeader>>,
     /// The block that the beacon node considers finalized.
+    /// beacon node认为finalized block
     finalized_block: RwLock<Option<SealedHeader>>,
 }

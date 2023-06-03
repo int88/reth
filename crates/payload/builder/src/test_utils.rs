@@ -20,6 +20,7 @@ pub fn test_payload_service(
 }
 
 /// Creates a new [PayloadBuilderService] for testing purposes and spawns it in the background.
+/// 创建一个新的[PayloadBuilderService]，用于测试目的，并在后台生成它。
 pub fn spawn_test_payload_service() -> PayloadBuilderHandle {
     let (service, handle) = test_payload_service();
     tokio::spawn(service);

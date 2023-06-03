@@ -10,10 +10,13 @@ where
     DB: Database,
 {
     /// All configured stages in the order they will be executed.
+    /// 所有配置的stages，按照它们将被执行的顺序
     stages: Vec<BoxedStage<DB>>,
     /// The maximum block number to sync to.
+    /// 同步的最大数目的block
     max_block: Option<BlockNumber>,
     /// A receiver for the current chain tip to sync to.
+    /// 一个receiver，用于同步到当前的chain tip
     tip_tx: Option<watch::Sender<H256>>,
 }
 
@@ -31,8 +34,10 @@ where
     }
 
     /// Add a set of stages to the pipeline.
+    /// 添加一系列的stages到pipeline
     ///
     /// Stages can be grouped into a set by using a [`StageSet`].
+    /// Stages可以被分组到一个set中，通过使用一个StageSet
     ///
     /// To customize the stages in the set (reorder, disable, insert a stage) call
     /// [`builder`][StageSet::builder] on the set which will convert it to a

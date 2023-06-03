@@ -24,6 +24,7 @@ pub struct HeadersRequest {
 pub type HeadersFut = Pin<Box<dyn Future<Output = PeerRequestResult<Vec<Header>>> + Send + Sync>>;
 
 /// The block headers downloader client
+/// block headers的downloader client
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait HeadersClient: DownloadClient {
     /// The headers future type
@@ -49,6 +50,7 @@ pub trait HeadersClient: DownloadClient {
     }
 
     /// Fetches a single header for the requested number or hash with priority
+    /// 获取一个header，对于指定的number或者hash
     fn get_header_with_priority(
         &self,
         start: BlockHashOrNumber,

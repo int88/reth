@@ -446,12 +446,14 @@ impl ChainSpecBuilder {
     }
 
     /// Set the chain ID
+    /// 设置chain ID
     pub fn chain(mut self, chain: Chain) -> Self {
         self.chain = Some(chain);
         self
     }
 
     /// Set the genesis block.
+    /// 设置genesis block
     pub fn genesis(mut self, genesis: Genesis) -> Self {
         self.genesis = Some(genesis);
         self
@@ -536,6 +538,7 @@ impl ChainSpecBuilder {
     }
 
     /// Enable Paris at genesis.
+    /// 在genesis时启用Paris
     pub fn paris_activated(mut self) -> Self {
         self = self.london_activated();
         self.hardforks.insert(
@@ -553,6 +556,7 @@ impl ChainSpecBuilder {
     }
 
     /// Build the resulting [`ChainSpec`].
+    /// 构建结果[`ChainSpec`]
     ///
     /// # Panics
     ///

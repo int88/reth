@@ -96,11 +96,14 @@ impl UnwindInput {
 }
 
 /// The output of a stage execution.
+/// 一个stage execution的输出
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ExecOutput {
     /// How far the stage got.
+    /// stage走了多远
     pub checkpoint: StageCheckpoint,
     /// Whether or not the stage is done.
+    /// stage是否完成
     pub done: bool,
 }
 

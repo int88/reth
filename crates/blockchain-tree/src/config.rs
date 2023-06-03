@@ -1,15 +1,20 @@
 //! Blockchain tree configuration
 
 /// The configuration for the blockchain tree.
+/// blockchain tree的配置
 #[derive(Clone, Debug)]
 pub struct BlockchainTreeConfig {
     /// Number of blocks after the last finalized block that we are storing.
+    /// 在最后一个finalized block之后，我们存储的block数量
     ///
     /// It should be more than the finalization window for the canonical chain.
+    /// 它应该比canonical chain的finalization window更大
     max_blocks_in_chain: u64,
     /// The number of blocks that can be re-orged (finalization windows)
+    /// 应该被re-orged的block的数量（finalization windows）
     max_reorg_depth: u64,
     /// The number of unconnected blocks that we are buffering
+    /// 我们缓存的unconnected blocks的数量
     max_unconnected_blocks: usize,
     /// For EVM's "BLOCKHASH" opcode we require last 256 block hashes. So we need to specify
     /// at least `additional_canonical_block_hashes`+`max_reorg_depth`, for eth that would be

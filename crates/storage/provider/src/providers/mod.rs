@@ -39,17 +39,23 @@ pub use post_state_provider::PostStateProvider;
 use reth_interfaces::blockchain_tree::{error::InsertBlockError, CanonicalOutcome};
 
 /// The main type for interacting with the blockchain.
+/// 和blockchain进行交互的主要类型
 ///
 /// This type serves as the main entry point for interacting with the blockchain and provides data
 /// from database storage and from the blockchain tree (pending state etc.) It is a simple wrapper
 /// type that holds an instance of the database and the blockchain tree.
+/// 这个类型作为和blockchain进行交互的主要入口点，并且提供来自数据库存储和blockchain tree的数据（pending state等）。
+/// 这是一个简单的包装类型，它持有数据库和blockchain tree的实例。
 #[derive(Clone)]
 pub struct BlockchainProvider<DB, Tree> {
     /// Provider type used to access the database.
+    /// Provider类型用来访问数据库
     database: ShareableDatabase<DB>,
     /// The blockchain tree instance.
+    /// blockchain tree的实例
     tree: Tree,
     /// Tracks the chain info wrt forkchoice updates
+    /// 追踪chain info wrt forkchoice更新
     chain_info: ChainInfoTracker,
 }
 

@@ -9,9 +9,11 @@ use reth_primitives::{
 use std::{borrow::Cow, collections::BTreeMap};
 
 /// A chain of blocks and their final state.
+/// 一个chain of blocks和它们的最终状态
 ///
 /// The chain contains the state of accounts after execution of its blocks,
 /// changesets for those blocks (and their transactions), as well as the blocks themselves.
+/// chain包含了它的blocks执行后的账户状态，这些blocks的变更集（和它们的交易），以及blocks本身。
 ///
 /// Used inside the BlockchainTree.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -20,8 +22,10 @@ pub struct Chain {
     /// [Chain::first] to [Chain::tip], inclusive.
     ///
     /// This state also contains the individual changes that lead to the current state.
+    /// 这个state同时包含了导致当前状态的单个变更。
     pub state: PostState,
     /// All blocks in this chain.
+    /// 所有的blocks在这个chain中
     pub blocks: BTreeMap<BlockNumber, SealedBlockWithSenders>,
 }
 

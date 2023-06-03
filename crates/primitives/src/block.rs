@@ -105,8 +105,10 @@ impl std::ops::DerefMut for BlockWithSenders {
 }
 
 /// Sealed Ethereum full block.
+/// 密封的Ethereum full block
 ///
 /// Withdrawals can be optionally included at the end of the RLP encoded message.
+/// Withdrawals可选地包含在RLP编码消息的末尾
 #[derive_arbitrary(rlp, 10)]
 #[derive(
     Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, RlpEncodable, RlpDecodable,
@@ -151,6 +153,7 @@ impl SealedBlock {
     }
 
     /// Seal sealed block with recovered transaction senders.
+    /// 用密的块与恢复的事务发送方一起密封sealed block
     pub fn try_seal_with_senders(self) -> Result<SealedBlockWithSenders, Self> {
         match self.senders() {
             Some(senders) => Ok(SealedBlockWithSenders { block: self, senders }),

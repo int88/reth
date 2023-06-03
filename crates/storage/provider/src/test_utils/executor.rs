@@ -27,6 +27,7 @@ impl<SP: StateProvider> BlockExecutor<SP> for TestExecutor {
 }
 
 /// Executor factory with pre-set execution results.
+/// Executor factory有着提前设置的执行结果
 #[derive(Clone, Debug)]
 pub struct TestExecutorFactory {
     exec_results: Arc<Mutex<Vec<PostState>>>,
