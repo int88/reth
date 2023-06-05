@@ -132,17 +132,25 @@ impl CanonicalOutcome {
 /// between if it is valid (extends canonical chain) or just accepted (is side chain).
 /// If we don't know the block parent we are returning Disconnected status
 /// as we can't make a claim if block is valid or not.
+/// 基于Engine API spec, block inclusion可以是valid, accepted或者invalid
+/// invalid case已经被error覆盖了，但是我们需要区分它是valid（扩展canonical chain）还是accepted（是side chain）
+/// 如果我们不知道block parent，我们返回Disconnected status，因为我们不能断言block是valid还是invalid
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BlockStatus {
     /// If block validation is valid and block extends canonical chain.
     /// In BlockchainTree sense it forks on canonical tip.
+    /// 如果block validation是valid，block扩展canonical chain
+    /// 在BlockchainTree中，它在canonical tip上分叉
     Valid,
     /// If the block is valid, but it does not extend canonical chain
     /// (It is side chain) or hasn't been fully validated but ancestors of a payload are known.
+    /// 如果block是valid的，但是它不扩展canonical chain（它是side chain）或者没有完全验证，但是payload的ancestors是已知的
     Accepted,
     /// If blocks is not connected to canonical chain.
+    /// 如果block没有连接到canonical chain
     Disconnected {
         /// The lowest parent block that is not connected to the canonical chain.
+        /// 最低的parent block，没有连接到canonical chain
         missing_parent: BlockNumHash,
     },
 }

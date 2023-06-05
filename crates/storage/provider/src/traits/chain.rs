@@ -15,6 +15,7 @@ use tracing::debug;
 pub type CanonStateNotifications = broadcast::Receiver<CanonStateNotification>;
 
 /// Type alias for a sender that sends [CanonStateNotification]
+/// 发送CanonStateNotification的发送者的类型别名
 pub type CanonStateNotificationSender = broadcast::Sender<CanonStateNotification>;
 
 /// A type that allows to register chain related event subscriptions.

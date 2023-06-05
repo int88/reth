@@ -24,10 +24,12 @@ use std::{
 };
 
 /// The ID of a sidechain internally in a [`BlockchainTree`][super::BlockchainTree].
+/// 一个sidechain在BlockchainTree中的ID
 pub(crate) type BlockChainId = u64;
 
 /// A chain if the blockchain tree, that has functionality to execute blocks and append them to the
 /// it self.
+/// 一个chain，如果blockchain tree，它具有执行blocks并将它们附加到自身的功能
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AppendableChain {
     chain: Chain,
@@ -49,6 +51,7 @@ impl DerefMut for AppendableChain {
 
 impl AppendableChain {
     /// Crate a new appendable chain from a given chain.
+    /// 从给定的chain创建一个新的appendable chain
     pub fn new(chain: Chain) -> Self {
         Self { chain }
     }
@@ -288,9 +291,11 @@ impl AppendableChain {
     }
 
     /// Validate and execute the given block, and append it to this chain.
+    /// 校验并且执行给定的block，并且将它附加到这个chain
     ///
     /// This expects that the block's ancestors can be traced back to the `canonical_fork` (the
     /// first parent block of the `block`'s chain that is in the canonical chain).
+    /// 这期望block的祖先可以追溯到canonical_fork（block的chain的第一个父block，它在canonical chain中）
     ///
     /// In other words, expects a gap less (side-) chain:  [`canonical_fork..block`] in order to be
     /// able to __execute__ the block.

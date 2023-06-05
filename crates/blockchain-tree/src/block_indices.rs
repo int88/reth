@@ -8,18 +8,25 @@ use reth_provider::Chain;
 use std::collections::{btree_map, hash_map, BTreeMap, BTreeSet, HashMap, HashSet};
 
 /// Internal indices of the blocks and chains.
+/// blocks和chains的内部索引
 ///
 /// This is main connection between blocks, chains and canonical chain.
+/// blocks，chains和canonical chain之间的主要连接
 ///
 /// It contains a list of canonical block hashes, forks to child blocks, and a mapping of block hash
 /// to chain ID.
+/// 它包含一系列的canonical block hashes，forks到child blocks，以及block hash到chain ID的映射
 #[derive(Debug, Clone)]
 pub struct BlockIndices {
     /// Last finalized block.
+    /// 最新的finalized block
     last_finalized_block: BlockNumber,
     /// Canonical chain. Contains N number (depends on `finalization_depth`) of blocks.
     /// These blocks are found in fork_to_child but not inside `blocks_to_chain` or
     /// `number_to_block` as those are chain specific indices.
+    /// Canonical chain，包含N个block number（取决于finalization_depth）的blocks。
+    /// 这些blocks在fork_to_child中找到，但不在blocks_to_chain或number_to_block中，
+    /// 因为它们是chain特定的indices
     canonical_chain: CanonicalChain,
     /// Index needed when discarding the chain, so we can remove connected chains from tree.
     ///
@@ -144,6 +151,7 @@ impl BlockIndices {
     }
 
     /// Get the chain ID the block belongs to
+    /// 找到block所属的chain ID
     pub(crate) fn get_blocks_chain_id(&self, block: &BlockHash) -> Option<BlockChainId> {
         self.blocks_to_chain.get(block).cloned()
     }

@@ -23,17 +23,22 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct TreeExternals<DB, C, EF> {
     /// The database, used to commit the canonical chain, or unwind it.
+    /// 数据库，用于提交canonical chain，或者unwind它
     pub(crate) db: DB,
     /// The consensus engine.
+    /// 共识引擎
     pub(crate) consensus: C,
     /// The executor factory to execute blocks with.
+    /// 用于执行block的executor factory
     pub(crate) executor_factory: EF,
     /// The chain spec.
+    /// chain spec
     pub(crate) chain_spec: Arc<ChainSpec>,
 }
 
 impl<DB, C, EF> TreeExternals<DB, C, EF> {
     /// Create new tree externals.
+    /// 创建新的tree externals
     pub fn new(db: DB, consensus: C, executor_factory: EF, chain_spec: Arc<ChainSpec>) -> Self {
         Self { db, consensus, executor_factory, chain_spec }
     }

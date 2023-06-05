@@ -1,17 +1,22 @@
 //! Substate for blockchain trees
+//! blockchain trees的子状态
 
 use reth_primitives::{BlockHash, BlockNumber, ForkBlock};
 use reth_provider::{post_state::PostState, PostStateDataProvider};
 use std::collections::BTreeMap;
 
 /// Structure that bundles references of data needs to implement [`PostStateDataProvider`]
+/// 结构，用于捆绑实现[`PostStateDataProvider`]所需的数据的引用
 #[derive(Clone, Debug)]
 pub struct PostStateDataRef<'a> {
     /// The wrapped state after execution of one or more transactions and/or blocks.
+    /// 在执行一个或多个transactions和/或blocks之后的包装状态
     pub state: &'a PostState,
     /// The blocks in the sidechain.
+    /// sidechain中的blocks
     pub sidechain_block_hashes: &'a BTreeMap<BlockNumber, BlockHash>,
     /// The blocks in the canonical chain.
+    /// canonical chain中的blocks
     pub canonical_block_hashes: &'a BTreeMap<BlockNumber, BlockHash>,
     /// Canonical fork
     pub canonical_fork: ForkBlock,

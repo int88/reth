@@ -20,18 +20,21 @@ impl CanonicalChain {
     }
 
     /// Replaces the current chain with the given one.
+    /// 替换当前的chain，用给定的chain
     #[inline]
     pub(crate) fn replace(&mut self, chain: BTreeMap<BlockNumber, BlockHash>) {
         self.chain = chain;
     }
 
     /// Returns the block hash of the canonical block with the given number.
+    /// 用给定的number返回canonical block的hash
     #[inline]
     pub(crate) fn canonical_hash(&self, number: &BlockNumber) -> Option<BlockHash> {
         self.chain.get(number).cloned()
     }
 
     /// Returns the block number of the canonical block with the given hash.
+    /// 用给定的hash返回canonical block的number
     #[inline]
     pub(crate) fn canonical_number(&self, block_hash: BlockHash) -> Option<BlockNumber> {
         self.chain.iter().find_map(
@@ -60,6 +63,7 @@ impl CanonicalChain {
     }
 
     /// Extends all items from the given iterator to the chain.
+    /// 扩展所有的items到chain
     #[inline]
     pub(crate) fn extend(&mut self, blocks: impl Iterator<Item = (BlockNumber, BlockHash)>) {
         self.chain.extend(blocks)

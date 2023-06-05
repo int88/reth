@@ -143,6 +143,7 @@ impl SealedBlock {
     }
 
     /// Expensive operation that recovers transaction signer. See [SealedBlockWithSenders].
+    /// 昂贵的操作，用于恢复transaction signer。参见[SealedBlockWithSenders]
     pub fn senders(&self) -> Option<Vec<Address>> {
         self.body.iter().map(|tx| tx.recover_signer()).collect::<Option<Vec<Address>>>()
     }
@@ -193,11 +194,14 @@ impl std::ops::DerefMut for SealedBlock {
 }
 
 /// Sealed block with senders recovered from transactions.
+/// Sealed block，senders从transactions中恢复
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SealedBlockWithSenders {
     /// Sealed block
+    /// 密封的block
     pub block: SealedBlock,
     /// List of senders that match transactions from block.
+    /// 一系列的发送者，与block中的transactions匹配
     pub senders: Vec<Address>,
 }
 
@@ -708,8 +712,10 @@ impl AsRef<H256> for RpcBlockHash {
 #[derive(Clone, Copy, Hash, Default, PartialEq, Eq)]
 pub struct BlockNumHash {
     /// Block number
+    /// Block的数字
     pub number: BlockNumber,
     /// Block hash
+    /// Block的哈希值
     pub hash: BlockHash,
 }
 

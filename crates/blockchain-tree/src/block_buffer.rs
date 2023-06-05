@@ -5,33 +5,45 @@ use std::{
     num::NonZeroUsize,
 };
 /// Type that contains blocks by number and hash.
+/// 类型包含blocks的number和hash
 pub type BufferedBlocks = BTreeMap<BlockNumber, HashMap<BlockHash, SealedBlockWithSenders>>;
 
 /// Contains the Tree of pending blocks that are not executed but buffered
 /// It allows us to store unconnected blocks for potential inclusion.
+/// 包含未执行但缓冲的pending blocks的树，它允许我们存储未连接的blocks以便可能包含
 ///
 /// It has three main functionality:
+/// 它有三个主要功能：
 /// * [BlockBuffer::insert_block] for inserting blocks inside the buffer.
+/// * [BlockBuffer::insert_block] 用于将blocks插入缓冲区
 /// * [BlockBuffer::remove_with_children] for connecting blocks if the parent gets received and
 ///   inserted.
+/// * [BlockBuffer::remove_with_children] 用于连接blocks，如果parent被接收并插入
 /// * [BlockBuffer::clean_old_blocks] to clear old blocks that are below finalized line.
+/// * [BlockBuffer::clean_old_blocks] 清除finalized line下面的旧blocks
 ///
 /// Note: Buffer is limited by number of blocks that it can contain and eviction of the block
 /// is done by last recently used block.
+/// 注意：Buffer受它可以包含的blocks数量的限制，并且block的驱逐是通过最近使用的block完成的
 #[derive(Debug)]
 pub struct BlockBuffer {
     /// Blocks ordered by block number inside the BTreeMap.
+    /// 在BTreeMap中按block number排序的blocks
     ///
     /// Note: BTreeMap is used so that we can remove the finalized old blocks
     /// from the buffer
+    /// 注意：使用BTreeMap，以便我们可以从buffer中删除finalized的旧blocks
     pub(crate) blocks: BufferedBlocks,
     /// Needed for removal of the blocks. and to connect the potential unconnected block
     /// to the connected one.
+    /// 移除blocks所需的，以及将潜在的未连接的block连接到已连接的block
     pub(crate) parent_to_child: HashMap<BlockHash, HashSet<BlockNumHash>>,
     /// Helper map for fetching the block num from the block hash.
+    /// Helper map用于从block hash获取block num
     pub(crate) hash_to_num: HashMap<BlockHash, BlockNumber>,
     /// LRU used for tracing oldest inserted blocks that are going to be
     /// first in line for evicting if `max_blocks` limit is hit.
+    /// LRU用于追踪最老的插入的blocks，如果达到`max_blocks`限制，它们将首先被驱逐
     ///
     /// Used as counter of amount of blocks inside buffer.
     pub(crate) lru: LruCache<BlockNumHash, ()>,
@@ -49,10 +61,13 @@ impl BlockBuffer {
     }
 
     /// Insert a correct block inside the buffer.
+    /// 插入一个正确的block到buffer中
     pub fn insert_block(&mut self, block: SealedBlockWithSenders) {
         let num_hash = block.num_hash();
 
+        // parent到child的映射
         self.parent_to_child.entry(block.parent_hash).or_default().insert(block.num_hash());
+        // hash到num的映射
         self.hash_to_num.insert(block.hash, block.number);
         self.blocks.entry(block.number).or_default().insert(block.hash, block);
 
@@ -60,6 +75,7 @@ impl BlockBuffer {
             self.lru.push(num_hash, ()).filter(|(b, _)| *b != num_hash)
         {
             // evict the block if limit is hit
+            // 驱逐block，如果到达了limit
             if let Some(evicted_block) = self.remove_from_blocks(&evicted_num_hash) {
                 // evict the block if limit is hit
                 self.remove_from_parent(evicted_block.parent_hash, &evicted_num_hash);
@@ -68,8 +84,10 @@ impl BlockBuffer {
     }
 
     /// Removes the given block from the buffer and also all the children of the block.
+    /// 从buffer中移除给定的block并且也移除block的所有children
     ///
     /// This is used to get all the blocks that are dependent on the block that is included.
+    /// 这用于获取所有依赖于包含的block的block
     ///
     /// Note: that order of returned blocks is important and the blocks with lower block number
     /// in the chain will come first so that they can be executed in the correct order.
@@ -118,12 +136,14 @@ impl BlockBuffer {
     }
 
     /// Return reference to the asked block by hash.
+    /// 返回reference到指定的block
     pub fn block_by_hash(&self, hash: &BlockHash) -> Option<&SealedBlockWithSenders> {
         let num = self.hash_to_num.get(hash)?;
         self.blocks.get(num)?.get(hash)
     }
 
     /// Return a reference to the lowest ancestor of the given block in the buffer.
+    /// 返回buffer中给定block的最低祖先的reference
     pub fn lowest_ancestor(&self, hash: &BlockHash) -> Option<&SealedBlockWithSenders> {
         let mut current_block = self.block_by_hash(hash)?;
         while let Some(block) = self
@@ -152,6 +172,7 @@ impl BlockBuffer {
     }
 
     /// Remove from parent child connection. Dont touch childrens.
+    /// 从parent child连接中移除，不要触摸childrens
     fn remove_from_parent(&mut self, parent: BlockHash, block: &BlockNumHash) {
         self.remove_from_hash_to_num(&parent);
 
@@ -166,8 +187,10 @@ impl BlockBuffer {
     }
 
     /// Remove block from `self.blocks`, This will also remove block from `self.lru`.
+    /// 从`self.blocks`移除block，这也将从`self.lru`中移除block
     ///
     /// Note: This function will not remove block from the `self.parent_to_child` connection.
+    /// 注意：这个函数不会从`self.parent_to_child`连接中移除block
     fn remove_from_blocks(&mut self, block: &BlockNumHash) -> Option<SealedBlockWithSenders> {
         self.remove_from_hash_to_num(&block.hash);
 
@@ -221,9 +244,11 @@ mod tests {
 
     #[test]
     fn simple_insertion() {
+        // 随机创建blocks
         let block1 = create_block(10, BlockHash::random());
         let mut buffer = BlockBuffer::new(3);
 
+        // buffer中插入blocks
         buffer.insert_block(block1.clone());
         assert_eq!(buffer.len(), 1);
         assert_eq!(buffer.block(block1.num_hash()), Some(&block1));
@@ -383,6 +408,7 @@ mod tests {
         buffer.insert_block(random_block3.clone());
 
         // check that random blocks are their own ancestor, and that chains have proper ancestors
+        // 检查random blocks有它们自己的ancestor并且chains有正确的ancestor
         assert_eq!(buffer.lowest_ancestor(&random_block1.hash), Some(&random_block1));
         assert_eq!(buffer.lowest_ancestor(&random_block2.hash), Some(&random_block2));
         assert_eq!(buffer.lowest_ancestor(&random_block3.hash), Some(&random_block3));
@@ -434,9 +460,11 @@ mod tests {
         assert_eq!(buffer.lowest_ancestor(&block4.hash), Some(&block4));
 
         // block1 gets evicted
+        // block1被驱逐
         assert_block_existance(&buffer, &block1);
 
         // check lowest ancestor results post eviction
+        // 检查lowest ancestor导致post eviction
         assert_eq!(buffer.lowest_ancestor(&block3.hash), Some(&block2));
         assert_eq!(buffer.lowest_ancestor(&block2.hash), Some(&block2));
         assert_eq!(buffer.lowest_ancestor(&block1.hash), None);

@@ -58,11 +58,13 @@ impl BlockchainTreeConfig {
     }
 
     /// Return the maximum reorg depth.
+    /// 返回做大的reorg depth
     pub fn max_reorg_depth(&self) -> u64 {
         self.max_reorg_depth
     }
 
     /// Return the maximum number of blocks in one chain.
+    /// 返回一个chain中的最大block数量
     pub fn max_blocks_in_chain(&self) -> u64 {
         self.max_blocks_in_chain
     }

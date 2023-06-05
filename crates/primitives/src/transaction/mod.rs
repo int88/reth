@@ -905,8 +905,10 @@ impl TransactionSigned {
     }
 
     /// Recover signer from signature and hash.
+    /// 从signature和hash中恢复签名者
     ///
     /// Returns `None` if the transaction's signature is invalid, see also [Self::recover_signer].
+    /// 返回`None`如果交易的签名无效，也可以看看[Self::recover_signer]
     pub fn recover_signer(&self) -> Option<Address> {
         let signature_hash = self.signature_hash();
         self.signature.recover_signer(signature_hash)

@@ -35,6 +35,7 @@ pub struct ShareableBlockchainTree<DB: Database, C: Consensus, EF: ExecutorFacto
 
 impl<DB: Database, C: Consensus, EF: ExecutorFactory> ShareableBlockchainTree<DB, C, EF> {
     /// Create a new sharable database.
+    /// 创建一个新的贡献的数据库
     pub fn new(tree: BlockchainTree<DB, C, EF>) -> Self {
         Self { tree: Arc::new(RwLock::new(tree)) }
     }

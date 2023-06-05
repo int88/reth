@@ -20,6 +20,7 @@ use std::{borrow::Cow, collections::BTreeMap};
 pub struct Chain {
     /// The state of all accounts after execution of the _all_ blocks in this chain's range from
     /// [Chain::first] to [Chain::tip], inclusive.
+    /// 所有accounts的状态，在这个chain的范围内的所有blocks执行后，从Chain::first到Chain::tip，包括。
     ///
     /// This state also contains the individual changes that lead to the current state.
     /// 这个state同时包含了导致当前状态的单个变更。
@@ -41,6 +42,7 @@ impl Chain {
     }
 
     /// Return true if chain is empty and has no blocks.
+    /// 返回true，如果chain是空的并且没有blocks
     pub fn is_empty(&self) -> bool {
         self.blocks.is_empty()
     }
