@@ -588,8 +588,10 @@ impl From<&ChainSpec> for ChainSpecBuilder {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ForkCondition {
     /// The fork is activated after a certain block.
+    /// 这个fork在某个块之后被激活
     Block(BlockNumber),
     /// The fork is activated after a total difficulty has been reached.
+    /// fork被激活后，总难度达到了
     TTD {
         /// The block number at which TTD is reached, if it is known.
         ///
@@ -602,8 +604,10 @@ pub enum ForkCondition {
         total_difficulty: U256,
     },
     /// The fork is activated after a specific timestamp.
+    /// 在特定的时间戳之后，fork被激活
     Timestamp(u64),
     /// The fork is never activated
+    /// 这个fork永远不会被激活
     #[default]
     Never,
 }

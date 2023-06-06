@@ -47,15 +47,19 @@ pub fn assert_genesis_block<DB: Database>(tx: &Transaction<'_, DB>, g: SealedBlo
 
 /// Test chain with genesis, blocks, execution results
 /// that have valid changesets.
+/// Test chain，有genesis，blocks，execution results
+/// 有有效的changesets。
 pub struct BlockChainTestData {
     /// Genesis
     pub genesis: SealedBlock,
     /// Blocks with its execution result
+    /// 有着execution result的blocks
     pub blocks: Vec<(SealedBlockWithSenders, PostState)>,
 }
 
 impl BlockChainTestData {
     /// Create test data with two blocks that are connected, specifying their block numbers.
+    /// 创建test data，有两个blocks，这两个blocks是连接的，指定他们的block numbers
     pub fn default_with_numbers(one: BlockNumber, two: BlockNumber) -> Self {
         let one = block1(one);
         let hash = one.0.hash;
@@ -72,6 +76,7 @@ impl Default for BlockChainTestData {
 }
 
 /// Genesis block
+/// 生成genesis block
 pub fn genesis() -> SealedBlock {
     SealedBlock {
         header: Header { number: 0, difficulty: U256::from(1), ..Default::default() }

@@ -43,6 +43,7 @@ impl StorageWipe {
 }
 
 /// Latest storage state for the account.
+/// 对于account的最新的storage
 ///
 /// # Wiped Storage
 ///

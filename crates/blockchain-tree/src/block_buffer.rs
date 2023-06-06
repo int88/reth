@@ -91,8 +91,10 @@ impl BlockBuffer {
     ///
     /// Note: that order of returned blocks is important and the blocks with lower block number
     /// in the chain will come first so that they can be executed in the correct order.
+    /// 注意：返回的blocks的顺序很重要，链中block number较低的blocks将首先出现，以便它们可以按正确的顺序执行
     pub fn remove_with_children(&mut self, parent: BlockNumHash) -> Vec<SealedBlockWithSenders> {
         // remove parent block if present
+        // 移除parent block，如果存在的话
         let mut taken = Vec::new();
         if let Some(block) = self.remove_from_blocks(&parent) {
             taken.push(block);
@@ -104,6 +106,7 @@ impl BlockBuffer {
 
     /// Clean up the old blocks from the buffer as blocks before finalization are not needed
     /// anymore. We can discard them from the buffer.
+    /// 清理buffer中的旧blocks，因为finalization之前的blocks不再需要，我们可以从buffer中丢弃它们
     pub fn clean_old_blocks(&mut self, finalized_number: BlockNumber) {
         let mut remove_parent_children = Vec::new();
 
@@ -207,15 +210,19 @@ impl BlockBuffer {
     }
 
     /// Remove all children and their descendants for the given blocks and return them.
+    /// 移除所有的children和它们的descendants，返回给定的blocks
     fn remove_children(&mut self, parent_blocks: Vec<BlockNumHash>) -> Vec<SealedBlockWithSenders> {
         // remove all parent child connection and all the child children blocks that are connected
         // to the discarded parent blocks.
+        // 移除所有的parent child连接和所有连接到被丢弃的parent blocks的child children blocks
         let mut remove_parent_children = parent_blocks;
         let mut removed_blocks = Vec::new();
         while let Some(parent_num_hash) = remove_parent_children.pop() {
             // get this child blocks children and add them to the remove list.
+            // 获取这个child blocks的children并将它们添加到remove list
             if let Some(parent_childrens) = self.parent_to_child.remove(&parent_num_hash.hash) {
                 // remove child from buffer
+                // 从buffer移除child
                 for child in parent_childrens.iter() {
                     if let Some(block) = self.remove_from_blocks(child) {
                         removed_blocks.push(block);

@@ -12,11 +12,14 @@ use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 
 /// Describes the current head block.
+/// 描述当前的head block
 ///
 /// The head block is the highest fully synced block.
+/// head block是最高的完全同步的block
 ///
 /// Note: This is a slimmed down version of [Header], primarily for communicating the highest block
 /// with the P2P network and the RPC.
+/// 注意：这是一个精简版的Header，主要用于与P2P网络和RPC通信的最高block
 #[derive(
     Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
 )]
@@ -34,6 +37,7 @@ pub struct Head {
 }
 
 /// Block header
+/// Block的header
 #[main_codec]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Header {

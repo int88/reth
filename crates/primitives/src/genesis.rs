@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use triehash::sec_trie_root;
 
 /// The genesis block specification.
+/// genesis block的定义
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Genesis {

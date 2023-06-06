@@ -22,12 +22,15 @@ use std::{fmt, fmt::Formatter, num::ParseIntError, ops::Deref, str::FromStr};
 #[rlp(trailing)]
 pub struct Block {
     /// Block header.
+    /// Block的header
     pub header: Header,
     /// Transactions in this block.
+    /// block里的transactions
     pub body: Vec<TransactionSigned>,
     /// Ommers/uncles header.
     pub ommers: Vec<Header>,
     /// Block withdrawals.
+    /// block的withdrawals
     pub withdrawals: Option<Vec<Withdrawal>>,
 }
 

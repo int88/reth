@@ -57,13 +57,16 @@ impl AppendableChain {
     }
 
     /// Get the chain.
+    /// 获取chain
     pub fn into_inner(self) -> Chain {
         self.chain
     }
 
     /// Create a new chain that forks off the canonical.
+    /// 创建一个新的chain，它从canonical分叉
     ///
     /// This will also verify the state root of the block extending the canonical chain.
+    /// 它同时也会验证扩展canonical chain的block的state root
     pub fn new_canonical_head_fork<DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_header: &SealedHeader,
@@ -86,6 +89,7 @@ impl AppendableChain {
             canonical_fork,
         };
 
+        // 执行block
         let changeset = Self::validate_and_execute_canonical_head_descendant(
             block.clone(),
             parent_header,
@@ -98,6 +102,7 @@ impl AppendableChain {
     }
 
     /// Create a new chain that forks off of the canonical chain.
+    /// 创建一个新的chain，它从canonical chain分叉
     pub fn new_canonical_fork<DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_header: &SealedHeader,
@@ -213,6 +218,7 @@ impl AppendableChain {
 
     /// Validate and execute the given block that _extends the canonical chain_, validating its
     /// state root after execution.
+    /// 校验并且执行给定的block，它扩展了canonical chain，在执行后验证它的state root
     fn validate_and_execute_canonical_head_descendant<PSDP, DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_block: &SealedHeader,
@@ -226,12 +232,14 @@ impl AppendableChain {
         EF: ExecutorFactory,
     {
         // some checks are done before blocks comes here.
+        // 在blocks到达这里之前，做一些检查
         externals.consensus.validate_header_against_parent(&block, parent_block)?;
 
         let (block, senders) = block.into_components();
         let block = block.unseal();
 
         //get state provider.
+        // 获取state provider
         let db = externals.database();
         // TODO, small perf can check if caonical fork is the latest state.
         let canonical_fork = post_state_data_provider.canonical_fork();
@@ -240,10 +248,12 @@ impl AppendableChain {
 
         let provider = PostStateProvider::new(state_provider, post_state_data_provider);
 
+        // 获取executor
         let mut executor = externals.executor_factory.with_sp(&provider);
         let post_state = executor.execute_and_verify_receipt(&block, U256::MAX, Some(senders))?;
 
         // check state root
+        // 检查state root
         let state_root = provider.state_root(post_state.clone())?;
         if block.state_root != state_root {
             return Err(ConsensusError::BodyStateRootDiff {

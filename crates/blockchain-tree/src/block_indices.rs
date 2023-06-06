@@ -29,28 +29,38 @@ pub struct BlockIndices {
     /// 因为它们是chain特定的indices
     canonical_chain: CanonicalChain,
     /// Index needed when discarding the chain, so we can remove connected chains from tree.
+    /// 丢弃链时需要的索引，这样我们就可以从树中删除连接的链
     ///
     /// This maintains insertion order for all child blocks, so
     /// [BlockIndices::pending_block_num_hash] returns always the same block: the first child block
     /// we inserted.
+    /// 这维持所有child blocks的插入顺序，所以BlockIndices::pending_block_num_hash总是返回相同的block：
+    /// 我们插入的第一个child block
     ///
     /// NOTE: It contains just blocks that are forks as a key and not all blocks.
+    /// 注意：它只包含forks的blocks作为key，而不是所有的blocks
     fork_to_child: HashMap<BlockHash, LinkedHashSet<BlockHash>>,
     /// Utility index for Block number to block hash(s).
+    /// Utility index对于block number到block hash(s)
     ///
     /// This maps all blocks with same block number to their hash.
+    /// 它映射了所有具有相同block number的blocks到它们的hash
     ///
     /// Can be used for RPC fetch block(s) in chain by its number.
+    /// 可以被用于RPC通过它的number获取chain中的block(s)
     ///
     /// Note: This is a bijection: at all times `blocks_to_chain` and this map contain the block
     /// hashes.
+    /// 注意：这是一个双射：在任何时候，blocks_to_chain和这个map都包含block hashes
     block_number_to_block_hashes: BTreeMap<BlockNumber, HashSet<BlockHash>>,
     /// Block hashes and side chain they belong
+    /// Block hashes和side chain它们属于
     blocks_to_chain: HashMap<BlockHash, BlockChainId>,
 }
 
 impl BlockIndices {
     /// Create new block indices structure
+    /// 创建新的block indices结构
     pub fn new(
         last_finalized_block: BlockNumber,
         canonical_chain: BTreeMap<BlockNumber, BlockHash>,
@@ -65,9 +75,12 @@ impl BlockIndices {
     }
 
     /// Return internal index that maps all pending block number to their hashes.
+    /// 返回内部的index，映射所有pending block number到它们的hashes
     ///
     /// This essentially contains all possible branches. Given a parent block, then the child block
     /// number as the key has all possible block hashes as the value.
+    /// 这本质上包含了所有可能的分支。给定一个parent block，然后child block number作为key，
+    /// 所有可能的block hashes作为value
     pub fn block_number_to_block_hashes(&self) -> &BTreeMap<BlockNumber, HashSet<BlockHash>> {
         &self.block_number_to_block_hashes
     }
@@ -78,6 +91,7 @@ impl BlockIndices {
     }
 
     /// Return block to chain id
+    /// 返回block到chain id的映射
     pub fn blocks_to_chain(&self) -> &HashMap<BlockHash, BlockChainId> {
         &self.blocks_to_chain
     }
@@ -93,6 +107,7 @@ impl BlockIndices {
     }
 
     /// Returns all pending block hashes.
+    /// 返回所有的pending block hashes
     ///
     /// Pending blocks are considered blocks that are extending the canonical tip by one block
     /// number and have their parent hash set to the canonical tip.
@@ -109,24 +124,29 @@ impl BlockIndices {
     }
 
     /// Returns the block number of the canonical block with the given hash.
+    /// 用给定的hash返回canonical block的block number
     ///
     /// Returns `None` if no block could be found in the canonical chain.
+    /// 返回None如果在canonical chain中没有找到block
     #[inline]
     pub(crate) fn get_canonical_block_number(&self, block_hash: &BlockHash) -> Option<BlockNumber> {
         self.canonical_chain.get_canonical_block_number(self.last_finalized_block, block_hash)
     }
 
     /// Check if block hash belongs to canonical chain.
+    /// 检查是否block hash属于canonical chain
     pub(crate) fn is_block_hash_canonical(&self, block_hash: &BlockHash) -> bool {
         self.get_canonical_block_number(block_hash).is_some()
     }
 
     /// Last finalized block
+    /// 最新的finalized block
     pub fn last_finalized_block(&self) -> BlockNumber {
         self.last_finalized_block
     }
 
     /// Insert non fork block.
+    /// 插入非fork block
     pub(crate) fn insert_non_fork_block(
         &mut self,
         block_number: BlockNumber,
@@ -138,15 +158,19 @@ impl BlockIndices {
     }
 
     /// Insert block to chain and fork child indices of the new chain
+    /// 插入block到chain和fork child indices的新chain
     pub(crate) fn insert_chain(&mut self, chain_id: BlockChainId, chain: &Chain) {
         for (number, block) in chain.blocks().iter() {
             // add block -> chain_id index
+            // 添加block到chain_id的索引
             self.blocks_to_chain.insert(block.hash(), chain_id);
             // add number -> block
+            // 添加number到block
             self.block_number_to_block_hashes.entry(*number).or_default().insert(block.hash());
         }
         let first = chain.first();
         // add parent block -> block index
+        // 添加parent block到block的索引
         self.fork_to_child.entry(first.parent_hash).or_default().insert_if_absent(first.hash());
     }
 
@@ -332,8 +356,10 @@ impl BlockIndices {
     }
 
     /// Used for finalization of block.
+    /// 用于block的finalization
     ///
     /// Return list of chains for removal that depend on finalized canonical chain.
+    /// 返回依赖于finalized canonical chain的需要移除的链
     pub(crate) fn finalize_canonical_blocks(
         &mut self,
         finalized_block: BlockNumber,
@@ -341,7 +367,10 @@ impl BlockIndices {
     ) -> BTreeSet<BlockChainId> {
         // get finalized chains. blocks between [self.last_finalized,finalized_block).
         // Dont remove finalized_block, as sidechain can point to it.
+        // 获取finalized chains，blocks在[self.last_finalized,finalized_block)之间。
+        // 不要删除finalized_block，因为sidechain可能指向它
         let finalized_blocks: Vec<BlockHash> = self
+            // 从canonical chain中遍历
             .canonical_chain
             .iter()
             .filter(|(number, _)| *number >= self.last_finalized_block && *number < finalized_block)
@@ -349,6 +378,7 @@ impl BlockIndices {
             .collect();
 
         // remove unneeded canonical hashes.
+        // 移除不需要的canonical hashes
         let remove_until =
             finalized_block.saturating_sub(num_of_additional_canonical_hashes_to_retain);
         self.canonical_chain.retain(|&number, _| number >= remove_until);
@@ -368,6 +398,7 @@ impl BlockIndices {
         }
 
         // set last finalized block.
+        // 设置finalized block
         self.last_finalized_block = finalized_block;
 
         lose_chains
@@ -386,12 +417,14 @@ impl BlockIndices {
     }
 
     /// get canonical tip
+    /// 获取canonical tip
     #[inline]
     pub fn canonical_tip(&self) -> BlockNumHash {
         self.canonical_chain.tip()
     }
 
     /// Canonical chain needed for execution of EVM. It should contains last 256 block hashes.
+    /// 在执行EVM时需要的Canonical chain。它应该包含最后256个block hashes
     #[inline]
     pub(crate) fn canonical_chain(&self) -> &CanonicalChain {
         &self.canonical_chain

@@ -1,4 +1,5 @@
 //! Blockchain tree configuration
+//! Blockchain tree的配置
 
 /// The configuration for the blockchain tree.
 /// blockchain tree的配置
@@ -25,14 +26,19 @@ pub struct BlockchainTreeConfig {
 impl Default for BlockchainTreeConfig {
     fn default() -> Self {
         // The defaults for Ethereum mainnet
+        // 对于Ethereum mainnet的默认值
         Self {
             // Gasper allows reorgs of any length from 1 to 64.
+            // Gasper允许从1到64的任意长度的reorg
             max_reorg_depth: 64,
             // This default is just an assumption. Has to be greater than the `max_reorg_depth`.
+            // 这个默认值只是一个假设，必须大于`max_reorg_depth`
             max_blocks_in_chain: 65,
             // EVM requires that last 256 block hashes are available.
+            // EVM需要最后256个block hashes可用
             num_of_additional_canonical_block_hashes: 256,
             // max unconnected blocks.
+            // 最大的unconnected blocks的数目
             max_unconnected_blocks: 200,
         }
     }
@@ -40,6 +46,7 @@ impl Default for BlockchainTreeConfig {
 
 impl BlockchainTreeConfig {
     /// Create tree configuration.
+    /// 创建tree configuration
     pub fn new(
         max_reorg_depth: u64,
         max_blocks_in_chain: u64,

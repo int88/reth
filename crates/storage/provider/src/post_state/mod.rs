@@ -62,10 +62,13 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
 pub struct PostState {
     /// The state of all modified accounts after execution.
+    /// 在执行之后的所有修改的帐户的状态。
     ///
     /// If the value contained is `None`, then the account should be deleted.
+    /// 如果包含的值是`None`，则应该删除该帐户。
     accounts: BTreeMap<Address, Option<Account>>,
     /// The state of all modified storage after execution
+    /// 在执行之后的所有修改的存储的状态
     ///
     /// If the contained [Storage] is marked as wiped, then all storage values should be cleared
     /// from the database.

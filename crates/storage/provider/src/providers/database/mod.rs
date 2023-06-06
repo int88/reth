@@ -21,8 +21,10 @@ mod provider;
 use provider::{DatabaseProvider, DatabaseProviderRO, DatabaseProviderRW};
 
 /// A common provider that fetches data from a database.
+/// 一个公共的provider，从数据库中获取数据
 ///
 /// This provider implements most provider or provider factory traits.
+/// 这个provider实现了大多数provider或者provider factory traits
 #[derive(Debug)]
 pub struct ShareableDatabase<DB> {
     /// Database
@@ -34,6 +36,7 @@ pub struct ShareableDatabase<DB> {
 impl<DB: Database> ShareableDatabase<DB> {
     /// Returns a provider with a created `DbTx` inside, which allows fetching data from the
     /// database using different types of providers. Example: [`HeaderProvider`]
+    /// 返回一个provider，其中包含一个创建的`DbTx`，它允许使用不同类型的provider从数据库中获取数据。例如：[`HeaderProvider`]
     /// [`BlockHashProvider`]
     pub fn provider(&self) -> Result<DatabaseProviderRO<'_, DB>> {
         Ok(DatabaseProvider::new(self.db.tx()?, self.chain_spec.clone()))

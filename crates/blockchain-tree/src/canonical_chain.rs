@@ -49,8 +49,10 @@ impl CanonicalChain {
     }
 
     /// Returns the block number of the canonical block with the given hash.
+    /// 用给定的哈希返回canonical block的number
     ///
     /// Returns `None` if no block could be found in the canonical chain.
+    /// 返回None，如果在canonical chain中没有找到block
     #[inline]
     pub(crate) fn get_canonical_block_number(
         &self,
@@ -70,6 +72,7 @@ impl CanonicalChain {
     }
 
     /// Retains only the elements specified by the predicate.
+    /// 只保留predicate指定的元素
     #[inline]
     pub(crate) fn retain<F>(&mut self, f: F)
     where

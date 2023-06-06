@@ -134,10 +134,12 @@ pub mod test_utils {
     pub const ERROR_TEMPDIR: &str = "Not able to create a temporary directory.";
 
     /// Create rw database for testing
+    /// 创建读写的database，用于测试
     pub fn create_test_rw_db() -> Arc<Env<WriteMap>> {
         create_test_db(EnvKind::RW)
     }
     /// Create database for testing
+    /// 创建database，用于测试
     pub fn create_test_db<E: EnvironmentKind>(kind: EnvKind) -> Arc<Env<E>> {
         Arc::new(create_test_db_with_path(
             kind,
@@ -146,6 +148,7 @@ pub mod test_utils {
     }
 
     /// Create database for testing with specified path
+    /// 创建数据库用于测试，指定path
     pub fn create_test_db_with_path<E: EnvironmentKind>(kind: EnvKind, path: &Path) -> Env<E> {
         let env = Env::<E>::open(path, kind).expect(ERROR_DB_CREATION);
         env.create_tables().expect(ERROR_TABLE_CREATION);

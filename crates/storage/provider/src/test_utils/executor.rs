@@ -36,11 +36,13 @@ pub struct TestExecutorFactory {
 
 impl TestExecutorFactory {
     /// Create new instance of test factory.
+    /// 创建test factory的新实例
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { exec_results: Arc::new(Mutex::new(Vec::new())), chain_spec }
     }
 
     /// Extend the mocked execution results
+    /// 扩展mocked execution results
     pub fn extend(&self, results: Vec<PostState>) {
         self.exec_results.lock().extend(results.into_iter());
     }

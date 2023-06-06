@@ -32,11 +32,13 @@ pub struct Chain {
 
 impl Chain {
     /// Get the blocks in this chain.
+    /// 获取chain中的blocks
     pub fn blocks(&self) -> &BTreeMap<BlockNumber, SealedBlockWithSenders> {
         &self.blocks
     }
 
     /// Get post state of this chain
+    /// 获取这个chain的post state
     pub fn state(&self) -> &PostState {
         &self.state
     }
@@ -60,6 +62,7 @@ impl Chain {
     }
 
     /// Return post state of the block at the `block_number` or None if block is not known
+    /// 返回block_number处的block的post state，如果block未知，返回None
     pub fn state_at_block(&self, block_number: BlockNumber) -> Option<PostState> {
         if self.tip().number == block_number {
             return Some(self.state.clone())
@@ -111,21 +114,26 @@ impl Chain {
     }
 
     /// Get the tip of the chain.
+    /// 获取chain的tip
     ///
     /// # Note
     ///
     /// Chains always have at least one block.
+    /// Chains总是至少有一个block
     #[track_caller]
     pub fn tip(&self) -> &SealedBlockWithSenders {
         self.blocks.last_key_value().expect("Chain should have at least one block").1
     }
 
     /// Create new chain with given blocks and post state.
+    /// 创建新的chain，用给定的blocks和post state
     pub fn new(blocks: Vec<(SealedBlockWithSenders, PostState)>) -> Self {
         let mut state = PostState::default();
         let mut block_num_hash = BTreeMap::new();
         for (block, block_state) in blocks.into_iter() {
+            // 扩展state
             state.extend(block_state);
+            // 扩展block number和block hash的映射
             block_num_hash.insert(block.number, block);
         }
 
@@ -172,21 +180,28 @@ impl Chain {
     }
 
     /// Split this chain at the given block.
+    /// 在给定的block处分割这个chain
     ///
     /// The given block will be the first block in the first returned chain.
+    /// 给定的block回事第一个block在返回的chain中
     ///
     /// If the given block is not found, [`ChainSplit::NoSplitPending`] is returned.
     /// Split chain at the number or hash, block with given number will be included at first chain.
     /// If any chain is empty (Does not have blocks) None will be returned.
+    /// 如果给定的block没有找到，返回[`ChainSplit::NoSplitPending`]。
+    /// Split chain在number或者hash处，给定number的block将会包含在第一个chain中。
+    /// 如果任何的chain为空（没有blocks），将会返回None。
     ///
     /// # Note
     ///
     /// The block number to transition ID mapping is only found in the second chain, making it
     /// impossible to perform any state reverts on the first chain.
+    /// block number到transition ID的映射只能在第二个chain中找到，这使得在第一个chain上执行任何状态回滚都是不可能的。
     ///
     /// The second chain only contains the changes that were reverted on the first chain; however,
     /// it retains the up to date state as if the chains were one, i.e. the second chain is an
     /// extension of the first.
+    /// 第二个chain只包含在第一个chain上被回滚的变更；然而，它保留了最新的状态，就好像这些chain是一个，也就是说，第二个chain是第一个chain的扩展。
     #[track_caller]
     pub fn split(mut self, split_at: SplitAt) -> ChainSplit {
         let chain_tip = *self.blocks.last_entry().expect("chain is never empty").key();
@@ -286,26 +301,36 @@ pub struct BlockReceipts {
 }
 
 /// Used in spliting the chain.
+/// 用于分割chain
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SplitAt {
     /// Split at block number.
+    /// 分割在block number处
     Number(BlockNumber),
     /// Split at block hash.
+    /// 分割在block hash处
     Hash(BlockHash),
 }
 
 /// Result of a split chain.
+/// 一个split chain的结果
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChainSplit {
     /// Chain is not split. Pending chain is returned.
+    /// Chain没有split，返回pending chain
     /// Given block split is higher than last block.
+    /// 给定的block sppit比最后一个block高
     /// Or in case of split by hash when hash is unknown.
+    /// 或者在split by hash的情况下，当hash是未知的时候
     NoSplitPending(Chain),
     /// Chain is not split. Canonical chain is returned.
     /// Given block split is lower than first block.
+    /// Chain没有split，返回canonical chain
+    /// 给定的block split比第一个block低
     NoSplitCanonical(Chain),
     /// Chain is split into two.
     /// Given block split is contained in first chain.
+    /// Chain现在被分成两个，给定的block split包含在第一个chain中
     Split {
         /// Left contains lower block numbers that get are considered canonicalized. It ends with
         /// the [SplitAt] block. The substate of this chain is now empty and not usable.

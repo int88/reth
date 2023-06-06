@@ -62,16 +62,22 @@ impl Stream for CanonStateNotificationStream {
 /// Chain action that is triggered when a new block is imported or old block is reverted.
 /// and will return all [`crate::PostState`] and [`reth_primitives::SealedBlockWithSenders`] of both
 /// reverted and committed blocks.
+/// 会被触发的chain action，当一个新的block被导入或者旧的block被revert，会返回所有的reverted和committed
+/// blocks的[`crate::PostState`]和[`reth_primitives::SealedBlockWithSenders`]
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub enum CanonStateNotification {
     /// Chain reorgs and both old and new chain are returned.
+    /// Chain reorgs，返回old和new chain
     Reorg { old: Arc<Chain>, new: Arc<Chain> },
     /// Chain got reverted without reorg and only old chain is returned.
+    /// Chain被reverted，没有reorg，只返回old chain
     ///
     /// This reverts the chain's tip to the first block of the chain.
+    /// 它将chain的tip revert到chain的第一个block
     Revert { old: Arc<Chain> },
     /// Chain got extended without reorg and only new chain is returned.
+    /// Chain被扩展，没有reorg，只返回new chain
     Commit { new: Arc<Chain> },
 }
 
