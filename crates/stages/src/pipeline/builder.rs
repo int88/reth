@@ -25,6 +25,7 @@ where
     DB: Database,
 {
     /// Add a stage to the pipeline.
+    /// 添加一个stage到pipeline
     pub fn add_stage<S>(mut self, stage: S) -> Self
     where
         S: Stage<DB> + 'static,
@@ -50,8 +51,10 @@ where
     }
 
     /// Set the target block.
+    /// 设置target block
     ///
     /// Once this block is reached, the pipeline will stop.
+    /// 一旦到达这个block，pipeline将会停止
     pub fn with_max_block(mut self, block: BlockNumber) -> Self {
         self.max_block = Some(block);
         self
@@ -64,8 +67,10 @@ where
     }
 
     /// Builds the final [`Pipeline`] using the given database.
+    /// 使用给定的database构建最终的Pipeline
     ///
     /// Note: it's expected that this is either an [Arc](std::sync::Arc) or an Arc wrapper type.
+    /// 注意：期望这是一个Arc或者Arc包装类型
     pub fn build(self, db: DB) -> Pipeline<DB> {
         let Self { stages, max_block, tip_tx } = self;
         Pipeline {

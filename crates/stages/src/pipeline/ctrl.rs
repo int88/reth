@@ -4,20 +4,26 @@ use reth_primitives::{BlockNumber, SealedHeader};
 #[derive(Debug, Eq, PartialEq)]
 pub enum ControlFlow {
     /// An unwind was requested and must be performed before continuing.
+    /// 请求了unwind，必须在继续之前执行
     Unwind {
         /// The block to unwind to.
         target: BlockNumber,
         /// The block that caused the unwind.
+        /// 导致unwind的block
         bad_block: SealedHeader,
     },
     /// The pipeline is allowed to continue executing stages.
+    /// 允许pipeline继续执行stages
     Continue {
         /// The progress of the last stage
+        /// 上一个stage的进度
         progress: BlockNumber,
     },
     /// Pipeline made no progress
+    /// Pipeline没有进展
     NoProgress {
         /// The current stage progress.
+        /// 当前的stage process
         stage_progress: Option<BlockNumber>,
     },
 }

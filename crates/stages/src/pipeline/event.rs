@@ -2,15 +2,20 @@ use crate::stage::{ExecOutput, UnwindInput, UnwindOutput};
 use reth_primitives::stage::{StageCheckpoint, StageId};
 
 /// An event emitted by a [Pipeline][crate::Pipeline].
+/// 由Pipeline发出的一个event
 ///
 /// It is possible for multiple of these events to be emitted over the duration of a pipeline's
 /// execution since:
+/// 有可能在pipeline的执行期间，多个这样的events被发出
 ///
 /// - Other stages may ask the pipeline to unwind
+/// - 其他的stages可能会要求pipeline去unwind
 /// - The pipeline will loop indefinitely unless a target block is set
+/// - pipeline将会无限循环，除非设置了一个target block
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum PipelineEvent {
     /// Emitted when a stage is about to be run.
+    /// 当一个stage准备被run的时候，发出
     Running {
         /// 1-indexed ID of the stage that is about to be run out of total stages in the pipeline.
         pipeline_position: usize,
@@ -22,6 +27,7 @@ pub enum PipelineEvent {
         checkpoint: Option<StageCheckpoint>,
     },
     /// Emitted when a stage has run a single time.
+    /// 当一个stage运行了一次的时候，发出
     Ran {
         /// 1-indexed ID of the stage that was run out of total stages in the pipeline.
         pipeline_position: usize,
@@ -52,6 +58,7 @@ pub enum PipelineEvent {
         stage_id: StageId,
     },
     /// Emitted when a stage was skipped due to it's run conditions not being met:
+    /// 当因为stage的运行条件没有被满足，而stage被跳过的时候，发出
     ///
     /// - The stage might have progressed beyond the point of our target block
     /// - The stage might not need to be unwound since it has not progressed past the unwind target

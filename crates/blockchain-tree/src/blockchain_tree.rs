@@ -255,12 +255,16 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Return items needed to execute on the pending state.
+    /// 返回items用于在pending state上执行
     /// This includes:
     ///     * `BlockHash` of canonical block that chain connects to. Needed for creating database
     ///       provider for the rest of the state.
+    ///     * chains连接的canonical block的`BlockHash`，需要为state的其余部分创建database provider
     ///     * `PostState` changes that happened at the asked `block_hash`
+    ///     * 在`block_hash`发生的`PostState`变化
     ///     * `BTreeMap<BlockNumber,BlockHash>` list of past pending and canonical hashes, That are
     ///       needed for evm `BLOCKHASH` opcode.
+    ///     * 过去pending和canonical hashes的`BTreeMap<BlockNumber,BlockHash>`列表，这些是evm `BLOCKHASH` opcode所需的
     /// Return none if block is not known.
     pub fn post_state_data(&self, block_hash: BlockHash) -> Option<PostStateData> {
         trace!(target: "blockchain_tree", ?block_hash, "Searching for post state data");
@@ -707,17 +711,24 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Check if block is found inside chain and if the chain extends the canonical chain.
+    /// 检查是否block在chain中找到并且如果chain扩展了canonical chain
     ///
     /// if it does extend the canonical chain, return `BlockStatus::Valid`
+    /// 如果它扩展了canonical chain，返回`BlockStatus::Valid`
     /// if it does not extend the canonical chain, return `BlockStatus::Accepted`
+    /// 如果它没有扩展canonical chain，返回`BlockStatus::Accepted`
     #[track_caller]
     fn is_block_inside_chain(&self, block: &BlockNumHash) -> Option<BlockStatus> {
         // check if block known and is already in the tree
+        // 检查block是否已知并且已经在tree中
         if let Some(chain_id) = self.block_indices.get_blocks_chain_id(&block.hash) {
             // find the canonical fork of this chain
+            // 找到这个chain的canonical fork
             let canonical_fork = self.canonical_fork(chain_id).expect("Chain id is valid");
             // if the block's chain extends canonical chain
+            // 如果block的chain扩展了canonical chain
             return if canonical_fork == self.block_indices.canonical_tip() {
+                // 返回Valid
                 Some(BlockStatus::Valid)
             } else {
                 Some(BlockStatus::Accepted)
@@ -1085,13 +1096,16 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Subscribe to new blocks events.
+    /// 订阅新的block events
     ///
     /// Note: Only canonical blocks are send.
+    /// 注意：只有canonical blocks被发送
     pub fn subscribe_canon_state(&self) -> CanonStateNotifications {
         self.canon_state_notification_sender.subscribe()
     }
 
     /// Canonicalize the given chain and commit it to the database.
+    /// 将给定的chain进行canonical化，并且提交到数据库中
     fn commit_canonical(&mut self, chain: Chain) -> Result<(), Error> {
         let mut tx = Transaction::new(&self.externals.db)?;
 
@@ -1130,8 +1144,10 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Revert canonical blocks from the database and return them.
+    /// 从数据库回退canonical blocks，并且返回它们
     ///
     /// The block, `revert_until`, is non-inclusive, i.e. `revert_until` stays in the database.
+    /// block，revert_until，是不包含的，例如，revert_until保留在数据库中
     fn revert_canonical(&mut self, revert_until: BlockNumber) -> Result<Option<Chain>, Error> {
         // read data that is needed for new sidechain
 

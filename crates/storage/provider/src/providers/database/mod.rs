@@ -306,6 +306,7 @@ impl<DB: Database> EvmEnvProvider for ShareableDatabase<DB> {
 }
 
 /// Get checkpoint for the given stage.
+/// 获取给定stage的checkpoint
 #[inline]
 pub fn get_stage_checkpoint<'a, TX>(
     tx: &TX,

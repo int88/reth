@@ -115,9 +115,11 @@ impl ExecOutput {
 }
 
 /// The output of a stage unwinding.
+/// 对于一个stage unwinding的输出
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct UnwindOutput {
     /// The block at which the stage has unwound to.
+    /// 在哪个block上stage已经unwound
     pub checkpoint: StageCheckpoint,
 }
 

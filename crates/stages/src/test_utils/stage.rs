@@ -30,11 +30,13 @@ impl TestStage {
     }
 
     pub fn add_exec(mut self, output: Result<ExecOutput, StageError>) -> Self {
+        // 添加exec output
         self.exec_outputs.push_back(output);
         self
     }
 
     pub fn add_unwind(mut self, output: Result<UnwindOutput, StageError>) -> Self {
+        // 添加unwind output
         self.unwind_outputs.push_back(output);
         self
     }

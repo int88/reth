@@ -98,32 +98,42 @@ impl Compact for MerkleCheckpoint {
 }
 
 /// Saves the progress of AccountHashing stage.
+/// 保存AccountHashing stage的进度
 #[main_codec]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct AccountHashingCheckpoint {
     /// The next account to start hashing from
+    /// 开始的下一个account
     pub address: Option<Address>,
     /// Start transition id
+    /// 开始的transition id
     pub from: u64,
     /// Last transition id
+    /// 最后的transition id
     pub to: u64,
 }
 
 /// Saves the progress of StorageHashing stage.
+/// 保存StorageHashing stage的进度
 #[main_codec]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StorageHashingCheckpoint {
     /// The next account to start hashing from
+    /// 下一个开始hash的account
     pub address: Option<Address>,
     /// The next storage slot to start hashing from
+    /// 下一个开始hash的storage slot
     pub storage: Option<H256>,
     /// Start transition id
+    /// 开始的transition id
     pub from: u64,
     /// Last transition id
+    /// 最后的transition id
     pub to: u64,
 }
 
 /// Saves the progress of abstract stage iterating over or downloading entities.
+/// 保存抽象stage的进度，这个stage迭代或者下载entities
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct EntitiesCheckpoint {
@@ -158,6 +168,7 @@ pub struct StageCheckpoint {
 
 impl StageCheckpoint {
     /// Creates a new [`StageCheckpoint`] with only `block_number` set.
+    /// 创建一个新的StageCheckpoint，只设置block_number
     pub fn new(block_number: BlockNumber) -> Self {
         Self { block_number, ..Default::default() }
     }

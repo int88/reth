@@ -1290,6 +1290,7 @@ where
     }
 
     /// Get the stage checkpoint.
+    /// 获取stage checkpoint
     pub fn get_stage_checkpoint(&self, id: StageId) -> Result<Option<StageCheckpoint>, DbError> {
         get_stage_checkpoint(self.deref(), id)
     }

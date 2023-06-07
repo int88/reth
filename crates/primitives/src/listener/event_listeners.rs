@@ -2,9 +2,11 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
 /// A collection of event listeners for a task.
+/// 对于一个task的event listeners的集合
 #[derive(Clone, Debug)]
 pub struct EventListeners<T> {
     /// All listeners for events
+    /// events的所有listeners
     listeners: Vec<mpsc::UnboundedSender<T>>,
 }
 

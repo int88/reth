@@ -27,6 +27,7 @@ pub use set::*;
 use sync_metrics::*;
 
 /// A container for a queued stage.
+/// 一个container用于存储一个queued stage
 pub(crate) type BoxedStage<DB> = Box<dyn Stage<DB>>;
 
 /// The future that returns the owned pipeline and the result of the pipeline run. See
@@ -97,6 +98,7 @@ pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineErr
 /// The [DefaultStages](crate::sets::DefaultStages) are used to fully sync reth.
 pub struct Pipeline<DB: Database> {
     /// The Database
+    /// 数据库
     db: DB,
     /// All configured stages in the order they will be executed.
     /// 所有配置的stages，按照它们将被执行的顺序。
@@ -177,6 +179,7 @@ where
 
     /// Run the pipeline in an infinite loop. Will terminate early if the user has specified
     /// a `max_block` in the pipeline.
+    /// 在一个无限循环中运行pipeline。如果用户在pipeline中指定了`max_block`，将会提前终止。
     pub async fn run(&mut self) -> Result<(), PipelineError> {
         let _ = self.register_metrics(); // ignore error
 
@@ -185,6 +188,7 @@ where
 
             // Terminate the loop early if it's reached the maximum user
             // configured block.
+            // 尽早终止循环，如果它达到了用户配置的最大block。
             if next_action.should_continue() &&
                 self.progress
                     .minimum_progress
@@ -205,10 +209,12 @@ where
 
     /// Performs one pass of the pipeline across all stages. After successful
     /// execution of each stage, it proceeds to commit it to the database.
+    /// 跨所有stages执行pipeline的一个pass。在每个stage成功执行之后，它继续将其提交到数据库。
     ///
     /// If any stage is unsuccessful at execution, we proceed to
     /// unwind. This will undo the progress across the entire pipeline
     /// up to the block that caused the error.
+    /// 如果任何stage在执行时不成功，我们继续解开。这将撤销整个pipeline的进度，直到导致错误的block。
     pub async fn run_loop(&mut self) -> Result<ControlFlow, PipelineError> {
         let mut previous_stage = None;
         for stage_index in 0..self.stages.len() {
@@ -246,14 +252,17 @@ where
     }
 
     /// Unwind the stages to the target block.
+    /// 放松stages到目标block。
     ///
     /// If the unwind is due to a bad block the number of that block should be specified.
+    /// 如果unwind是由于一个bad block，那么应该指定该block的数目。
     pub async fn unwind(
         &mut self,
         to: BlockNumber,
         bad_block: Option<BlockNumber>,
     ) -> Result<(), PipelineError> {
         // Unwind stages in reverse order of execution
+        // 按照执行的反顺序解开stages
         let unwind_pipeline = self.stages.iter_mut().rev();
 
         let mut tx = Transaction::new(&self.db)?;
@@ -333,11 +342,13 @@ where
                 self.listeners.notify(PipelineEvent::Skipped { stage_id });
 
                 // We reached the maximum block, so we skip the stage
+                // 到达了最大的block，所以我们跳过这个stage
                 return Ok(ControlFlow::NoProgress {
                     stage_progress: prev_checkpoint.map(|progress| progress.block_number),
                 })
             }
 
+            // 通知listeners，stage即将被run
             self.listeners.notify(PipelineEvent::Running {
                 pipeline_position: stage_index + 1,
                 pipeline_total: total_stages,
@@ -345,6 +356,7 @@ where
                 checkpoint: prev_checkpoint,
             });
 
+            // 执行stage
             match stage
                 .execute(&mut tx, ExecInput { previous_stage, checkpoint: prev_checkpoint })
                 .await
@@ -360,6 +372,7 @@ where
                         %done,
                         "Stage made progress"
                     );
+                    // metric 更新stage point
                     self.metrics.stage_checkpoint(
                         stage_id,
                         checkpoint,
@@ -400,6 +413,7 @@ where
                         // We unwind because of a validation error. If the unwind itself fails,
                         // we bail entirely, otherwise we restart the execution loop from the
                         // beginning.
+                        // 因为验证错误而解开。如果解开本身失败，我们完全放弃，否则我们从头开始重新执行循环。
                         Ok(ControlFlow::Unwind {
                             target: prev_checkpoint.unwrap_or_default().block_number,
                             bad_block: block,
@@ -414,6 +428,7 @@ where
                     } else {
                         // On other errors we assume they are recoverable if we discard the
                         // transaction and run the stage again.
+                        // 对于其他错误，如果我们丢弃事务并再次运行stage，我们假设它们是可恢复的。
                         warn!(
                             target: "sync::pipeline",
                             stage = %stage_id,
@@ -477,6 +492,7 @@ mod tests {
     }
 
     /// Runs a simple pipeline.
+    /// 运行一个简单的pipeline
     #[tokio::test]
     async fn run_pipeline() {
         let db = test_utils::create_test_db::<mdbx::WriteMap>(EnvKind::RW);
@@ -495,11 +511,13 @@ mod tests {
         let events = pipeline.events();
 
         // Run pipeline
+        // 运行pipeline
         tokio::spawn(async move {
             pipeline.run().await.unwrap();
         });
 
         // Check that the stages were run in order
+        // 检查stages是否按顺序运行
         assert_eq!(
             events.collect::<Vec<PipelineEvent>>().await,
             vec![

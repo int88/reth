@@ -18,6 +18,7 @@ pub trait DatabaseGAT<'a, __ImplicitBounds: Sealed = Bounds<&'a Self>>: Send + S
 }
 
 /// Main Database trait that spawns transactions to be executed.
+/// 维护Database的主要trait，产生要被执行的transactions
 pub trait Database: for<'a> DatabaseGAT<'a> {
     /// Create read only transaction.
     fn tx(&self) -> Result<<Self as DatabaseGAT<'_>>::TX, DatabaseError>;
