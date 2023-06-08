@@ -138,8 +138,10 @@ pub struct StorageHashingCheckpoint {
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct EntitiesCheckpoint {
     /// Number of entities already processed.
+    /// 已经处理的entities的数目
     pub processed: u64,
     /// Total entities to be processed.
+    /// 等待被处理的所有entities
     pub total: Option<u64>,
 }
 
@@ -216,6 +218,7 @@ impl StageCheckpoint {
     }
 
     /// Sets the stage checkpoint to entities.
+    /// 设置stage checkpoint为entities
     pub fn with_entities_stage_checkpoint(mut self, checkpoint: EntitiesCheckpoint) -> Self {
         self.stage_checkpoint = Some(StageUnitCheckpoint::Entities(checkpoint));
         self

@@ -104,6 +104,7 @@ pub struct Pipeline<DB: Database> {
     /// 所有配置的stages，按照它们将被执行的顺序。
     stages: Vec<BoxedStage<DB>>,
     /// The maximum block number to sync to.
+    /// 用于同步的最大的block number。
     max_block: Option<BlockNumber>,
     /// All listeners for events the pipeline emits.
     /// 所有listeners监听pipeline发出的事件。
@@ -245,6 +246,7 @@ where
 
             previous_stage = Some((
                 stage_id,
+                // 获取stage的checkpoint
                 get_stage_checkpoint(&self.db.tx()?, stage_id)?.unwrap_or_default(),
             ));
         }
@@ -327,6 +329,7 @@ where
         loop {
             let mut tx = Transaction::new(&self.db)?;
 
+            // 获取之前的checkpoint
             let prev_checkpoint = tx.get_stage_checkpoint(stage_id)?;
 
             let stage_reached_max_block = prev_checkpoint

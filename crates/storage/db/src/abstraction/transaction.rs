@@ -42,6 +42,7 @@ pub trait DbTx<'tx>: for<'a> DbTxGAT<'a> {
     /// Drops transaction
     fn drop(self);
     /// Iterate over read only values in table.
+    /// 迭代读取table中的值
     fn cursor_read<T: Table>(&self) -> Result<<Self as DbTxGAT<'_>>::Cursor<T>, DatabaseError>;
     /// Iterate over read only values in dup sorted table.
     fn cursor_dup_read<T: DupSort>(

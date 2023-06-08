@@ -22,4 +22,5 @@ pub use set::TestStages;
 pub const TEST_STAGE_ID: StageId = StageId::Other("TestStage");
 
 /// The previous test stage id mock used for testing
+/// 之前的test stage id，用于测试
 pub(crate) const PREV_STAGE_ID: StageId = StageId::Other("PrevStage");

@@ -15,6 +15,7 @@ pub trait DbCursorRO<'tx, T: Table> {
     fn first(&mut self) -> PairResult<T>;
 
     /// Seeks to the KV pair exactly at `key`.
+    /// 找到刚好在`key`的KV pair
     fn seek_exact(&mut self, key: T::Key) -> PairResult<T>;
 
     /// Seeks to the KV pair whose key is greater than or equal to `key`.

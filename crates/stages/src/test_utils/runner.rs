@@ -22,6 +22,7 @@ pub(crate) trait StageTestRunner {
     fn tx(&self) -> &TestTransaction;
 
     /// Return an instance of a Stage.
+    /// 返回一个Stage的实例
     fn stage(&self) -> Self::S;
 }
 
@@ -40,11 +41,13 @@ pub(crate) trait ExecuteStageTestRunner: StageTestRunner {
     ) -> Result<(), TestRunnerError>;
 
     /// Run [Stage::execute] and return a receiver for the result.
+    /// 运行Stage::execute并返回结果的接收器
     fn execute(&self, input: ExecInput) -> oneshot::Receiver<Result<ExecOutput, StageError>> {
         let (tx, rx) = oneshot::channel();
         let (db, mut stage) = (self.tx().inner_raw(), self.stage());
         tokio::spawn(async move {
             let mut db = Transaction::new(db.borrow()).expect("failed to create db container");
+            // 执行stage
             let result = stage.execute(&mut db, input).await;
             db.commit().expect("failed to commit");
             tx.send(result).expect("failed to send message")

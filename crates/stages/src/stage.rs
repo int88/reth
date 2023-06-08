@@ -12,16 +12,20 @@ use std::{
 };
 
 /// Stage execution input, see [Stage::execute].
+/// Stage execution的输入
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct ExecInput {
     /// The stage that was run before the current stage and the progress it reached.
+    /// 在当前的stage之前运行的stage和它达到的进度
     pub previous_stage: Option<(StageId, StageCheckpoint)>,
     /// The progress of this stage the last time it was executed.
+    /// 这个stage的进度，上次执行的时候
     pub checkpoint: Option<StageCheckpoint>,
 }
 
 impl ExecInput {
     /// Return the progress of the stage or default.
+    /// 返回progress的stage或者默认
     pub fn checkpoint(&self) -> StageCheckpoint {
         self.checkpoint.unwrap_or_default()
     }

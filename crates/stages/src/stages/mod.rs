@@ -1,14 +1,20 @@
 /// The bodies stage.
+/// bodies阶段
 mod bodies;
 /// The execution stage that generates state diff.
+/// 生成state diff的execution阶段
 mod execution;
 /// The finish stage
+/// finish阶段
 mod finish;
 /// Account hashing stage.
+/// Account hashing阶段
 mod hashing_account;
 /// Storage hashing stage.
+/// Storage hashing阶段
 mod hashing_storage;
 /// The headers stage.
+/// headers阶段
 mod headers;
 /// Index history of account changes
 mod index_account_history;
@@ -17,6 +23,7 @@ mod index_storage_history;
 /// Stage for computing state root.
 mod merkle;
 /// The sender recovery stage.
+/// sender recovery阶段
 mod sender_recovery;
 /// The total difficulty stage
 mod total_difficulty;

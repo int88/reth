@@ -16,8 +16,10 @@ use reth_primitives::{BlockHashOrNumber, SealedHeader, H256};
 /// A [HeaderDownloader] is a [Stream] that returns batches of headers.
 pub trait HeaderDownloader: Send + Sync + Stream<Item = Vec<SealedHeader>> + Unpin {
     /// Updates the gap to sync which ranges from local head to the sync target
+    /// 更新gap to sync，它的范围是从本地head到sync target
     ///
     /// See also [HeaderDownloader::update_sync_target] and [HeaderDownloader::update_local_head]
+    /// 同时见HeaderDownloader::update_sync_target和HeaderDownloader::update_local_head
     fn update_sync_gap(&mut self, head: SealedHeader, target: SyncTarget) {
         self.update_local_head(head);
         self.update_sync_target(target);
@@ -37,23 +39,29 @@ pub trait HeaderDownloader: Send + Sync + Stream<Item = Vec<SealedHeader>> + Unp
 }
 
 /// Specifies the target to sync for [HeaderDownloader::update_sync_target]
+/// 指定sync的target
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SyncTarget {
     /// This represents a range missing headers in the form of `(head,..`
+    /// 这代表一个range missing headers，形式为`(head,..`
     ///
     /// Sync _inclusively_ to the given block hash.
     ///
     /// This target specifies the upper end of the sync gap `(head...tip]`
+    /// 这个target指定了sync gap的上限
     Tip(H256),
     /// This represents a gap missing headers bounded by the given header `h` in the form of
     /// `(head,..h),h+1,h+2...`
+    /// 这代表一个gap missing headers，形式为`(head,..h),h+1,h+2...`
     ///
     /// Sync _exclusively_ to the given header's parent which is: `(head..h-1]`
     ///
     /// The benefit of this variant is, that this already provides the block number of the highest
     /// missing block.
+    /// 这个variant的好处是，它已经提供了最高缺失块的block number
     Gap(SealedHeader),
     /// This represents a tip by block number
+    /// 这代表一个tip，通过block number
     TipNum(u64),
 }
 

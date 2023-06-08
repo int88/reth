@@ -992,6 +992,7 @@ impl SyncTargetBlock {
 
 /// The builder for [ReverseHeadersDownloader] with
 /// some default settings
+/// 用默认的配置构建一个[ReverseHeadersDownloader]的构建器
 #[derive(Debug)]
 pub struct ReverseHeadersDownloaderBuilder {
     /// The batch size per one request

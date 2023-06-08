@@ -74,14 +74,17 @@ where
         checkpoint: u64,
     ) -> Result<bool, StageError> {
         let mut header_cursor = tx.cursor_read::<tables::CanonicalHeaders>()?;
+        // 获取当年的header canonical number
         let (head_num, _) = header_cursor
             .seek_exact(checkpoint)?
             .ok_or_else(|| ProviderError::HeaderNotFound(checkpoint.into()))?;
         // Check if the next entry is congruent
+        // 检查是否下一个entry是congruent的
         Ok(header_cursor.next()?.map(|(next_num, _)| head_num + 1 == next_num).unwrap_or_default())
     }
 
     /// Get the head and tip of the range we need to sync
+    /// 获取head和tip，我们需要同步的range
     ///
     /// See also [SyncTarget]
     async fn get_sync_gap<DB: Database>(
@@ -90,6 +93,7 @@ where
         checkpoint: u64,
     ) -> Result<SyncGap, StageError> {
         // Create a cursor over canonical header hashes
+        // 创建一个cursor，遍历canonical header hashes
         let mut cursor = tx.cursor_read::<tables::CanonicalHeaders>()?;
         let mut header_cursor = tx.cursor_read::<tables::Headers>()?;
 
@@ -204,11 +208,13 @@ where
         let current_checkpoint = input.checkpoint();
 
         // Lookup the head and tip of the sync range
+        // 查找head以及sync range的tip
         let gap = self.get_sync_gap(tx, current_checkpoint.block_number).await?;
         let local_head = gap.local_head.number;
         let tip = gap.target.tip();
 
         // Nothing to sync
+        // 没有什么需要同步
         if gap.is_closed() {
             info!(target: "sync::stages::headers", checkpoint = %current_checkpoint, target = ?tip, "Target block already reached");
             return Ok(ExecOutput { checkpoint: current_checkpoint, done: true })
@@ -217,12 +223,15 @@ where
         debug!(target: "sync::stages::headers", ?tip, head = ?gap.local_head.hash(), "Commencing sync");
 
         // let the downloader know what to sync
+        // 让downloader知道要同步什么
         self.downloader.update_sync_gap(gap.local_head, gap.target);
 
         // The downloader returns the headers in descending order starting from the tip
         // down to the local head (latest block in db).
+        // downloader返回headers，从tip开始，按照降序排列，直到local head（db中的最新block）。
         // Task downloader can return `None` only if the response relaying channel was closed. This
         // is a fatal error to prevent the pipeline from running forever.
+        // Task downloader只能返回`None`，如果response relaying channel被关闭。这是一个致命的错误，防止pipeline永远运行。
         let downloaded_headers = self.downloader.next().await.ok_or(StageError::ChannelClosed)?;
 
         info!(target: "sync::stages::headers", len = downloaded_headers.len(), "Received headers");
@@ -230,6 +239,7 @@ where
         let tip_block_number = match tip {
             // If tip is hash and it equals to the first downloaded header's hash, we can use
             // the block number of this header as tip.
+            // 如果tip是hash，并且它等于第一个下载的header的hash，我们可以使用这个header的block number作为tip。
             BlockHashOrNumber::Hash(hash) => downloaded_headers.first().and_then(|header| {
                 if header.hash == hash {
                     Some(header.number)
@@ -238,6 +248,7 @@ where
                 }
             }),
             // If tip is number, we can just grab it and not resolve using downloaded headers.
+            // 如果tip是number，我们可以直接获取它，而不是使用下载的headers来解析。
             BlockHashOrNumber::Number(number) => Some(number),
         };
 
@@ -277,12 +288,15 @@ where
 
         // Total headers can be updated if we received new tip from the network, and need to fill
         // the local gap.
+        // Total headers可以被更新，如果我们从network接收到了新的tip，需要填充本地的gap。
         if let Some(target_block_number) = target_block_number {
             stage_checkpoint.total = Some(target_block_number);
         }
+        // 加上processed headers
         stage_checkpoint.processed += downloaded_headers.len() as u64;
 
         // Write the headers to db
+        // 将headers写入到db中
         self.write_headers::<DB>(tx, downloaded_headers)?.unwrap_or_default();
 
         if self.is_stage_done(tx, current_checkpoint.block_number)? {
@@ -335,12 +349,15 @@ where
 }
 
 /// Represents a gap to sync: from `local_head` to `target`
+/// 代表一个gap to sync：从`local_head`到`target`
 #[derive(Debug)]
 pub struct SyncGap {
     /// The local head block. Represents lower bound of sync range.
+    /// 本地的head block，代表sync range的下限。
     pub local_head: SealedHeader,
 
     /// The sync target. Represents upper bound of sync range.
+    /// sync target，代表sync range的上限。
     pub target: SyncTarget,
 }
 
@@ -427,13 +444,16 @@ mod tests {
             type Seed = Vec<SealedHeader>;
 
             fn seed_execution(&mut self, input: ExecInput) -> Result<Self::Seed, TestRunnerError> {
+                // 获取开始的block number
                 let start = input.checkpoint().block_number;
                 let head = random_header(start, None);
                 self.tx.insert_headers(std::iter::once(&head))?;
                 // patch td table for `update_head` call
+                // 对于`update_head`调用，patch td table
                 self.tx.commit(|tx| tx.put::<tables::HeaderTD>(head.number, U256::ZERO.into()))?;
 
                 // use previous checkpoint as seed size
+                // 使用之前的checkpoint作为seed size
                 let end =
                     input.previous_stage.map(|(_, num)| num).unwrap_or_default().block_number + 1;
 
@@ -441,6 +461,7 @@ mod tests {
                     return Ok(Vec::default())
                 }
 
+                // 构建headers
                 let mut headers = random_header_range(start + 1..end, head.hash());
                 headers.insert(0, head);
                 Ok(headers)
@@ -538,6 +559,7 @@ mod tests {
     stage_test_suite!(HeadersTestRunner, headers);
 
     /// Execute the stage with linear downloader
+    /// 用liner downloader执行stage
     #[tokio::test]
     async fn execute_with_linear_downloader() {
         let mut runner = HeadersTestRunner::with_linear_downloader();
@@ -552,6 +574,7 @@ mod tests {
         runner.client.extend(headers.iter().rev().map(|h| h.clone().unseal())).await;
 
         // skip `after_execution` hook for linear downloader
+        // 对于liner downloader，跳过`after_execution` hook
         let tip = headers.last().unwrap();
         runner.send_tip(tip.hash());
 
@@ -570,6 +593,7 @@ mod tests {
     }
 
     /// Test the head and tip range lookup
+    /// 测试head以及tip的range lookup
     #[tokio::test]
     async fn head_and_tip_lookup() {
         let runner = HeadersTestRunner::default();
@@ -625,10 +649,12 @@ mod tests {
     }
 
     /// Execute the stage in two steps
+    /// 分两步执行stage
     #[tokio::test]
     async fn execute_from_previous_checkpoint() {
         let mut runner = HeadersTestRunner::with_linear_downloader();
         // pick range that's larger than the configured headers batch size
+        // 选择range，它比配置的headers batch size大
         let (checkpoint, previous_stage) = (600, 1200);
         let mut input = ExecInput {
             previous_stage: Some((PREV_STAGE_ID, StageCheckpoint::new(previous_stage))),
@@ -640,6 +666,7 @@ mod tests {
         runner.client.extend(headers.iter().rev().map(|h| h.clone().unseal())).await;
 
         // skip `after_execution` hook for linear downloader
+        // 跳过`after_execution` hook，对于linear downloader
         let tip = headers.last().unwrap();
         runner.send_tip(tip.hash());
 
@@ -669,6 +696,7 @@ mod tests {
             }))
         }, done: true }) if block_number == tip.number
             // -1 because we don't need to download the local head
+            // -1因为我们不需要下载local head
             && processed == checkpoint + headers.len() as u64 - 1
             && total == tip.number);
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "validation failed");

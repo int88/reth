@@ -187,6 +187,7 @@ impl Stream for TestDownload {
 }
 
 /// A test client for fetching headers
+/// 一个test client用于获取headers
 #[derive(Debug, Default, Clone)]
 pub struct TestHeadersClient {
     responses: Arc<Mutex<Vec<Header>>>,
@@ -201,6 +202,7 @@ impl TestHeadersClient {
     }
 
     /// Adds headers to the set.
+    /// 添加headers到set
     pub async fn extend(&self, headers: impl IntoIterator<Item = Header>) {
         let mut lock = self.responses.lock().await;
         lock.extend(headers);
