@@ -1,11 +1,14 @@
 //! High level network management.
+//! 高层的网络管理
 //!
 //! The [`NetworkManager`] contains the state of the network as a whole. It controls how connections
 //! are handled and keeps track of connections to peers.
+//! [`NetworkManager`]包含了整个网络的状态。它控制如何处理连接，并跟踪与peers的连接并且跟踪与peers的连接。
 //!
 //! ## Capabilities
 //!
 //! The network manages peers depending on their announced capabilities via their RLPx sessions. Most importantly the [Ethereum Wire Protocol](https://github.com/ethereum/devp2p/blob/master/caps/eth.md)(`eth`).
+//! network管理peers取决于他们通过RLPx sessions宣布的capabilities。最重要的是[Ethereum Wire Protocol]
 //!
 //! ## Overview
 //!
@@ -14,6 +17,7 @@
 //! Responsible for peer discovery is ethereum's discovery protocol (discv4, discv5). If the address
 //! (IP+port) of our node is published via discovery, remote peers can initiate inbound connections
 //! to the local node. Once a (tcp) connection is established, both peers start to authenticate a [RLPx session](https://github.com/ethereum/devp2p/blob/master/rlpx.md) via a handshake. If the handshake was successful, both peers announce their capabilities and are now ready to exchange sub-protocol messages via the RLPx session.
+//! [`NetworkManager`]负责推进`network`的状态。`network`由节点之间的点对点连接组成，这些节点在同一个网络上可用。负责peer discovery的是以太坊的discovery protocol(discv4, discv5)。如果我们的节点的地址(IP+port)通过discovery发布，远程peers可以建立到本地节点的入站连接。一旦建立了(tcp)连接，两个peers都开始通过握手来验证RLPx session。如果握手成功，两个peers都会宣布他们的capabilities，并且现在准备通过RLPx session交换子协议消息。
 
 use crate::{
     config::NetworkConfig,
@@ -121,6 +125,7 @@ pub struct NetworkManager<C> {
     /// Updated by the `NetworkWorker` and loaded by the `NetworkService`.
     num_active_peers: Arc<AtomicUsize>,
     /// Metrics for the Network
+    /// 对于Network的Metrics
     metrics: NetworkMetrics,
     /// Disconnect metrics for the Network
     disconnect_metrics: DisconnectMetrics,
@@ -159,9 +164,11 @@ where
     C: BlockProvider,
 {
     /// Creates the manager of a new network.
+    /// 创建一个新的network的manager
     ///
     /// The [`NetworkManager`] is an endless future that needs to be polled in order to advance the
     /// state of the entire network.
+    /// [`NetworkManager`]是一个无尽的future，需要被polling以便推进整个network的状态。
     pub async fn new(config: NetworkConfig<C>) -> Result<Self, NetworkError> {
         let NetworkConfig {
             client,

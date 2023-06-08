@@ -5,10 +5,12 @@ use reth_metrics::{
 };
 
 /// Metrics for the entire network, handled by NetworkManager
+/// 整个network的metrics，由NetworkManager处理
 #[derive(Metrics)]
 #[metrics(scope = "network")]
 pub struct NetworkMetrics {
     /// Number of currently connected peers
+    /// 当前连接的peers的数目
     pub(crate) connected_peers: Gauge,
 
     /// Number of currently backed off peers
@@ -18,6 +20,7 @@ pub struct NetworkMetrics {
     pub(crate) tracked_peers: Gauge,
 
     /// Cumulative number of failures of pending sessions
+    /// 累计的pending sessions的失败数目
     pub(crate) pending_session_failures: Counter,
 
     /// Total number of sessions closed
@@ -43,12 +46,15 @@ pub struct NetworkMetrics {
 }
 
 /// Metrics for the TransactionsManager
+/// 对于TransactionsManager的metrics
 #[derive(Metrics)]
 #[metrics(scope = "network")]
 pub struct TransactionsManagerMetrics {
     /// Total number of propagated transactions
+    /// 传播的transactions的总数目
     pub(crate) propagated_transactions: Counter,
     /// Total number of reported bad transactions
+    /// bad transactions的总数目
     pub(crate) reported_bad_transactions: Counter,
     /// Total number of messages with already seen hashes
     pub(crate) messages_with_already_seen_hashes: Counter,
@@ -57,6 +63,7 @@ pub struct TransactionsManagerMetrics {
 }
 
 /// Metrics for Disconnection types
+/// Disconnections类型的metrics
 ///
 /// These are just counters, and ideally we would implement these metrics on a peer-by-peer basis,
 /// in that we do not double-count peers for `TooManyPeers` if we make an outgoing connection and

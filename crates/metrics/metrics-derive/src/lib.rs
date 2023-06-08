@@ -6,6 +6,7 @@
 ))]
 
 //! This crate provides [Metrics] derive macro
+//! 整个crate提供了Metrics的derive宏
 
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};

@@ -146,6 +146,7 @@ where
     }
 
     /// Registers progress metrics for each registered stage
+    /// 为每个注册的stage注册进度metrics
     pub fn register_metrics(&mut self) -> Result<(), PipelineError> {
         let tx = self.db.tx()?;
         for stage in &self.stages {

@@ -35,6 +35,7 @@ impl NodeState {
     }
 
     /// Processes an event emitted by the pipeline
+    /// 处理由pipeline发出的event
     fn handle_pipeline_event(&mut self, event: PipelineEvent) {
         match event {
             PipelineEvent::Running { pipeline_position, pipeline_total, stage_id, checkpoint } => {

@@ -1,5 +1,6 @@
 //! Support for metering senders. Facilitates debugging by exposing metrics for number of messages
 //! sent, number of errors, etc.
+//! 支持metering senders。通过暴露metrics，方便debug，比如发送的消息数目，错误数目等
 
 use metrics::Counter;
 use reth_metrics_derive::Metrics;
