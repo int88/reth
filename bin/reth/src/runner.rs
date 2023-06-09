@@ -106,8 +106,10 @@ impl AsyncCliRunner {
 }
 
 /// Additional context provided by the [CliRunner] when executing commands
+/// [CliRunner]提供的额外的上下文，用于执行命令
 pub struct CliContext {
     /// Used to execute/spawn tasks
+    /// 用于执行/生成任务
     pub task_executor: TaskExecutor,
 }
 

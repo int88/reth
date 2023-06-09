@@ -20,13 +20,17 @@ use std::{
 };
 
 /// A mock implementation for Provider interfaces.
+/// 一个用于Provider接口的mock实现
 #[derive(Debug, Clone, Default)]
 pub struct MockEthProvider {
     /// Local block store
+    /// 本地的block store
     pub blocks: Arc<Mutex<HashMap<H256, Block>>>,
     /// Local header store
+    /// 本地的header store
     pub headers: Arc<Mutex<HashMap<H256, Header>>>,
     /// Local account store
+    /// 本地的account store
     pub accounts: Arc<Mutex<HashMap<Address, ExtendedAccount>>>,
 }
 

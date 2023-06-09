@@ -63,8 +63,10 @@ pub struct ExecutionStageMetrics {
 pub struct ExecutionStage<EF: ExecutorFactory> {
     metrics: ExecutionStageMetrics,
     /// The stage's internal executor
+    /// stage内部的executor
     executor_factory: EF,
     /// The commit thresholds of the execution stage.
+    /// execution的commit阈值
     thresholds: ExecutionStageThresholds,
 }
 

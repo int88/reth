@@ -7,8 +7,10 @@
 
 //! This crate contains a collection of traits and trait implementations for common database
 //! operations.
+//! 这个crate包含一系列的traits和trait实现，用于常见的数据库操作
 
 /// Various provider traits.
+/// 各种provider traits
 mod traits;
 pub use traits::{
     AccountProvider, BlockExecutor, BlockHashProvider, BlockIdProvider, BlockNumProvider,
@@ -21,6 +23,7 @@ pub use traits::{
 };
 
 /// Provider trait implementations.
+/// Provider trait的实现
 pub mod providers;
 pub use providers::{
     HistoricalStateProvider, HistoricalStateProviderRef, LatestStateProvider,
@@ -32,6 +35,7 @@ pub mod post_state;
 pub use post_state::PostState;
 
 /// Helper types for interacting with the database
+/// 用于和database交互的helper types
 mod transaction;
 pub use transaction::{Transaction, TransactionError};
 

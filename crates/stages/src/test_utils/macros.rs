@@ -125,17 +125,20 @@ macro_rules! stage_test_suite {
 
 // `execute_already_reached_target` is not suitable for the headers stage thus
 // included in the test suite extension
+// `execute_already_reached_target`不适合headers阶段，因此包含在测试套件扩展中`
 macro_rules! stage_test_suite_ext {
     ($runner:ident, $name:ident) => {
         crate::test_utils::stage_test_suite!($runner, $name);
 
          paste::item! {
             /// Check that the execution is short-circuited if the target was already reached.
+            /// 检查如果目标已经达到，执行是否被短路。
             #[tokio::test]
             async fn [< execute_already_reached_target_ $name>] () {
                 let stage_progress = 1000;
 
                 // Set up the runner
+                // 构建runner
                 let mut runner = $runner::default();
                 let input = crate::stage::ExecInput {
                     previous_stage: Some((crate::test_utils::PREV_STAGE_ID, reth_primitives::stage::StageCheckpoint::new(stage_progress))),
@@ -144,12 +147,15 @@ macro_rules! stage_test_suite_ext {
                 let seed = runner.seed_execution(input).expect("failed to seed");
 
                 // Run stage execution
+                // 运行stage execution
                 let rx = runner.execute(input);
 
                 // Run `after_execution` hook
+                // 运行`after_execution`钩子
                 runner.after_execution(seed).await.expect("failed to run after execution hook");
 
                 // Assert the successful result
+                // 插入成功的结果
                 let result = rx.await.unwrap();
                 assert_matches::assert_matches!(
                     result,
@@ -158,6 +164,7 @@ macro_rules! stage_test_suite_ext {
                 );
 
                 // Validate the stage execution
+                // 校验stage execution
                 assert_matches::assert_matches!(runner.validate_execution(input, result.ok()),Ok(_), "execution validation");
             }
         }

@@ -24,6 +24,7 @@ pub struct DebugArgs {
     pub tip: Option<H256>,
 
     /// Runs the sync only up to the specified block.
+    /// 运行sync，只到指定的块。
     #[arg(long = "debug.max-block", help_heading = "Debug")]
     pub max_block: Option<u64>,
 

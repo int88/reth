@@ -4,9 +4,11 @@ use reth_primitives::stage::{StageCheckpoint, StageId};
 use reth_provider::Transaction;
 
 /// The finish stage.
+/// 结束的stage
 ///
 /// This stage does not write anything; it's checkpoint is used to denote the highest fully synced
 /// block.
+/// 这个stage不会写入任何东西，它的checkpoint用于表示最高的完全同步的块
 #[derive(Default, Debug, Clone)]
 pub struct FinishStage;
 

@@ -7,12 +7,15 @@
 
 //! A [Consensus] implementation for local testing purposes
 //! that automatically seals blocks.
+//! 一个用于本地测试目的的[Consensus]实现，它会自动封装块。
 //!
 //! The Mining task polls a [MiningMode], and will return a list of transactions that are ready to
 //! be mined.
+//! Mining task轮询[MiningMode]，并返回一个准备挖掘的交易列表。
 //!
 //! These downloaders poll the miner, assemble the block, and return transactions that are ready to
 //! be mined.
+//! 这些downloaders轮询miner，组装块，并返回准备挖掘的交易。
 
 use reth_beacon_consensus::BeaconEngineMessage;
 use reth_interfaces::consensus::{Consensus, ConsensusError};
@@ -35,6 +38,7 @@ pub use mode::{FixedBlockTimeMiner, MiningMode, ReadyTransactionMiner};
 pub use task::MiningTask;
 
 /// A consensus implementation intended for local development and testing purposes.
+/// 一个consensus的实现，用于本地开发和测试目的
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct AutoSealConsensus {

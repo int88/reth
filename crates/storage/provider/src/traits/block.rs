@@ -56,8 +56,10 @@ pub trait BlockProvider:
     fn find_block_by_hash(&self, hash: H256, source: BlockSource) -> Result<Option<Block>>;
 
     /// Returns the block with given id from the database.
+    /// 从数据库中返回block
     ///
     /// Returns `None` if block is not found.
+    /// 如果没找到block，返回None
     fn block(&self, id: BlockHashOrNumber) -> Result<Option<Block>>;
 
     /// Returns the pending block if available

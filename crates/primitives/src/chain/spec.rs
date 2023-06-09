@@ -119,12 +119,17 @@ pub static SEPOLIA: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 });
 
 /// An Ethereum chain specification.
+/// 一个Ethereum的chain specification
 ///
 /// A chain specification describes:
+/// 一个chain specification描述了：
 ///
 /// - Meta-information about the chain (the chain ID)
+/// - 元数据信息，关于chain的ID
 /// - The genesis block of the chain ([`Genesis`])
+/// - chain的genesis block
 /// - What hardforks are activated, and under which conditions
+/// - 哪个hardfork被激活了，以及在什么条件下
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChainSpec {
     /// The chain ID

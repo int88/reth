@@ -136,6 +136,7 @@ where
     }
 
     /// Sets a new target to sync the pipeline to.
+    /// 设置一个新的target来同步pipeline
     pub(crate) fn set_pipeline_sync_target(&mut self, target: H256) {
         self.pending_pipeline_target = Some(target);
     }

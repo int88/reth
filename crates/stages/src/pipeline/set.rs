@@ -17,6 +17,7 @@ use std::{
 /// 单个stages可以使用StageSetBuilder添加，删除和覆盖
 pub trait StageSet<DB: Database>: Sized {
     /// Configures the stages in the set.
+    /// 构建set中的stages
     fn builder(self) -> StageSetBuilder<DB>;
 
     /// Overrides the given [`Stage`], if it is in this set.

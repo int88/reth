@@ -13,17 +13,24 @@
 ))]
 
 //! Reth's transaction pool implementation.
+//! Reth的transaction pool的实现
 //!
 //! This crate provides a generic transaction pool implementation.
+//! 这个crate提供了一个通用的transaction pool的实现
 //!
 //! ## Functionality
 //!
 //! The transaction pool is responsible for
+//! transaction pool负责
 //!
 //!    - recording incoming transactions
+//!    - 记录传入的transactions
 //!    - providing existing transactions
+//!    - 提供已经存在的transactions
 //!    - ordering and providing the best transactions for block production
+//!    - 排序并且提供最好的transactions给block production
 //!    - monitoring memory footprint and enforce pool size limits
+//!    - 监控内存占用并且强制pool size的限制
 //!
 //! ## Assumptions
 //!

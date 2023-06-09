@@ -79,13 +79,16 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct DefaultStages<H, B, EF> {
     /// Configuration for the online stages
+    /// 配置online stages
     online: OnlineStages<H, B>,
     /// Executor factory needs for execution stage
+    /// 用于执行阶段的执行器工厂
     executor_factory: EF,
 }
 
 impl<H, B, EF> DefaultStages<H, B, EF> {
     /// Create a new set of default stages with default values.
+    /// 创建一个新的默认stages集合，使用默认值
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,

@@ -23,14 +23,19 @@ const MAX_PAYLOAD_BODIES_LIMIT: u64 = 1024;
 
 /// The Engine API implementation that grants the Consensus layer access to data and
 /// functions in the Execution layer that are crucial for the consensus process.
+/// Engine API的实现，为共识层提供对执行层中对共识过程至关重要的数据和函数的访问。
 pub struct EngineApi<Client> {
     /// The client to interact with the chain.
+    /// 用于和chain进行交互
     client: Client,
     /// Consensus configuration
+    /// 共识层配置
     chain_spec: Arc<ChainSpec>,
     /// The channel to send messages to the beacon consensus engine.
+    /// channel用于发送消息给beacon共识引擎
     beacon_consensus: BeaconConsensusEngineHandle,
     /// The type that can communicate with the payload service to retrieve payloads.
+    /// 可以和payload服务通信以检索payload的类型
     payload_store: PayloadStore,
 }
 
@@ -154,6 +159,7 @@ where
 
     /// Returns the execution payload bodies by the range starting at `start`, containing `count`
     /// blocks.
+    /// 通过从`start`开始的范围返回执行payload bodies，包含`count`个blocks。
     ///
     /// WARNING: This method is associated with the BeaconBlocksByRange message in the consensus
     /// layer p2p specification, meaning the input should be treated as untrusted or potentially
@@ -162,6 +168,7 @@ where
     /// Implementors should take care when acting on the input to this method, specifically
     /// ensuring that the range is limited properly, and that the range boundaries are computed
     /// correctly and without panics.
+    /// Implementors在执行此方法的输入时应该小心，特别是确保范围正确限制，并且范围边界正确计算且不会发生panic。
     pub fn get_payload_bodies_by_range(
         &self,
         start: BlockNumber,
@@ -468,6 +475,7 @@ mod tests {
         tokio::spawn(async move {
             api.new_payload_v1(SealedBlock::default().into()).await.unwrap();
         });
+        // handle能获取一个BeaconEngineMessage::NewPayload
         assert_matches!(handle.from_api.recv().await, Some(BeaconEngineMessage::NewPayload { .. }));
     }
 
@@ -526,6 +534,7 @@ mod tests {
             let blocks = random_block_range(start..=start + count - 1, H256::default(), 0..2);
 
             // Insert only blocks in ranges 1-25 and 50-75
+            // 在范围1-25和50-75中插入块
             let first_missing_range = 26..=50;
             let second_missing_range = 76..=100;
             handle.client.extend_blocks(

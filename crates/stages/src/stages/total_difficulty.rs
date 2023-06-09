@@ -15,15 +15,19 @@ use std::sync::Arc;
 use tracing::*;
 
 /// The total difficulty stage.
+/// total difficulty的stage
 ///
 /// This stage walks over inserted headers and computes total difficulty
 /// at each block. The entries are inserted into [`HeaderTD`][reth_db::tables::HeaderTD]
 /// table.
+/// 这个stage遍历插入的headers并且计算每个block的total difficulty。entries被插入到HeaderTD表中
 #[derive(Debug, Clone)]
 pub struct TotalDifficultyStage {
     /// Consensus client implementation
+    /// Consentus客户端实现
     consensus: Arc<dyn Consensus>,
     /// The number of table entries to commit at once
+    /// 一次性提交的表条目数
     commit_threshold: u64,
 }
 

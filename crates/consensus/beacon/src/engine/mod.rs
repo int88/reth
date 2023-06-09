@@ -131,6 +131,7 @@ impl BeaconConsensusEngineHandle {
     }
 
     /// Creates a new [`BeaconConsensusEngineEvent`] listener stream.
+    /// 创建一个新的[`BeaconConsensusEngineEvent`] listener stream。
     pub fn event_listener(&self) -> UnboundedReceiverStream<BeaconConsensusEngineEvent> {
         let (tx, rx) = mpsc::unbounded_channel();
         let _ = self.to_engine.send(BeaconEngineMessage::EventListener(tx));

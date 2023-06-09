@@ -1,4 +1,5 @@
 //! Contains [Chain], a chain of blocks and their final state.
+//! 包含Chain，一个chain of blocks和它们的最终状态
 
 use crate::PostState;
 use reth_interfaces::{executor::BlockExecutionError, Error};

@@ -55,16 +55,21 @@ use tracing::{debug, trace};
 mod metrics;
 
 /// The [PayloadJobGenerator] that creates [BasicPayloadJob]s.
+/// [PayloadJobGenerator]创建[BasicPayloadJob]的生成器
 pub struct BasicPayloadJobGenerator<Client, Pool, Tasks> {
     /// The client that can interact with the chain.
+    /// 和链交互的客户端
     client: Client,
     /// txpool
     pool: Pool,
     /// How to spawn building tasks
+    /// 如何生成构建任务
     executor: Tasks,
     /// The configuration for the job generator.
+    /// job generator的配置
     config: BasicPayloadJobGeneratorConfig,
     /// Restricts how many generator tasks can be executed at once.
+    /// 限制可以同时执行多少个生成器任务
     payload_task_guard: PayloadTaskGuard,
     /// The chain spec.
     chain_spec: Arc<ChainSpec>,

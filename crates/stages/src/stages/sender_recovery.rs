@@ -21,6 +21,7 @@ use tracing::*;
 /// The sender recovery stage iterates over existing transactions,
 /// recovers the transaction signer and stores them
 /// in [`TxSenders`][reth_db::tables::TxSenders] table.
+/// sender recovery stage遍历已经存在的transactions，恢复transaction signer并且存储在TxSenders表中
 #[derive(Clone, Debug)]
 pub struct SenderRecoveryStage {
     /// The size of inserted items after which the control

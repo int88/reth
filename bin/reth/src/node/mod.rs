@@ -84,9 +84,11 @@ use reth_rlp::Encodable;
 pub mod events;
 
 /// Start the node
+/// 启动node
 #[derive(Debug, Parser)]
 pub struct Command {
     /// The path to the data dir for all reth files and subdirectories.
+    /// data dir的路径，对于所有的reth文件和子目录
     ///
     /// Defaults to the OS-specific data directory:
     ///
@@ -101,8 +103,10 @@ pub struct Command {
     config: Option<PathBuf>,
 
     /// The chain this node is running.
+    /// 这个node运行的chain
     ///
     /// Possible values are either a built-in chain or the path to a chain specification file.
+    /// 可能的值为内置的chain或者chain spec文件的路径
     ///
     /// Built-in chains:
     /// - mainnet
@@ -136,12 +140,14 @@ pub struct Command {
     debug: DebugArgs,
 
     /// Automatically mine blocks for new transactions
+    /// 对于新的transactions自动开始挖矿
     #[arg(long)]
     auto_mine: bool,
 }
 
 impl Command {
     /// Execute `node` command
+    /// 执行`node`命令
     pub async fn execute(self, ctx: CliContext) -> eyre::Result<()> {
         info!(target: "reth::cli", "reth {} starting", SHORT_VERSION);
 
@@ -150,6 +156,7 @@ impl Command {
         raise_fd_limit();
 
         // add network name to data dir
+        // 添加network name到data dir
         let data_dir = self.datadir.unwrap_or_chain_default(self.chain.chain);
         let config_path = self.config.clone().unwrap_or(data_dir.config_path());
 
@@ -158,6 +165,7 @@ impl Command {
         // always store reth.toml in the data dir, not the chain specific data dir
         info!(target: "reth::cli", path = ?config_path, "Configuration loaded");
 
+        // 打开数据库
         let db_path = data_dir.db_path();
         info!(target: "reth::cli", path = ?db_path, "Opening database");
         let db = Arc::new(init_db(&db_path)?);
@@ -167,8 +175,10 @@ impl Command {
 
         debug!(target: "reth::cli", chain=%self.chain.chain, genesis=?self.chain.genesis_hash(), "Initializing genesis");
 
+        // 初始化genesis
         let genesis_hash = init_genesis(db.clone(), self.chain.clone())?;
 
+        // 构建consensus
         let consensus: Arc<dyn Consensus> = if self.auto_mine {
             debug!(target: "reth::cli", "Using auto seal");
             Arc::new(AutoSealConsensus::new(Arc::clone(&self.chain)))
@@ -179,17 +189,20 @@ impl Command {
         self.init_trusted_nodes(&mut config);
 
         // configure blockchain tree
+        // 配置blockchain tree
         let tree_externals = TreeExternals::new(
             db.clone(),
             Arc::clone(&consensus),
             Factory::new(self.chain.clone()),
             Arc::clone(&self.chain),
         );
+        // 获取blockhain tree的配置
         let tree_config = BlockchainTreeConfig::default();
         // The size of the broadcast is twice the maximum reorg depth, because at maximum reorg
         // depth at least N blocks must be sent at once.
         let (canon_state_notification_sender, _receiver) =
             tokio::sync::broadcast::channel(tree_config.max_reorg_depth() as usize * 2);
+        // 构建blockchain tree
         let blockchain_tree = ShareableBlockchainTree::new(BlockchainTree::new(
             tree_externals,
             canon_state_notification_sender.clone(),
@@ -197,6 +210,7 @@ impl Command {
         )?);
 
         // setup the blockchain provider
+        // 设置blockchain provider
         let shareable_db = ShareableDatabase::new(Arc::clone(&db), Arc::clone(&self.chain));
         let blockchain_db = BlockchainProvider::new(shareable_db, blockchain_tree.clone())?;
 
@@ -207,12 +221,14 @@ impl Command {
         info!(target: "reth::cli", "Transaction pool initialized");
 
         // spawn txpool maintenance task
+        // 生成txpool的maintenance task
         {
             let pool = transaction_pool.clone();
             let chain_events = blockchain_db.canonical_state_stream();
             let client = blockchain_db.clone();
             ctx.task_executor.spawn_critical(
                 "txpool maintenance task",
+                // 执行tool maintenance
                 Box::pin(async move {
                     reth_transaction_pool::maintain::maintain_transaction_pool(
                         client,
@@ -231,6 +247,7 @@ impl Command {
         debug!(target: "reth::cli", ?network_secret_path, "Loading p2p key file");
         let secret_key = get_secret_key(&network_secret_path)?;
         let default_peers_path = data_dir.known_peers_path();
+        // 加载network配置
         let network_config = self.load_network_config(
             &config,
             Arc::clone(&db),
@@ -238,6 +255,7 @@ impl Command {
             secret_key,
             default_peers_path.clone(),
         );
+        // 启动network
         let network = self
             .start_network(
                 network_config,
@@ -253,6 +271,7 @@ impl Command {
         let (consensus_engine_tx, consensus_engine_rx) = unbounded_channel();
 
         // configure the payload builder
+        // 构建payload builder
         let mut extradata = BytesMut::new();
         self.builder.extradata.as_bytes().encode(&mut extradata);
         let payload_generator = BasicPayloadJobGenerator::new(
@@ -273,7 +292,9 @@ impl Command {
         ctx.task_executor.spawn_critical("payload builder service", payload_service);
 
         // Configure the pipeline
+        // 配置pipeline
         let (mut pipeline, client) = if self.auto_mine {
+            // 对于auto mine，需要构建auto seal
             let (_, client, mut task) = AutoSealBuilder::new(
                 Arc::clone(&self.chain),
                 blockchain_db.clone(),
@@ -295,6 +316,7 @@ impl Command {
 
             let pipeline_events = pipeline.events();
             task.set_pipeline_events(pipeline_events);
+            // 生成auto mine task
             debug!(target: "reth::cli", "Spawning auto mine task");
             ctx.task_executor.spawn(Box::pin(task));
 
@@ -317,11 +339,13 @@ impl Command {
 
         let initial_target = if let Some(tip) = self.debug.tip {
             // Set the provided tip as the initial pipeline target.
+            // 设置提供的tip作为初始的pipeline target
             debug!(target: "reth::cli", %tip, "Tip manually set");
             Some(tip)
         } else if self.debug.continuous {
             // Set genesis as the initial pipeline target.
             // This will allow the downloader to start
+            // 设置genesis作为初始的pipeline target，这将允许downloader开始
             debug!(target: "reth::cli", "Continuous sync mode enabled");
             Some(genesis_hash)
         } else {
@@ -329,6 +353,7 @@ impl Command {
         };
 
         // Configure the consensus engine
+        // 配置consensus engine
         let (beacon_consensus_engine, beacon_engine_handle) = BeaconConsensusEngine::with_channel(
             client,
             pipeline,
@@ -354,6 +379,7 @@ impl Command {
         ctx.task_executor
             .spawn_critical("events task", events::handle_events(Some(network.clone()), events));
 
+        // 构建engine api
         let engine_api = EngineApi::new(
             blockchain_db.clone(),
             self.chain.clone(),
@@ -363,12 +389,15 @@ impl Command {
         info!(target: "reth::cli", "Engine API handler initialized");
 
         // extract the jwt secret from the args if possible
+        // 从参数中获取args
         let default_jwt_path = data_dir.jwt_path();
         let jwt_secret = self.rpc.jwt_secret(default_jwt_path)?;
 
         // Start RPC servers
+        // 开始RPC servers
         let (_rpc_server, _auth_server) = self
             .rpc
+            // 启动rpc server
             .start_servers(
                 blockchain_db.clone(),
                 transaction_pool.clone(),
@@ -381,6 +410,7 @@ impl Command {
             .await?;
 
         // Run consensus engine to completion
+        // 运行consensus engine
         let (tx, rx) = oneshot::channel();
         info!(target: "reth::cli", "Starting consensus engine");
         ctx.task_executor.spawn_critical("consensus engine", async move {
@@ -397,11 +427,14 @@ impl Command {
         } else {
             // The pipeline has finished downloading blocks up to `--debug.tip` or
             // `--debug.max-block`. Keep other node components alive for further usage.
+            // pipeline已经结束下载blocks到`--debug.tip`或者`--debug.max-block`，保持其他的node components
+            // 继续使用
             futures::future::pending().await
         }
     }
 
     /// Constructs a [Pipeline] that's wired to the network
+    /// 构建一个[Pipeline]，它连接到network
     async fn build_networked_pipeline<DB, Client>(
         &self,
         config: &mut Config,
@@ -417,12 +450,14 @@ impl Command {
         let max_block = if let Some(block) = self.debug.max_block {
             Some(block)
         } else if let Some(tip) = self.debug.tip {
+            // 查找tip
             Some(self.lookup_or_fetch_tip(&db, &client, tip).await?)
         } else {
             None
         };
 
         // building network downloaders using the fetch client
+        // 构建network downloader，使用fetch client
         let header_downloader = ReverseHeadersDownloaderBuilder::from(config.stages.headers)
             .build(client.clone(), Arc::clone(&consensus))
             .into_task_with(task_executor);
@@ -431,6 +466,7 @@ impl Command {
             .build(client, Arc::clone(&consensus), db.clone())
             .into_task_with(task_executor);
 
+        // 构建pipeline
         let pipeline = self
             .build_pipeline(
                 db,
@@ -456,6 +492,7 @@ impl Command {
         config.peers.connect_trusted_nodes_only = self.network.trusted_only;
 
         if !self.network.trusted_peers.is_empty() {
+            // 添加trusted nodes
             info!(target: "reth::cli", "Adding trusted nodes");
             self.network.trusted_peers.iter().for_each(|peer| {
                 config.peers.trusted_nodes.insert(*peer);
@@ -631,15 +668,18 @@ impl Command {
     {
         let stage_conf = &config.stages;
 
+        // 构建pipeline builder
         let mut builder = Pipeline::builder();
 
         if let Some(max_block) = max_block {
+            // 构建builder使用最大的block
             debug!(target: "reth::cli", max_block, "Configuring builder to use max block");
             builder = builder.with_max_block(max_block)
         }
 
         let (tip_tx, tip_rx) = watch::channel(H256::zero());
         use reth_revm_inspectors::stack::InspectorStackConfig;
+        // 构建revm的factory
         let factory = reth_revm::Factory::new(self.chain.clone());
 
         let stack_config = InspectorStackConfig {
@@ -661,6 +701,7 @@ impl Command {
             if continuous { HeaderSyncMode::Continuous } else { HeaderSyncMode::Tip(tip_rx) };
         let pipeline = builder
             .with_tip_sender(tip_tx)
+            // 添加stages
             .add_stages(
                 DefaultStages::new(
                     header_mode,
