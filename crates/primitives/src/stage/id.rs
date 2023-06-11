@@ -22,6 +22,7 @@ pub enum StageId {
 
 impl StageId {
     /// All supported Stages
+    /// 所有支持的Stages
     pub const ALL: [StageId; 13] = [
         StageId::Headers,
         StageId::Bodies,

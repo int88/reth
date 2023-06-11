@@ -62,6 +62,7 @@ where
 
     /// Set the tip sender.
     pub fn with_tip_sender(mut self, tip_tx: watch::Sender<H256>) -> Self {
+        // 设置tip sender
         self.tip_tx = Some(tip_tx);
         self
     }

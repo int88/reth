@@ -18,9 +18,11 @@ use triehash::sec_trie_root;
 #[serde(rename_all = "camelCase", default)]
 pub struct Genesis {
     /// The genesis header nonce.
+    /// genesis header的nonce
     #[serde(deserialize_with = "deserialize_stringified_u64")]
     pub nonce: u64,
     /// The genesis header timestamp.
+    /// genesis header的timestamp
     #[serde(deserialize_with = "deserialize_stringified_u64")]
     pub timestamp: u64,
     /// The genesis header extra data.

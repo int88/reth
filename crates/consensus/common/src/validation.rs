@@ -244,12 +244,14 @@ pub fn validate_block_standalone(
 }
 
 /// Validate block in regards to parent
+/// 针对parent校验block
 pub fn validate_header_regarding_parent(
     parent: &SealedHeader,
     child: &SealedHeader,
     chain_spec: &ChainSpec,
 ) -> Result<(), ConsensusError> {
     // Parent number is consistent.
+    // Parent number是一致的
     if parent.number + 1 != child.number {
         return Err(ConsensusError::ParentBlockNumberMismatch {
             parent_block_number: parent.number,

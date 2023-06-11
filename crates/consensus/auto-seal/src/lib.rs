@@ -48,12 +48,14 @@ pub struct AutoSealConsensus {
 
 impl AutoSealConsensus {
     /// Create a new instance of [AutoSealConsensus]
+    /// 创建一个新的[AutoSealConsensus]实例
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { chain_spec }
     }
 }
 
 impl Consensus for AutoSealConsensus {
+    // 全部返还Ok
     fn validate_header(&self, _header: &SealedHeader) -> Result<(), ConsensusError> {
         Ok(())
     }
@@ -80,6 +82,7 @@ impl Consensus for AutoSealConsensus {
 }
 
 /// Builder type for configuring the setup
+/// Builder类型用于配置setup
 pub struct AutoSealBuilder<Client, Pool> {
     client: Client,
     consensus: AutoSealConsensus,
@@ -94,6 +97,7 @@ pub struct AutoSealBuilder<Client, Pool> {
 
 impl<Client, Pool: TransactionPool> AutoSealBuilder<Client, Pool> {
     /// Creates a new builder instance to configure all parts.
+    /// 创建一个新的builder实例用来配置所有部分
     pub fn new(
         chain_spec: Arc<ChainSpec>,
         client: Client,
@@ -120,10 +124,13 @@ impl<Client, Pool: TransactionPool> AutoSealBuilder<Client, Pool> {
     }
 
     /// Consumes the type and returns all components
+    /// 消费类型并返回所有组件
     pub fn build(self) -> (AutoSealConsensus, AutoSealClient, MiningTask<Client, Pool>) {
         let Self { client, consensus, pool, mode, storage, to_engine, canon_state_notification } =
             self;
+        // 构建auto seal client
         let auto_client = AutoSealClient::new(storage.clone());
+        // 构建新的mining task
         let task = MiningTask::new(
             Arc::clone(&consensus.chain_spec),
             mode,

@@ -29,6 +29,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use tracing::{debug, trace, warn};
 
 /// A Future that listens for new ready transactions and puts new blocks into storage
+/// 一个Future，监听新的准备好的transaction，并将新的块放入storage中
 pub struct MiningTask<Client, Pool: TransactionPool> {
     /// The configured chain spec
     chain_spec: Arc<ChainSpec>,
@@ -56,6 +57,7 @@ pub struct MiningTask<Client, Pool: TransactionPool> {
 
 impl<Client, Pool: TransactionPool> MiningTask<Client, Pool> {
     /// Creates a new instance of the task
+    /// 创建task的一个新的实例
     pub(crate) fn new(
         chain_spec: Arc<ChainSpec>,
         miner: MiningMode,
@@ -80,6 +82,7 @@ impl<Client, Pool: TransactionPool> MiningTask<Client, Pool> {
     }
 
     /// Sets the pipeline events to listen on.
+    /// 监听新的pipeline events
     pub fn set_pipeline_events(&mut self, events: UnboundedReceiverStream<PipelineEvent>) {
         self.pipe_line_events = Some(events);
     }
@@ -97,6 +100,7 @@ where
         let this = self.get_mut();
 
         // this drives block production and
+        // 驱动了block的生产
         loop {
             if let Poll::Ready(transactions) = this.miner.poll(&this.pool, cx) {
                 // miner returned a set of transaction that we feed to the producer

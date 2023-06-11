@@ -302,6 +302,7 @@ table!(
 
 table!(
     /// Stores the highest synced block number and stage-specific checkpoint of each stage.
+    /// 存储最高的同步block number和每个stage特定的checkpoint
     ( SyncStage ) StageId | StageCheckpoint
 );
 
@@ -315,4 +316,5 @@ table!(
 /// List with transaction numbers.
 pub type BlockNumberList = IntegerList;
 /// Encoded stage id.
+/// 编码的stage id
 pub type StageId = String;

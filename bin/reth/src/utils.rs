@@ -16,6 +16,7 @@ use std::{collections::BTreeMap, path::Path, time::Duration};
 use tracing::info;
 
 /// Get a single header from network
+/// 从network中获取一个header
 pub async fn get_single_header<Client>(
     client: Client,
     id: BlockHashOrNumber,
@@ -26,6 +27,7 @@ where
     let request = HeadersRequest { direction: HeadersDirection::Rising, limit: 1, start: id };
 
     let (peer_id, response) =
+        // 获取header
         client.get_headers_with_priority(request, Priority::High).await?.split();
 
     if response.len() != 1 {

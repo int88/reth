@@ -27,6 +27,7 @@ use std::{
 };
 
 /// Main block executor
+/// 主要的block executor
 pub struct Executor<DB>
 where
     DB: StateProvider,
@@ -62,6 +63,7 @@ where
     }
 
     /// Configures the executor with the given inspectors.
+    /// 用给定的inspectors配置executor
     pub fn with_stack(mut self, stack: InspectorStack) -> Self {
         self.stack = stack;
         self

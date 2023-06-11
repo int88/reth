@@ -11,6 +11,7 @@ use std::{path::Path, sync::Arc};
 use tracing::debug;
 
 /// Opens up an existing database or creates a new one at the specified path.
+/// 打开一个已经存在的数据库，或者在指定的路径上创建一个新的数据库
 pub fn init_db<P: AsRef<Path>>(path: P) -> eyre::Result<Env<WriteMap>> {
     std::fs::create_dir_all(path.as_ref())?;
     let db = Env::<WriteMap>::open(path.as_ref(), reth_db::mdbx::EnvKind::RW)?;
@@ -23,6 +24,7 @@ pub fn init_db<P: AsRef<Path>>(path: P) -> eyre::Result<Env<WriteMap>> {
 #[derive(Debug, thiserror::Error, PartialEq, Eq, Clone)]
 pub enum InitDatabaseError {
     /// Attempted to reinitialize database with inconsistent genesis block
+    /// 试着重新初始化数据库，使用不一致的genesis block
     #[error("Genesis hash mismatch: expected {expected}, got {actual}")]
     GenesisHashMismatch {
         /// Expected genesis hash.
@@ -41,6 +43,7 @@ pub enum InitDatabaseError {
 }
 
 /// Write the genesis block if it has not already been written
+/// 写入genesis block，如果它还没有被写入
 #[allow(clippy::field_reassign_with_default)]
 pub fn init_genesis<DB: Database>(
     db: Arc<DB>,
@@ -54,6 +57,7 @@ pub fn init_genesis<DB: Database>(
     let tx = db.tx()?;
     if let Some((_, db_hash)) = tx.cursor_read::<tables::CanonicalHeaders>()?.first()? {
         if db_hash == hash {
+            // genesis已经写入，跳过
             debug!("Genesis already written, skipping.");
             return Ok(hash)
         }
@@ -66,10 +70,12 @@ pub fn init_genesis<DB: Database>(
     let tx = db.tx_mut()?;
 
     // use transaction to insert genesis header
+    // 使用transaction来插入genesis header
     let transaction = Transaction::new_raw(&db, tx);
     insert_genesis_hashes(transaction, genesis)?;
 
     // Insert header
+    // 插入header
     let tx = db.tx_mut()?;
     tx.put::<tables::CanonicalHeaders>(0, hash)?;
     tx.put::<tables::HeaderNumbers>(hash, 0)?;
@@ -80,10 +86,12 @@ pub fn init_genesis<DB: Database>(
     insert_genesis_state::<DB>(&tx, genesis)?;
 
     // insert sync stage
+    // 插入sync stage
     for stage in StageId::ALL.iter() {
         tx.put::<tables::SyncStage>(stage.to_string(), Default::default())?;
     }
 
+    // 对transaction进行commit
     tx.commit()?;
     Ok(hash)
 }

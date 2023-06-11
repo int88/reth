@@ -124,27 +124,36 @@ impl PayloadBuilderHandle {
 }
 
 /// A service that manages payload building tasks.
+/// 一个service用来管理payload building tasks
 ///
 /// This type is an endless future that manages the building of payloads.
+/// 这个类型是一个无尽的future，用来管理payloads的构建
 ///
 /// It tracks active payloads and their build jobs that run in the worker pool.
+/// 它追踪active payloads和它们的build jobs，这些jobs在worker pool中运行
 ///
 /// By design, this type relies entirely on the [PayloadJobGenerator] to create new payloads and
 /// does know nothing about how to build them, itt just drives the payload jobs.
+/// 按照设计，这个类型依赖于[PayloadJobGenerator]来创建新的payloads，并且不知道如何构建它们，它只是驱动payload jobs
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct PayloadBuilderService<Gen>
 where
     Gen: PayloadJobGenerator,
 {
     /// The type that knows how to create new payloads.
+    /// 这个类型知道如何创建新的payloads
     generator: Gen,
     /// All active payload jobs.
+    /// 所有的active payload jobs
     payload_jobs: Vec<(Gen::Job, PayloadId)>,
     /// Copy of the sender half, so new [`PayloadBuilderHandle`] can be created on demand.
+    /// 拷贝发送者的一半，所以可以根据需要创建新的[`PayloadBuilderHandle`]
     _service_tx: mpsc::UnboundedSender<PayloadServiceCommand>,
     /// Receiver half of the command channel.
+    /// 接收command channel的一半
     command_rx: UnboundedReceiverStream<PayloadServiceCommand>,
     /// metrics for the payload builder service
+    /// 关于payload builder service的metrics
     metrics: PayloadBuilderServiceMetrics,
 }
 

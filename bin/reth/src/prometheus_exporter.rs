@@ -65,6 +65,7 @@ async fn start_endpoint<F: Fn() + Send + Sync + 'static>(
 }
 
 /// Installs Prometheus as the metrics recorder and serves it over HTTP with database metrics.
+/// 安装Prometheus作为metrics recorder，并使用数据库metrics在HTTP上提供它
 pub(crate) async fn initialize_with_db_metrics(
     listen_addr: SocketAddr,
     db: Arc<Env<WriteMap>>,

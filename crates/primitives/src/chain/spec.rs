@@ -143,6 +143,7 @@ pub struct ChainSpec {
     pub genesis_hash: Option<H256>,
 
     /// The genesis block
+    /// genesis block的信息
     pub genesis: Genesis,
 
     /// The block at which [Hardfork::Paris] was activated and the final difficulty at this block.

@@ -278,6 +278,7 @@ where
         };
 
         if let Some(target) = target {
+            // 设置pipeline的sync target
             this.sync.set_pipeline_sync_target(target);
         }
 

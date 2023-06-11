@@ -14,16 +14,21 @@ use tokio::{sync::mpsc::Receiver, time::Interval};
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 
 /// Mode of operations for the `Miner`
+/// Miner的操作模式
 #[derive(Debug)]
 pub enum MiningMode {
     /// A miner that does nothing
+    /// 一个miner什么都不做
     None,
     /// A miner that listens for new transactions that are ready.
+    /// 一个miner监听新的准备好的交易
     ///
     /// Either one transaction will be mined per block, or any number of transactions will be
     /// allowed
+    /// 一个块将被挖掘一次，或者允许任意数量的交易
     Auto(ReadyTransactionMiner),
     /// A miner that constructs a new block every `interval` tick
+    /// 一个miner构建一个新的block，每个`interval` tick
     FixedBlockTime(FixedBlockTimeMiner),
 }
 

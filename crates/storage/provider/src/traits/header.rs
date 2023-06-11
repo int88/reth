@@ -4,6 +4,7 @@ use reth_primitives::{BlockHash, BlockHashOrNumber, BlockNumber, Header, SealedH
 use std::ops::RangeBounds;
 
 /// Client trait for fetching `Header` related data.
+/// 用于获取`Header`相关数据的client trait
 #[auto_impl(&, Arc)]
 pub trait HeaderProvider: Send + Sync {
     /// Check if block is known

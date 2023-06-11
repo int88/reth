@@ -1,4 +1,5 @@
 //! Trait abstractions used by the payload crate.
+//! 由payload crate使用的trait抽象
 
 use crate::{error::PayloadBuilderError, BuiltPayload, PayloadBuilderAttributes};
 use std::{future::Future, sync::Arc};
@@ -56,18 +57,24 @@ pub enum KeepPayloadJobAlive {
 }
 
 /// A type that knows how to create new jobs for creating payloads.
+/// 一个类型知道如何创建新的jobs来创建payloads
 pub trait PayloadJobGenerator: Send + Sync {
     /// The type that manages the lifecycle of a payload.
+    /// 这个类型管理payload的生命周期
     ///
     /// This type is a Stream that yields better payloads.
+    /// 这个类型是一个Stream，它产生更好的payloads
     type Job: PayloadJob;
 
     /// Creates the initial payload and a new [PayloadJob] that yields better payloads.
+    /// 创建初始的payload和一个新的PayloadJob，它产生更好的payloads
     ///
     /// This is called when the CL requests a new payload job via a fork choice update.
+    /// 这是当CL通过fork choice update请求一个新的payload job时调用的
     ///
     /// Note: this is expected to build a new (empty) payload without transactions, so it can be
     /// returned directly. when asked for
+    /// 注意：这期望构建一个新的（空的）payload，没有transactions，所以它可以直接返回。当被要求时
     fn new_payload_job(
         &self,
         attr: PayloadBuilderAttributes,

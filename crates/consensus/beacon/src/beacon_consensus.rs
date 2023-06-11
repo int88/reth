@@ -28,6 +28,7 @@ impl BeaconConsensus {
 
 impl Consensus for BeaconConsensus {
     fn validate_header(&self, header: &SealedHeader) -> Result<(), ConsensusError> {
+        // 单独校验header
         validation::validate_header_standalone(header, &self.chain_spec)?;
         Ok(())
     }
@@ -84,6 +85,7 @@ impl Consensus for BeaconConsensus {
     }
 
     fn validate_block(&self, block: &SealedBlock) -> Result<(), ConsensusError> {
+        // 单独校验block
         validation::validate_block_standalone(block, &self.chain_spec)
     }
 }

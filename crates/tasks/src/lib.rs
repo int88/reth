@@ -189,15 +189,19 @@ impl Future for TaskManager {
 pub struct PanickedTaskError(&'static str);
 
 /// A type that can spawn new tokio tasks
+/// 一个类型，可以生成新的tokio tasks
 #[derive(Debug, Clone)]
 pub struct TaskExecutor {
     /// Handle to the tokio runtime this task manager is associated with.
+    /// 这个task manager关联的tokio runtime的handle
     ///
     /// See [`Handle`] docs.
     handle: Handle,
     /// Receiver of the shutdown signal.
+    /// shutdown signal的接收者
     on_shutdown: Shutdown,
     /// Sender half for sending panic signals to this type
+    /// Sender部分，用于向此类型发送panic信号
     panicked_tasks_tx: UnboundedSender<&'static str>,
     // Task Executor Metrics
     metrics: TaskExecutorMetrics,

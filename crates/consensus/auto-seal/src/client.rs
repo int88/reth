@@ -1,4 +1,5 @@
 //! This includes download client implementations for auto sealing miners.
+//! 这个包含download client的实现，对于自动封装的miner
 use crate::Storage;
 use reth_interfaces::p2p::{
     bodies::client::{BodiesClient, BodiesFut},
@@ -14,9 +15,11 @@ use tracing::{trace, warn};
 
 /// A download client that polls the miner for transactions and assembles blocks to be returned in
 /// the download process.
+/// 一个download client，轮询miner来获取交易，并组装块来在下载过程中返回。
 ///
 /// When polled, the miner will assemble blocks when miners produce ready transactions and store the
 /// blocks in memory.
+/// 当轮询时，miner会组装块，当miner产生准备好的交易并将块存储在内存中时。
 #[derive(Debug, Clone)]
 pub struct AutoSealClient {
     storage: Storage,
@@ -48,6 +51,7 @@ impl AutoSealClient {
 
         for _ in 0..limit {
             // fetch from storage
+            // 从storage中获取
             if let Some(header) = storage.header_by_hash_or_number(block) {
                 match direction {
                     HeadersDirection::Falling => block = header.parent_hash.into(),

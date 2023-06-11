@@ -490,12 +490,16 @@ impl Ord for OrderedBodiesResponse {
 #[derive(Debug, Clone)]
 pub struct BodiesDownloaderBuilder {
     /// The batch size of non-empty blocks per one request
+    /// 每次请求的非空块的批量大小
     pub request_limit: u64,
     /// The maximum number of block bodies returned at once from the stream
+    /// 一次性从流中返回的最大块体数
     pub stream_batch_size: usize,
     /// Maximum amount of received bodies to buffer internally.
+    /// 用于内部缓存的最大块体数
     pub max_buffered_blocks: usize,
     /// The maximum number of requests to send concurrently.
+    /// 并行发送的最大请求数
     pub concurrent_requests_range: RangeInclusive<usize>,
 }
 

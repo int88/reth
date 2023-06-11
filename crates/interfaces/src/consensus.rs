@@ -39,10 +39,13 @@ pub trait Consensus: Debug + Send + Sync {
 
     /// Validate if the header is correct and follows the consensus specification, including
     /// computed properties (like total difficulty).
+    /// 校验是否header正确，是否遵循共识规范，包括计算属性（如总难度）
     ///
     /// Some consensus engines may want to do additional checks here.
+    /// 有的共识引擎可能想在这里做额外的检查
     ///
     /// Note: validating headers with TD does not include other Consensus validation.
+    /// 注意：校验带有TD的headers不包括其他共识校验
     fn validate_header_with_total_difficulty(
         &self,
         header: &Header,

@@ -65,12 +65,14 @@ impl<DB: Clone> Clone for ShareableDatabase<DB> {
 
 impl<DB: Database> ShareableDatabase<DB> {
     /// Storage provider for latest block
+    /// 对于最新的block的storage provider
     pub fn latest(&self) -> Result<StateProviderBox<'_>> {
         trace!(target: "providers::db", "Returning latest state provider");
         Ok(Box::new(LatestStateProvider::new(self.db.tx()?)))
     }
 
     /// Storage provider for state at that given block
+    /// Storage provider对于给定的block的state
     pub fn history_by_block_number(
         &self,
         mut block_number: BlockNumber,
@@ -91,6 +93,7 @@ impl<DB: Database> ShareableDatabase<DB> {
     }
 
     /// Storage provider for state at that given block hash
+    /// Storage provider对于给定的block hash的state
     pub fn history_by_block_hash(&self, block_hash: BlockHash) -> Result<StateProviderBox<'_>> {
         let provider = self.provider()?;
 

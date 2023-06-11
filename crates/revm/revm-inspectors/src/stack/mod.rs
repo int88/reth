@@ -30,9 +30,11 @@ pub enum Hook {
 }
 
 /// An inspector that calls multiple inspectors in sequence.
+/// 一个inspector，按顺序调用多个inspector
 ///
 /// If a call to an inspector returns a value other than [InstructionResult::Continue] (or
 /// equivalent) the remaining inspectors are not called.
+/// 如果对inspector的调用返回的值不是[InstructionResult::Continue]（或等效值），则不会调用剩余的inspector
 #[derive(Default, Clone)]
 pub struct InspectorStack {
     /// An inspector that prints the opcode traces to the console.
@@ -75,9 +77,12 @@ impl InspectorStack {
 
 #[derive(Default)]
 /// Configuration for the inspectors.
+/// 对于inspectors的配置
 pub struct InspectorStackConfig {
     /// Enable revm inspector printer.
+    /// 使能revm的inspector printer
     /// In execution this will print opcode level traces directly to console.
+    /// 在执行中，这会直接将opcode级别的跟踪打印到控制台
     pub use_printer_tracer: bool,
 
     /// Hook on a specific block or transaction.

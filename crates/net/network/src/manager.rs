@@ -891,9 +891,11 @@ where
 }
 
 /// (Non-exhaustive) Events emitted by the network that are of interest for subscribers.
+/// (非穷尽)网络发出的对订阅者感兴趣的事件。
 ///
 /// This includes any event types that may be relevant to tasks, for metrics, keep track of peers
 /// etc.
+/// 这包括可能与任务相关的任何事件类型，用于度量，跟踪对等体等。
 #[derive(Debug, Clone)]
 pub enum NetworkEvent {
     /// Closed the peer session.

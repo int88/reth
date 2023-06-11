@@ -76,8 +76,10 @@ use reth_net_nat::ResolveNatInterval;
 pub use reth_net_nat::{external_ip, NatResolver};
 
 /// The default port for discv4 via UDP
+/// 对于discv4的默认UDP端口
 ///
 /// Note: the default TCP port is the same.
+/// 注意：默认的TCP端口是一样的。
 pub const DEFAULT_DISCOVERY_PORT: u16 = 30303;
 
 /// The maximum size of any packet is 1280 bytes.

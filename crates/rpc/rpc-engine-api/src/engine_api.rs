@@ -44,6 +44,7 @@ where
     Client: HeaderProvider + BlockProvider + StateProviderFactory + EvmEnvProvider + 'static,
 {
     /// Create new instance of [EngineApi].
+    /// 创建[EngineApi]的新实例
     pub fn new(
         client: Client,
         chain_spec: Arc<ChainSpec>,

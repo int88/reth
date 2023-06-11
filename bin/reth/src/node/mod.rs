@@ -1,4 +1,5 @@
 //! Main node command
+//! 主要的node命令，启动client
 //!
 //! Starts the client
 use crate::{
@@ -153,6 +154,7 @@ impl Command {
 
         // Raise the fd limit of the process.
         // Does not do anything on windows.
+        // 提高进程的fd limit，对于windows不做任何事情
         raise_fd_limit();
 
         // add network name to data dir
@@ -163,6 +165,7 @@ impl Command {
         let mut config: Config = self.load_config(config_path.clone())?;
 
         // always store reth.toml in the data dir, not the chain specific data dir
+        // 总是存储reth.toml在data dir，而不是chain specific data dir
         info!(target: "reth::cli", path = ?config_path, "Configuration loaded");
 
         // 打开数据库
@@ -193,6 +196,7 @@ impl Command {
         let tree_externals = TreeExternals::new(
             db.clone(),
             Arc::clone(&consensus),
+            // 构建external factory
             Factory::new(self.chain.clone()),
             Arc::clone(&self.chain),
         );
@@ -200,6 +204,7 @@ impl Command {
         let tree_config = BlockchainTreeConfig::default();
         // The size of the broadcast is twice the maximum reorg depth, because at maximum reorg
         // depth at least N blocks must be sent at once.
+        // 广播的大小是最大的reorg depth的两倍，因为在最大的reorg depth，至少N个blocks必须一次发送
         let (canon_state_notification_sender, _receiver) =
             tokio::sync::broadcast::channel(tree_config.max_reorg_depth() as usize * 2);
         // 构建blockchain tree
@@ -214,6 +219,7 @@ impl Command {
         let shareable_db = ShareableDatabase::new(Arc::clone(&db), Arc::clone(&self.chain));
         let blockchain_db = BlockchainProvider::new(shareable_db, blockchain_tree.clone())?;
 
+        // 构建transaction pool
         let transaction_pool = reth_transaction_pool::Pool::eth_pool(
             EthTransactionValidator::new(blockchain_db.clone(), Arc::clone(&self.chain)),
             Default::default(),
@@ -231,6 +237,7 @@ impl Command {
                 // 执行tool maintenance
                 Box::pin(async move {
                     reth_transaction_pool::maintain::maintain_transaction_pool(
+                        // client是blockchain db的克隆
                         client,
                         pool,
                         chain_events,
@@ -238,10 +245,12 @@ impl Command {
                     .await
                 }),
             );
+            // 生成了txpool maintenance task
             debug!(target: "reth::cli", "Spawned txpool maintenance task");
         }
 
         info!(target: "reth::cli", "Connecting to P2P network");
+        // 连接到p2p network
         let network_secret_path =
             self.network.p2p_secret_key.clone().unwrap_or_else(|| data_dir.p2p_secret_path());
         debug!(target: "reth::cli", ?network_secret_path, "Loading p2p key file");
@@ -286,6 +295,7 @@ impl Command {
                 .max_gas_limit(self.builder.max_gas_limit),
             Arc::clone(&self.chain),
         );
+        // 构建payload builder service
         let (payload_service, payload_builder) = PayloadBuilderService::new(payload_generator);
 
         debug!(target: "reth::cli", "Spawning payload builder service");
@@ -315,6 +325,7 @@ impl Command {
                 .await?;
 
             let pipeline_events = pipeline.events();
+            // 监听pipeline events
             task.set_pipeline_events(pipeline_events);
             // 生成auto mine task
             debug!(target: "reth::cli", "Spawning auto mine task");
@@ -404,6 +415,7 @@ impl Command {
                 network.clone(),
                 ctx.task_executor.clone(),
                 blockchain_tree,
+                // 包含了engine api
                 engine_api,
                 jwt_secret,
             )
@@ -462,6 +474,7 @@ impl Command {
             .build(client.clone(), Arc::clone(&consensus))
             .into_task_with(task_executor);
 
+        // 构建body downloader
         let body_downloader = BodiesDownloaderBuilder::from(config.stages.bodies)
             .build(client, Arc::clone(&consensus), db.clone())
             .into_task_with(task_executor);
@@ -512,6 +525,7 @@ impl Command {
 
     /// Spawns the configured network and associated tasks and returns the [NetworkHandle] connected
     /// to that network.
+    /// 生成配置的network和相关的tasks，并且返回连接到network的[NetworkHandle]
     async fn start_network<C, Pool>(
         &self,
         config: NetworkConfig<C>,
@@ -568,9 +582,12 @@ impl Command {
     }
 
     /// Attempt to look up the block number for the tip hash in the database.
+    /// 试着查找tip hash的block number在database中
     /// If it doesn't exist, download the header and return the block number.
+    /// 如果不存在，下载header并且返回block number
     ///
     /// NOTE: The download is attempted with infinite retries.
+    /// 注意：下载尝试使用无限的重试
     async fn lookup_or_fetch_tip<DB, Client>(
         &self,
         db: &DB,
@@ -585,8 +602,10 @@ impl Command {
     }
 
     /// Attempt to look up the block with the given number and return the header.
+    /// 试着查找给定number的block并且返回header
     ///
     /// NOTE: The download is attempted with infinite retries.
+    /// 注意：下载尝试使用无限的重试
     async fn fetch_tip<DB, Client>(
         &self,
         db: &DB,
@@ -606,6 +625,7 @@ impl Command {
         })??;
 
         // try to look up the header in the database
+        // 试着在数据库中查找header
         if let Some(header) = header {
             info!(target: "reth::cli", ?tip, "Successfully looked up tip block in the database");
             return Ok(header.seal_slow())
@@ -613,6 +633,7 @@ impl Command {
 
         info!(target: "reth::cli", ?tip, "Fetching tip block from the network.");
         loop {
+            // 试着从network中查找tip
             match get_single_header(&client, tip).await {
                 Ok(tip_header) => {
                     info!(target: "reth::cli", ?tip, "Successfully fetched tip");
@@ -736,6 +757,8 @@ impl Command {
 
 /// Drives the [NetworkManager] future until a [Shutdown](reth_tasks::shutdown::Shutdown) signal is
 /// received. If configured, this writes known peers to `persistent_peers_file` afterwards.
+/// 派生[NetworkManager] future直到[Shutdown](reth_tasks::shutdown::Shutdown)信号被接收。
+/// 如果配置了的话，这将会写入known peers到`persistent_peers_file`
 async fn run_network_until_shutdown<C>(
     shutdown: reth_tasks::shutdown::Shutdown,
     network: NetworkManager<C>,
