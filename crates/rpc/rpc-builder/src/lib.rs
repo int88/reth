@@ -179,19 +179,26 @@ where
 }
 
 /// A builder type to configure the RPC module: See [RpcModule]
+/// 一个builder类型用来配置RPC模块
 ///
 /// This is the main entrypoint for up RPC servers.
+/// 这是启动RPC服务器的主要入口
 #[derive(Debug, Clone)]
 pub struct RpcModuleBuilder<Client, Pool, Network, Tasks, Events> {
     /// The Client type to when creating all rpc handlers
+    /// 当创建所有rpc handlers时，使用的Client类型
     client: Client,
     /// The Pool type to when creating all rpc handlers
+    /// 当创建所有rpc handlers时，使用的Pool类型
     pool: Pool,
     /// The Network type to when creating all rpc handlers
+    /// 当创建所有rpc handlers时，使用的Network类型
     network: Network,
     /// How additional tasks are spawned, for example in the eth pubsub namespace
+    /// 额外的任务是如何生成的，例如在eth pubsub命名空间中
     executor: Tasks,
     /// Provides access to chain events, such as new blocks, required by pubsub.
+    /// 提供对于链事件的访问，例如新的blocks，pubsub所需的
     events: Events,
 }
 

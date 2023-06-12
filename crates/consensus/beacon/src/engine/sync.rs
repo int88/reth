@@ -52,6 +52,7 @@ where
     /// 缓存的events，直到manager被轮询并且pipeline空闲
     queued_events: VecDeque<EngineSyncEvent>,
     /// If enabled, the pipeline will be triggered continuously, as soon as it becomes idle
+    /// 如果使能的话，pipeline将会连续触发，一旦它变得空闲
     run_pipeline_continuously: bool,
     /// Max block after which the consensus engine would terminate the sync. Used for debugging
     /// purposes.
@@ -86,6 +87,7 @@ where
     }
 
     /// Sets the max block value for testing
+    /// 设置max block value用于测试
     #[cfg(test)]
     pub(crate) fn set_max_block(&mut self, block: BlockNumber) {
         self.max_block = Some(block);
@@ -102,6 +104,7 @@ where
     }
 
     /// Returns whether or not the sync controller is set to run the pipeline continuously.
+    /// 返回是否sync controller被设置为连续运行pipeline
     pub(crate) fn run_pipeline_continuously(&self) -> bool {
         self.run_pipeline_continuously
     }
@@ -159,8 +162,10 @@ where
     }
 
     /// Advances the pipeline state.
+    /// 推动pipeline state
     ///
     /// This checks for the result in the channel, or returns pending if the pipeline is idle.
+    /// 它检查channel中的结果，或者如果pipeline是空闲的，返回pending
     fn poll_pipeline(&mut self, cx: &mut Context<'_>) -> Poll<EngineSyncEvent> {
         let res = match self.pipeline_state {
             PipelineState::Idle(_) => return Poll::Pending,
@@ -178,6 +183,7 @@ where
             }
             Err(_) => {
                 // failed to receive the pipeline
+                // 接收pipeline失败
                 EngineSyncEvent::PipelineTaskDropped
             }
         };
@@ -230,30 +236,35 @@ where
 
         loop {
             // drain buffered events first if pipeline is not running
+            // 首先排空缓冲的events，如果pipeline没有运行
             if self.is_pipeline_idle() {
                 if let Some(event) = self.queued_events.pop_front() {
                     return Poll::Ready(event)
                 }
             } else {
                 // advance the pipeline
+                // 移动pipeline
                 if let Poll::Ready(event) = self.poll_pipeline(cx) {
                     return Poll::Ready(event)
                 }
             }
 
             // advance all requests
+            // 移动所有的requests
             for idx in (0..self.inflight_full_block_requests.len()).rev() {
                 let mut request = self.inflight_full_block_requests.swap_remove(idx);
                 if let Poll::Ready(block) = request.poll_unpin(cx) {
                     self.queued_events.push_back(EngineSyncEvent::FetchedFullBlock(block));
                 } else {
                     // still pending
+                    // 依然处于Pending
                     self.inflight_full_block_requests.push(request);
                 }
             }
 
             if !self.pipeline_state.is_idle() || self.queued_events.is_empty() {
                 // can not make any progress
+                // 不能取得任何进展
                 return Poll::Pending
             }
         }
@@ -307,15 +318,20 @@ pub(crate) enum EngineSyncEvent {
 /// running, it acquires the write lock over the database. This means that we cannot forward to the
 /// blockchain tree any messages that would result in database writes, since it would result in a
 /// deadlock.
+/// 注意：这两个states之间的不同是非常重要的，因为当pipeline正在运行时，它会获取数据库的写锁。
+/// 这意味着我们不能将任何会导致数据库写入的消息转发到blockchain tree，因为这会导致死锁
 enum PipelineState<DB: Database> {
     /// Pipeline is idle.
+    /// Pipeline处于idle状态
     Idle(Option<Pipeline<DB>>),
     /// Pipeline is running and waiting for a response
+    /// Pipeline正在运行并且等待一个response
     Running(oneshot::Receiver<PipelineWithResult<DB>>),
 }
 
 impl<DB: Database> PipelineState<DB> {
     /// Returns `true` if the state matches idle.
+    /// 返回`true`，如果state匹配idle
     fn is_idle(&self) -> bool {
         matches!(self, PipelineState::Idle(_))
     }

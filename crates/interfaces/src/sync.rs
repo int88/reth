@@ -34,6 +34,7 @@ pub trait NetworkSyncUpdater: std::fmt::Debug + Send + Sync + 'static {
 }
 
 /// The state the network is currently in when it comes to synchronization.
+/// network的状态，当它来到同步时
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum SyncState {
     /// Node sync is complete.

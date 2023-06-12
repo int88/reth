@@ -1,4 +1,5 @@
 //! Support for handling events emitted by node components.
+//! 支持处理节点组件发出的事件。
 
 use futures::Stream;
 use reth_beacon_consensus::BeaconConsensusEngineEvent;
@@ -16,12 +17,16 @@ use tokio::time::Interval;
 use tracing::{debug, info};
 
 /// The current high-level state of the node.
+/// 当前的节点高级状态
 struct NodeState {
     /// Connection to the network
+    /// 到网络的连接
     network: Option<NetworkHandle>,
     /// The stage currently being executed.
+    /// 当前正在执行的stage
     current_stage: Option<StageId>,
     /// The current checkpoint of the executing stage.
+    /// 当前执行的stage的checkpoint
     current_checkpoint: StageCheckpoint,
 }
 
@@ -38,6 +43,7 @@ impl NodeState {
     /// 处理由pipeline发出的event
     fn handle_pipeline_event(&mut self, event: PipelineEvent) {
         match event {
+            // 仅仅只是记录日志
             PipelineEvent::Running { pipeline_position, pipeline_total, stage_id, checkpoint } => {
                 let notable = self.current_stage.is_none();
                 self.current_stage = Some(stage_id);
@@ -86,9 +92,11 @@ impl NodeState {
 
     fn handle_network_event(&mut self, event: NetworkEvent) {
         match event {
+            // session建立
             NetworkEvent::SessionEstablished { peer_id, status, .. } => {
                 info!(target: "reth::cli", connected_peers = self.num_connected_peers(), peer_id = %peer_id, best_block = %status.blockhash, "Peer connected");
             }
+            // session关闭
             NetworkEvent::SessionClosed { peer_id, reason } => {
                 let reason = reason.map(|s| s.to_string()).unwrap_or_else(|| "None".to_string());
                 debug!(target: "reth::cli", connected_peers = self.num_connected_peers(), peer_id = %peer_id, %reason, "Peer disconnected.");
@@ -116,10 +124,13 @@ impl NodeState {
 #[derive(Debug)]
 pub enum NodeEvent {
     /// A network event.
+    /// 一个network事件
     Network(NetworkEvent),
     /// A sync pipeline event.
+    /// 一个同步的pipeline事件
     Pipeline(PipelineEvent),
     /// A consensus engine event.
+    /// 一个consensus engine事件
     ConsensusEngine(BeaconConsensusEngineEvent),
 }
 
@@ -157,6 +168,7 @@ pub async fn handle_events(
 }
 
 /// Handles events emitted by the node and logs them accordingly.
+/// 处理来自node发出的events，并相应地记录它们。
 #[pin_project::pin_project]
 struct EventHandler<St> {
     state: NodeState,
@@ -186,6 +198,7 @@ where
 
         while let Poll::Ready(Some(event)) = this.events.as_mut().poll_next(cx) {
             match event {
+                // 处理node event
                 NodeEvent::Network(event) => {
                     this.state.handle_network_event(event);
                 }

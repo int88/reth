@@ -49,6 +49,7 @@ pub trait BlockProvider:
     BlockNumProvider + HeaderProvider + TransactionsProvider + ReceiptProvider + Send + Sync
 {
     /// Tries to find in the given block source.
+    /// 试着查找给定的block source
     ///
     /// Note: this only operates on the hash because the number might be ambiguous.
     ///

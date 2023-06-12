@@ -17,6 +17,7 @@ pub(crate) struct PipelineProgress {
 
 impl PipelineProgress {
     pub(crate) fn update(&mut self, progress: BlockNumber) {
+        // 更新progress
         self.progress = Some(progress);
         self.minimum_progress = opt::min(self.minimum_progress, progress);
         self.maximum_progress = opt::max(self.maximum_progress, progress);

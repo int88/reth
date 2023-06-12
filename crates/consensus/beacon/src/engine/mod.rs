@@ -900,6 +900,7 @@ where
             EngineSyncEvent::FetchedFullBlock(block) => {
                 trace!(target: "consensus::engine", hash=?block.hash, "Fetched full block");
                 // it is guaranteed that the pipeline is not active at this point.
+                // 确保pipeline此时不活动。
 
                 // TODO(mattsse): better error handling and start closing the gap if there's any by
                 //  closing the gap either via pipeline, or by fetching the blocks via block number
@@ -909,21 +910,25 @@ where
                     .try_insert_new_payload(block)
                     .map(|status| status.is_valid())
                     .unwrap_or_default()
-                {
+                { 
                     // payload is valid
+                    // payload是合法的
                     self.sync_state_updater.update_sync_state(SyncState::Idle);
                 } else if let Some(target) = self.forkchoice_state_tracker.sync_target() {
                     // if the payload is invalid, we run the pipeline to the head block.
+                    // 如果payload是不合法的，我们运行pipeline到head block。
                     self.sync.set_pipeline_sync_target(target);
                 }
             }
             EngineSyncEvent::PipelineStarted(target) => {
+                // 启动了pipeline
                 trace!(target: "consensus::engine", ?target, continuous = target.is_none(), "Started the pipeline");
                 self.metrics.pipeline_runs.increment(1);
                 self.sync_state_updater.update_sync_state(SyncState::Syncing);
             }
             EngineSyncEvent::PipelineTaskDropped => {
                 error!(target: "consensus::engine", "Failed to receive spawned pipeline");
+                // 接收spawned pipeline失败
                 return Some(Err(BeaconConsensusEngineError::PipelineChannelClosed))
             }
             EngineSyncEvent::PipelineFinished { result, reached_max_block } => {
@@ -933,6 +938,7 @@ where
                         if reached_max_block {
                             // Terminate the sync early if it's reached the maximum user
                             // configured block.
+                            // 如果到达了最大的用户配置块，尽早结束同步。
                             return Some(Ok(()))
                         }
 
@@ -940,11 +946,13 @@ where
                             trace!(target: "consensus::engine", hash=?bad_block.hash, "Bad block detected in unwind");
 
                             // update the `invalid_headers` cache with the new invalid headers
+                            // 更新`invalid_headers` cache与新的invalid headers
                             self.invalid_headers.insert(bad_block);
                             return None
                         }
 
                         // update the canon chain if continuous is enabled
+                        // 更新canon chain，如果启用了continuous
                         if self.sync.run_pipeline_continuously() {
                             let max_block = ctrl.progress().unwrap_or_default();
                             let max_header = match self.blockchain.sealed_header(max_block) {
@@ -1137,10 +1145,12 @@ mod tests {
 
     type TestBeaconConsensusEngine = BeaconConsensusEngine<
         Arc<Env<WriteMap>>,
+        // 指定的blockchain tree engine
         BlockchainProvider<
             Arc<Env<WriteMap>>,
             ShareableBlockchainTree<Arc<Env<WriteMap>>, TestConsensus, TestExecutorFactory>,
         >,
+        // Noop Full Block client
         NoopFullBlockClient,
     >;
 
@@ -1268,6 +1278,7 @@ mod tests {
             // 转发consensus engine结果失败
             tx.send(result).expect("failed to forward consensus engine result");
         });
+        // 返回rx
         rx
     }
 
@@ -1394,6 +1405,7 @@ mod tests {
         let (mut consensus_engine, env) = setup_consensus_engine(
             chain_spec,
             VecDeque::from([Ok(ExecOutput {
+                // 到达了max block
                 checkpoint: StageCheckpoint::new(max_block),
                 done: true,
             })]),

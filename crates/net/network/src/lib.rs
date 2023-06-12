@@ -24,26 +24,36 @@
 //!      [`TransactionsManager`](crate::transactions::TransactionsManager) future that:
 //!
 //!        * Responds to incoming transaction related requests
+//!        * 对传入的transaction相关的请求进行响应
 //!        * Requests missing transactions from the `Network`
+//!        * 从`Network`请求缺失的transactions
 //!        * Broadcasts new transactions received from the
 //!          [`TransactionPool`](reth_transaction_pool::TransactionPool) over the `Network`
+//!        * 广播从[`TransactionPool`](reth_transaction_pool::TransactionPool)接收到的新transactions
 //!
 //!    - `ETH request Task`: is a spawned
 //!      [`EthRequestHandler`](crate::eth_requests::EthRequestHandler) future that:
 //!
 //!        * Responds to incoming ETH related requests: `Headers`, `Bodies`
+//!        * 对于传入的ETH相关的请求进行响应：`Headers`, `Bodies`
 //!
 //!    - `Discovery Task`: is a spawned [`Discv4`](reth_discv4::Discv4) future that handles peer
 //!      discovery and emits new peers to the `Network`
+//!    - `Discovery Task`是一个[`Discv4`](reth_discv4::Discv4) future，用于处理peer发现并将新的peer发送到`Network`
 //!
 //!    - [`NetworkManager`] task advances the state of the `Network`, which includes:
 //!
 //!        * Initiating new _outgoing_ connections to discovered peers
+//!        * 对于发现的peer发起新的_outgoing_连接
 //!        * Handling _incoming_ TCP connections from peers
+//!        * 处理来自peer的_incoming_ TCP连接
 //!        * Peer management
+//!        * Peer管理
 //!        * Route requests:
 //!             - from remote peers to corresponding tasks
+//!             - 从remote peers到对应的tasks
 //!             - from local to remote peers
+//!             - 从本地到remote peers
 //!
 //! ## Usage
 //!

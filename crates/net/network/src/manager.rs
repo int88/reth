@@ -923,7 +923,9 @@ pub enum NetworkEvent {
         version: EthVersion,
     },
     /// Event emitted when a new peer is added
+    /// 当一个新的peer被添加，发出的事件
     PeerAdded(PeerId),
     /// Event emitted when a new peer is removed
+    /// 当一个新的peer被移除，发出的事件
     PeerRemoved(PeerId),
 }

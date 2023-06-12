@@ -54,6 +54,7 @@ where
 }
 
 /// A future that downloads a full block from the network.
+/// 一个future用来从网络中下载完整的区块
 #[must_use = "futures do nothing unless polled"]
 pub struct FetchFullBlockFuture<Client>
 where

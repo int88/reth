@@ -74,6 +74,7 @@ pub mod shutdown;
 /// The [TaskSpawner] trait is [DynClone] so `Box<dyn TaskSpawner>` are also `Clone`.
 pub trait TaskSpawner: Send + Sync + Unpin + std::fmt::Debug + DynClone {
     /// Spawns the task onto the runtime.
+    /// 生成task到runtime
     /// See also [`Handle::spawn`].
     fn spawn(&self, fut: BoxFuture<'static, ()>) -> JoinHandle<()>;
 
@@ -81,9 +82,11 @@ pub trait TaskSpawner: Send + Sync + Unpin + std::fmt::Debug + DynClone {
     fn spawn_critical(&self, name: &'static str, fut: BoxFuture<'static, ()>) -> JoinHandle<()>;
 
     /// Spawns a blocking task onto the runtime.
+    /// 生成一个阻塞的task到runtime
     fn spawn_blocking(&self, fut: BoxFuture<'static, ()>) -> JoinHandle<()>;
 
     /// This spawns a critical blocking task onto the runtime.
+    /// 这生成一个阻塞的critical task到runtime
     fn spawn_critical_blocking(
         &self,
         name: &'static str,

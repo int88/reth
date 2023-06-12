@@ -39,6 +39,7 @@ pub enum PipelineEvent {
         result: ExecOutput,
     },
     /// Emitted when a stage is about to be unwound.
+    /// 当一个stage准备被unwind的时候，发出
     Unwinding {
         /// The stage that is about to be unwound.
         stage_id: StageId,
@@ -46,6 +47,7 @@ pub enum PipelineEvent {
         input: UnwindInput,
     },
     /// Emitted when a stage has been unwound.
+    /// 当一个stage已经被unwind的时候，发出
     Unwound {
         /// The stage that was unwound.
         stage_id: StageId,

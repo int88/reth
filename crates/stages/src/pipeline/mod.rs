@@ -195,6 +195,7 @@ where
                 self.progress
                     .minimum_progress
                     .zip(self.max_block)
+                    // 如果大于target，返回true
                     .map_or(false, |(progress, target)| progress >= target)
             {
                 trace!(
@@ -219,16 +220,19 @@ where
     /// 如果任何stage在执行时不成功，我们继续解开。这将撤销整个pipeline的进度，直到导致错误的block。
     pub async fn run_loop(&mut self) -> Result<ControlFlow, PipelineError> {
         let mut previous_stage = None;
+        // 遍历stages
         for stage_index in 0..self.stages.len() {
             let stage = &self.stages[stage_index];
             let stage_id = stage.id();
 
             trace!(target: "sync::pipeline", stage = %stage_id, "Executing stage");
             let next = self
+                // 执行stage到完成
                 .execute_stage_to_completion(previous_stage, stage_index)
                 .instrument(info_span!("execute", stage = %stage_id))
                 .await?;
 
+            // stage执行完成
             trace!(target: "sync::pipeline", stage = %stage_id, ?next, "Completed stage");
 
             match next {
@@ -366,6 +370,7 @@ where
                 .await
             {
                 Ok(out @ ExecOutput { checkpoint, done }) => {
+                    // 如果和之前的checkpoint不一样，说明stage取得了进展
                     made_progress |=
                         checkpoint.block_number != prev_checkpoint.unwrap_or_default().block_number;
                     info!(
@@ -374,6 +379,7 @@ where
                         progress = checkpoint.block_number,
                         %checkpoint,
                         %done,
+                        // Stage取得了进展
                         "Stage made progress"
                     );
                     // metric 更新stage point
@@ -382,6 +388,7 @@ where
                         checkpoint,
                         previous_stage.map(|(_, checkpoint)| checkpoint.block_number),
                     );
+                    // 保存stage checkpoint
                     tx.save_stage_checkpoint(stage_id, checkpoint)?;
 
                     self.listeners.notify(PipelineEvent::Ran {
@@ -404,6 +411,7 @@ where
                     }
                 }
                 Err(err) => {
+                    // 通知listeners，stage遇到了错误
                     self.listeners.notify(PipelineEvent::Error { stage_id });
 
                     let out = if let StageError::Validation { block, error } = err {

@@ -6,6 +6,7 @@ use reth_primitives::{
 use std::ops::RangeBounds;
 
 ///  Client trait for fetching [TransactionSigned] related data.
+/// 用于获取[TransactionSigned]相关数据的客户端trait
 #[auto_impl::auto_impl(&, Arc)]
 pub trait TransactionsProvider: BlockNumProvider + Send + Sync {
     /// Get internal transaction identifier by transaction hash.
