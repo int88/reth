@@ -1,4 +1,5 @@
 //! A client implementation that can interact with the network and download data.
+//! 一个client的实现，可以和网络交互并且下载数据
 
 use crate::{fetch::DownloadRequest, flattened_response::FlattenedResponse, peers::PeersHandle};
 use futures::{future, future::Either};
@@ -22,6 +23,7 @@ use tokio::sync::{
 };
 
 /// Front-end API for fetching data from the network.
+/// 前端的API，用于从网络中获取数据
 ///
 /// Following diagram illustrates how a request, See [`HeadersClient::get_headers`] and
 /// [`BodiesClient::get_block_bodies`] is handled internally.
@@ -62,10 +64,13 @@ use tokio::sync::{
 #[derive(Debug, Clone)]
 pub struct FetchClient {
     /// Sender half of the request channel.
+    /// request channel的sender
     pub(crate) request_tx: UnboundedSender<DownloadRequest>,
     /// The handle to the peers
+    /// 到peers的handle
     pub(crate) peers_handle: PeersHandle,
     /// Number of active peer sessions the node's currently handling.
+    /// node当前正在处理的active peer sessions的数量
     pub(crate) num_active_peers: Arc<AtomicUsize>,
 }
 
@@ -87,6 +92,7 @@ impl HeadersClient for FetchClient {
     type Output = HeadersClientFuture<PeerRequestResult<Vec<Header>>>;
 
     /// Sends a `GetBlockHeaders` request to an available peer.
+    /// 发送一个`GetBlockHeaders`请求到一个可用的peer
     fn get_headers_with_priority(
         &self,
         request: HeadersRequest,
@@ -109,6 +115,7 @@ impl BodiesClient for FetchClient {
     type Output = BodiesFut;
 
     /// Sends a `GetBlockBodies` request to an available peer.
+    /// 发送一个`GetBlockBodies`请求到一个可用的peer
     fn get_block_bodies_with_priority(
         &self,
         request: Vec<H256>,

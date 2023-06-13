@@ -75,9 +75,12 @@ impl PeersHandle {
 }
 
 /// Maintains the state of _all_ the peers known to the network.
+/// 维护网络中所有已知peer的状态。
 ///
 /// This is supposed to be owned by the network itself, but can be reached via the [`PeersHandle`].
+/// 这应该由网络本身拥有，但可以通过[`PeersHandle`]访问。
 /// From this type, connections to peers are established or disconnected, see [`PeerAction`].
+/// 基于这个类型，与peers的连接建立或断开，参见[`PeerAction`]。
 ///
 /// The [`PeersManager`] will be notified on peer related changes
 pub(crate) struct PeersManager {
@@ -165,6 +168,7 @@ impl PeersManager {
     }
 
     /// Returns a new [`PeersHandle`] that can send commands to this type.
+    /// 返回一个新的[`PeersHandle`]，可以将命令发送到此类型。
     pub(crate) fn handle(&self) -> PeersHandle {
         PeersHandle { manager_tx: self.manager_tx.clone() }
     }
@@ -1041,6 +1045,7 @@ pub enum PeerAction {
 }
 
 /// Config type for initiating a [`PeersManager`] instance
+/// 用于初始化[`PeersManager`]实例的配置类型
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(default))]
@@ -1049,8 +1054,10 @@ pub struct PeersConfig {
     #[cfg_attr(feature = "serde", serde(with = "humantime_serde"))]
     pub refill_slots_interval: Duration,
     /// Trusted nodes to connect to.
+    /// 连接的可信节点
     pub trusted_nodes: HashSet<NodeRecord>,
     /// Connect to trusted nodes only?
+    /// 只连接到可信节点？
     pub connect_trusted_nodes_only: bool,
     /// Basic nodes to connect to.
     #[cfg_attr(feature = "serde", serde(skip))]

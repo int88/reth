@@ -1,4 +1,5 @@
 //! Builder support for configuring the entire setup.
+//! Builder支持用于配置整个的设置。
 
 use crate::{
     eth_requests::EthRequestHandler, transactions::TransactionsManager, NetworkHandle,

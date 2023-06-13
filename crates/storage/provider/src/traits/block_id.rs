@@ -18,6 +18,7 @@ pub trait BlockNumProvider: BlockHashProvider + Send + Sync {
     fn last_block_number(&self) -> Result<BlockNumber>;
 
     /// Gets the `BlockNumber` for the given hash. Returns `None` if no block with this hash exists.
+    /// 获取给定hash的`BlockNumber`。如果没有与此哈希匹配的块，则返回`None`。
     fn block_number(&self, hash: H256) -> Result<Option<BlockNumber>>;
 
     /// Gets the block number for the given `BlockHashOrNumber`. Returns `None` if no block with

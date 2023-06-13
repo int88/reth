@@ -13,6 +13,7 @@
 //! In order for a node to join the ethereum p2p network it needs to know what nodes are already
 //! port of that network. This includes public identities (public key) and addresses (where to reach
 //! them).
+//! 为了让一个节点加入到ethereum p2p网络中，它需要知道哪些节点已经是网络的一部分了。这包括公共身份（公钥）和地址（如何到达它们）。
 //!
 //! ## Bird's Eye View
 //!

@@ -6,11 +6,14 @@
 ))]
 
 //! Puts together all the Reth stages in a unified abstraction.
+//! 将所有的Reth stages组合在一个统一的抽象中。
 //!
 //! # Features
 //!
 //! - `test-utils`: Various utilities helpful for writing tests
+//! - `test-utils`: 各种有用的测试工具
 //! - `geth-tests`: Runs tests that require Geth to be installed locally.
+//! - `geth-tests`: 运行需要在本地安装Geth的测试。
 pub mod utils;
 
 #[cfg(any(test, feature = "test-utils"))]

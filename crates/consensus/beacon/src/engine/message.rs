@@ -17,17 +17,22 @@ use std::{
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
 
 /// Represents the outcome of forkchoice update.
+/// 表示forkchoice update的结果
 ///
 /// This is a future that resolves to [ForkChoiceUpdateResult]
+/// 这是一个将解析为[ForkChoiceUpdateResult]的future
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 #[derive(Debug)]
 pub struct OnForkChoiceUpdated {
     /// Represents the status of the forkchoice update.
+    /// 代表forkchoice update的状态
     ///
     /// Note: This is separate from the response `fut`, because we still can return an error
     /// depending on the payload attributes, even if the forkchoice update itself is valid.
+    /// 注意：这是与响应`fut`分开的，因为我们仍然可以根据payload attributes返回错误，即使forkchoice update本身是有效的。
     forkchoice_status: ForkchoiceStatus,
     /// Returns the result of the forkchoice update.
+    /// 返回forkchoice update的结果
     fut: Either<futures::future::Ready<ForkChoiceUpdateResult>, PendingPayloadId>,
 }
 
@@ -63,7 +68,8 @@ impl OnForkChoiceUpdated {
     }
 
     /// Creates a new instance of `OnForkChoiceUpdated` if the forkchoice update failed because the
-    /// given state is considered invalid
+    /// given state is considered invalid1
+    /// 创建一个新的`OnForkChoiceUpdated`实例，如果forkchoice update失败，因为给定的状态被认为是无效的
     pub(crate) fn invalid_state() -> Self {
         Self {
             forkchoice_status: ForkchoiceStatus::Invalid,

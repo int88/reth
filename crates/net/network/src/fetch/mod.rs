@@ -1,4 +1,5 @@
 //! Fetch data from the network.
+//! 从network获取data
 
 use crate::{message::BlockRequest, peers::PeersHandle};
 use futures::StreamExt;
@@ -25,29 +26,40 @@ mod client;
 pub use client::FetchClient;
 
 /// Manages data fetching operations.
+/// 管理data的拉取操作
 ///
 /// This type is hooked into the staged sync pipeline and delegates download request to available
 /// peers and sends the response once ready.
+/// 这个类型被hook到了staged sync pipeline中，并且将下载请求委托给可用的peers，并且一旦准备好就发送response
 ///
 /// This type maintains a list of connected peers that are available for requests.
+/// 这个类型维护一系列的已连接的peers，这些peers可以用于请求
 pub struct StateFetcher {
     /// Currently active [`GetBlockHeaders`] requests
+    /// 当前活跃的[`GetBlockHeaders`]请求
     inflight_headers_requests:
         HashMap<PeerId, Request<HeadersRequest, PeerRequestResult<Vec<Header>>>>,
     /// Currently active [`GetBlockBodies`] requests
+    /// 当前的活跃的[`GetBlockBodies`]请求
     inflight_bodies_requests:
         HashMap<PeerId, Request<Vec<H256>, PeerRequestResult<Vec<BlockBody>>>>,
     /// The list of _available_ peers for requests.
+    /// 一系列可用的peers用于请求
     peers: HashMap<PeerId, Peer>,
     /// The handle to the peers manager
+    /// 对于peers manager的handle
     peers_handle: PeersHandle,
     /// Number of active peer sessions the node's currently handling.
+    /// node当前处理的活跃的peer sessions的数目
     num_active_peers: Arc<AtomicUsize>,
     /// Requests queued for processing
+    /// 排队的请求用于处理
     queued_requests: VecDeque<DownloadRequest>,
     /// Receiver for new incoming download requests
+    /// 对于新的传入的download requests的receiver
     download_requests_rx: UnboundedReceiverStream<DownloadRequest>,
     /// Sender for download requests, used to detach a [`FetchClient`]
+    /// 用于download requests的sender，用于分离一个[`FetchClient`]
     download_requests_tx: UnboundedSender<DownloadRequest>,
 }
 
@@ -144,6 +156,7 @@ impl StateFetcher {
     }
 
     /// Advance the state the syncer
+    /// 推进syncer的状态
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<FetchAction> {
         // drain buffered actions first
         loop {
@@ -155,6 +168,7 @@ impl StateFetcher {
 
             loop {
                 // poll incoming requests
+                // 轮询incoming requests
                 match self.download_requests_rx.poll_next_unpin(cx) {
                     Poll::Ready(Some(request)) => match request.get_priority() {
                         Priority::High => {
@@ -435,6 +449,7 @@ mod tests {
         poll_fn(move |cx| {
             assert!(fetcher.poll(cx).is_pending());
             let (tx, _rx) = oneshot::channel();
+            // 推送到queued_requests
             fetcher.queued_requests.push_back(DownloadRequest::GetBlockBodies {
                 request: vec![],
                 response: tx,

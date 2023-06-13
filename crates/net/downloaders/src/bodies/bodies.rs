@@ -29,8 +29,10 @@ use std::{
 pub const BODIES_DOWNLOADER_SCOPE: &str = "downloaders.bodies";
 
 /// Downloads bodies in batches.
+/// 批量下载bodies
 ///
 /// All blocks in a batch are fetched at the same time.
+/// 所有的blocks都是在同一时间获取的
 #[must_use = "Stream does nothing unless polled"]
 #[derive(Debug)]
 pub struct BodiesDownloader<B: BodiesClient, DB> {

@@ -118,8 +118,10 @@ where
 #[allow(missing_docs)]
 pub struct NetworkConfigBuilder {
     /// The node's secret key, from which the node's identity is derived.
+    /// node的secret key，从中派生node的identity
     secret_key: SecretKey,
     /// How to configure discovery over DNS.
+    /// 如何通过DNS配置discovery
     dns_discovery_config: Option<DnsDiscoveryConfig>,
     /// How to set up discovery.
     discovery_v4_builder: Option<Discv4ConfigBuilder>,

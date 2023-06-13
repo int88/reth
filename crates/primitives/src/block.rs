@@ -235,6 +235,7 @@ impl std::ops::DerefMut for SealedBlockWithSenders {
 }
 
 /// Either a block hash _or_ a block number
+/// 要么是block hash，要么是block number
 #[derive_arbitrary(rlp)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum BlockHashOrNumber {

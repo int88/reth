@@ -438,23 +438,28 @@ where
             match self.blockchain.make_canonical(&state.head_block_hash) {
                 Ok(outcome) => {
                     let header = outcome.into_header();
+                    // canonicalized了新的head
                     debug!(target: "consensus::engine", hash=?state.head_block_hash, number=header.number, "canonicalized new head");
 
                     let pipeline_min_progress = self
                         .blockchain
+                        // 获取stage checkpoint
                         .get_stage_checkpoint(StageId::Finish)?
                         .unwrap_or_default()
                         .block_number;
 
                     if pipeline_min_progress < header.number {
+                        // 运行pipeline到需要的head
                         debug!(target: "consensus::engine", last_finished=pipeline_min_progress, head_number=header.number, "pipeline run to head required");
 
                         // TODO(mattsse) ideally sync blockwise
+                        // 重新设置pipeline的sync target
                         self.sync.set_pipeline_sync_target(state.head_block_hash);
                     }
 
                     if let Some(attrs) = attrs {
                         let payload_response =
+                            // 处理payload attributes
                             self.process_payload_attributes(attrs, header.unseal(), state);
                         if payload_response.is_valid_update() {
                             // we will return VALID, so let's make sure the info tracker is
@@ -462,12 +467,14 @@ where
                             self.update_canon_chain(&state)?;
                         }
                         self.listeners.notify(BeaconConsensusEngineEvent::ForkchoiceUpdated(state));
+                        // 返回forkchoice status
                         trace!(target: "consensus::engine", status = ?payload_response, ?state, "Returning forkchoice status ");
                         return Ok(payload_response)
                     }
 
                     // we will return VALID, so let's make sure the info tracker is
                     // properly updated
+                    // 我们会返回VALID，所以让我们确保info tracker被正确更新
                     self.update_canon_chain(&state)?;
                     PayloadStatus::new(PayloadStatusEnum::Valid, Some(state.head_block_hash))
                 }
@@ -496,9 +503,12 @@ where
     }
 
     /// Sets the state of the canon chain tracker based on the given forkchoice update.
+    /// 基于给定的forkchoice update设置canon chain tracker的状态。
     /// Additionally, updates the head used for p2p handshakes.
+    /// 另外，更新用于p2p握手的head。
     ///
     /// This should be called before issuing a VALID forkchoice update.
+    /// 这应该在发出VALID forkchoice update之前调用。
     fn update_canon_chain(&self, update: &ForkchoiceState) -> Result<(), reth_interfaces::Error> {
         if !update.finalized_block_hash.is_zero() {
             let finalized = self
@@ -619,9 +629,11 @@ where
     /// Return the parent hash of the lowest buffered ancestor for the requested block, if there
     /// are any buffered ancestors. If there are no buffered ancestors, and the block itself does
     /// not exist in the buffer, this returns the hash that is passed in.
+    /// 返回请求的block的最低缓冲祖先的父哈希，如果有任何缓冲祖先。如果没有缓冲祖先，并且block本身不存在于缓冲区中，则返回传入的哈希。
     ///
     /// Returns the parent hash of the block itself if the block is buffered and has no other
     /// buffered ancestors.
+    /// 返回block本身的父哈希，如果block被缓冲并且没有其他缓冲祖先。
     fn lowest_buffered_ancestor_or(&self, hash: H256) -> H256 {
         self.blockchain
             .lowest_buffered_ancestor(hash)
@@ -865,7 +877,9 @@ where
     }
 
     /// Attempt to restore the tree with the finalized block number.
+    /// 试着用finalized block number恢复tree。
     /// If the finalized block is missing from the database, trigger the pipeline run.
+    /// 如果finalized block在数据库中丢失，触发pipeline run。
     fn restore_tree_if_possible(
         &mut self,
         state: ForkchoiceState,
@@ -873,9 +887,11 @@ where
         let needs_pipeline_run = match self.blockchain.block_number(state.finalized_block_hash)? {
             Some(number) => {
                 // Attempt to restore the tree.
+                // 试着恢复tree。
                 self.blockchain.restore_canonical_hashes(number)?;
 
                 // After restoring the tree, check if the head block is missing.
+                // 在恢复tree之后，检查head block是否丢失。
                 self.blockchain.header(&state.head_block_hash)?.is_none()
             }
             None => true,
@@ -1011,6 +1027,7 @@ where
 
                         if self.invalid_headers.get(&lowest_buffered_ancestor).is_none() {
                             // Update the state and hashes of the blockchain tree if possible.
+                            // 更新blockchain tree的状态和hashes，如果可能的话。
                             match self.restore_tree_if_possible(sync_target_state) {
                                 Ok(_) => self.sync_state_updater.update_sync_state(SyncState::Idle),
                                 Err(error) => {
@@ -1021,6 +1038,7 @@ where
                         }
                     }
                     // Any pipeline error at this point is fatal.
+                    // 这个时候的任何pipeline error都是致命的。
                     Err(error) => return Some(Err(error.into())),
                 };
             }

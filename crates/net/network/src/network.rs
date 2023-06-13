@@ -23,6 +23,7 @@ use tokio::sync::{mpsc, mpsc::UnboundedSender, oneshot};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
 /// A _shareable_ network frontend. Used to interact with the network.
+/// 一个共享的网络前端。用于与网络交互。
 ///
 /// See also [`NetworkManager`](crate::NetworkManager).
 #[derive(Clone, Debug)]

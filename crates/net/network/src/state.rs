@@ -34,6 +34,7 @@ use tracing::debug;
 const PEER_BLOCK_CACHE_LIMIT: usize = 512;
 
 /// The [`NetworkState`] keeps track of the state of all peers in the network.
+/// [`NetworkState`]追踪network中所有peers的状态
 ///
 /// This includes:
 ///   - [`Discovery`]: manages the discovery protocol, essentially a stream of discovery updates

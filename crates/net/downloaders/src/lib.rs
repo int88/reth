@@ -9,9 +9,11 @@
 //! Implements the downloader algorithms.
 
 /// The collection of algorithms for downloading block bodies.
+/// 一系列的算法用于下载block bodies
 pub mod bodies;
 
 /// The collection of algorithms for downloading block headers.
+/// 一系列的算法用于下载block headers
 pub mod headers;
 
 /// Common downloader metrics.

@@ -22,6 +22,7 @@ use tokio_stream::wrappers::ReceiverStream;
 // Limits: <https://github.com/ethereum/go-ethereum/blob/b0d44338bbcefee044f1f635a84487cbbd8f0538/eth/protocols/eth/handler.go#L34-L56>
 
 /// Maximum number of block headers to serve.
+/// 能服务的最大数目的block headers
 ///
 /// Used to limit lookups.
 const MAX_HEADERS_SERVE: usize = 1024;
@@ -37,25 +38,32 @@ const MAX_BODIES_SERVE: usize = 1024;
 const APPROX_BODY_SIZE: usize = 24 * 1024;
 
 /// Maximum size of replies to data retrievals.
+/// 对于data retrievals的回复的最大size
 const SOFT_RESPONSE_LIMIT: usize = 2 * 1024 * 1024;
 
 /// Estimated size in bytes of an RLP encoded header.
 const APPROX_HEADER_SIZE: usize = 500;
 
 /// Manages eth related requests on top of the p2p network.
+/// 管理eth相关的请求在p2p网络之上
 ///
 /// This can be spawned to another task and is supposed to be run as background service.
+/// 这可以被spawn到另一个task中，并且应该作为后台服务运行。
 #[must_use = "Manager does nothing unless polled."]
 pub struct EthRequestHandler<C> {
     /// The client type that can interact with the chain.
+    /// 可以和chain交互的client类型
     client: C,
     /// Used for reporting peers.
+    /// 用于报告peers
     #[allow(unused)]
     // TODO use to report spammers
     peers: PeersHandle,
     /// Incoming request from the [NetworkManager](crate::NetworkManager).
+    /// 来自[NetworkManager](crate::NetworkManager)的传入请求
     incoming_requests: ReceiverStream<IncomingEthRequest>,
     /// Metrics for the eth request handler.
+    /// eth request handler的metrics
     metrics: EthRequestHandlerMetrics,
 }
 
@@ -73,6 +81,7 @@ where
     C: BlockProvider + HeaderProvider,
 {
     /// Returns the list of requested headers
+    /// 返回一系列请求的headers
     fn get_headers_response(&self, request: GetBlockHeaders) -> Vec<Header> {
         let GetBlockHeaders { start_block, limit, skip, direction } = request;
 
@@ -233,10 +242,12 @@ impl Borrow<(PeerId, GetBlockHeaders)> for RespondedGetBlockHeaders {
 }
 
 /// All `eth` request related to blocks delegated by the network.
+/// 所有`eth`请求相关的blocks由network委托
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum IncomingEthRequest {
     /// Request Block headers from the peer.
+    /// 从peer请求block headers
     ///
     /// The response should be sent through the channel.
     GetBlockHeaders {
@@ -253,6 +264,7 @@ pub enum IncomingEthRequest {
         response: oneshot::Sender<RequestResult<BlockBodies>>,
     },
     /// Request Node Data from the peer.
+    /// 从peer请求Node Data
     ///
     /// The response should be sent through the channel.
     GetNodeData {
@@ -261,6 +273,7 @@ pub enum IncomingEthRequest {
         response: oneshot::Sender<RequestResult<NodeData>>,
     },
     /// Request Receipts from the peer.
+    /// 从peer请求Receipts
     ///
     /// The response should be sent through the channel.
     GetReceipts {

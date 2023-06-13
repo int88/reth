@@ -82,6 +82,7 @@ impl SyncTarget {
 }
 
 /// Validate whether the header is valid in relation to it's parent
+/// 校验header是否和它的parent相关
 ///
 /// Returns Ok(false) if the
 pub fn validate_header_download(

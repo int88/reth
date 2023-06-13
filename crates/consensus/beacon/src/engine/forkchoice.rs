@@ -22,8 +22,10 @@ pub(crate) struct ForkchoiceStateTracker {
 
 impl ForkchoiceStateTracker {
     /// Sets the latest forkchoice state that we received.
+    /// 设置我们接收到的最新的forkchoice状态
     ///
     /// If the status is valid, we also update the last valid forkchoice state.
+    /// 如果status是合法的，我们也会更新最后一个有效的forkchoice状态
     pub(crate) fn set_latest(&mut self, state: ForkchoiceState, status: ForkchoiceStatus) {
         if status.is_valid() {
             self.set_valid(state);
@@ -37,6 +39,7 @@ impl ForkchoiceStateTracker {
 
     fn set_valid(&mut self, state: ForkchoiceState) {
         // we no longer need to sync to this state.
+        // 我们不再需要同步到这个状态
         self.last_syncing = None;
 
         self.last_valid = Some(state);
@@ -48,11 +51,13 @@ impl ForkchoiceStateTracker {
     }
 
     /// Returns the last received ForkchoiceState to which we need to sync.
+    /// 返回最新的接收到的ForkchoiceState，我们需要同步到该状态
     pub(crate) fn sync_target_state(&self) -> Option<ForkchoiceState> {
         self.last_syncing
     }
 
     /// Returns true if no forkchoice state has been received yet.
+    /// 返回true，如果还没有接收到forkchoice状态
     pub(crate) fn is_empty(&self) -> bool {
         self.latest.is_none()
     }
@@ -67,13 +72,17 @@ pub(crate) struct ReceivedForkchoiceState {
 }
 
 /// A simplified representation of [PayloadStatusEnum] specifically for FCU.
+/// 一个简单化的PayloadStatusEnum的表示，专门用于FCU
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub(crate) enum ForkchoiceStatus {
     /// The forkchoice state is valid.
+    /// forkchoice state是合法的
     Valid,
     /// The forkchoice state is invalid.
+    /// forkchoice state是非法的
     Invalid,
     /// The forkchoice state is unknown.
+    /// forkchoice state是未知的
     Syncing,
 }
 

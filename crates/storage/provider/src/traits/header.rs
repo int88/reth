@@ -19,6 +19,7 @@ pub trait HeaderProvider: Send + Sync {
     fn header_by_number(&self, num: u64) -> Result<Option<Header>>;
 
     /// Get header by block number or hash
+    /// 通过block number或者hash获取header
     fn header_by_hash_or_number(&self, hash_or_num: BlockHashOrNumber) -> Result<Option<Header>> {
         match hash_or_num {
             BlockHashOrNumber::Hash(hash) => self.header(&hash),
@@ -42,5 +43,6 @@ pub trait HeaderProvider: Send + Sync {
     ) -> Result<Vec<SealedHeader>>;
 
     /// Get a single sealed header by block number
+    /// 通过block number获取单个的sealed header
     fn sealed_header(&self, number: BlockNumber) -> Result<Option<SealedHeader>>;
 }

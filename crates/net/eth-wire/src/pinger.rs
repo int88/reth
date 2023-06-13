@@ -9,6 +9,7 @@ use tokio_stream::Stream;
 
 /// The pinger is a state machine that is created with a maximum number of pongs that can be
 /// missed.
+/// pinger是一个状态机，它的创建是有一个最大的可以丢失的pong数
 #[derive(Debug)]
 pub(crate) struct Pinger {
     /// The timer used for the next ping.

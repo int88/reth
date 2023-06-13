@@ -1,4 +1,5 @@
 /// BlockHeader and BodyHeader DownloadRequest priority
+/// BlockHeader和BodyHeader DownloadRequest优先级
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Priority {
     /// Queued from the back for download requests.

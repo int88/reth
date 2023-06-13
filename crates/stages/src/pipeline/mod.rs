@@ -129,11 +129,13 @@ where
     }
 
     /// Return the minimum pipeline progress
+    /// 返回最小的pipeline进度
     pub fn minimum_progress(&self) -> Option<u64> {
         self.progress.minimum_progress
     }
 
     /// Set tip for reverse sync.
+    /// 设置tip用于reverse sync
     #[track_caller]
     pub fn set_tip(&self, tip: H256) {
         let _ = self.tip_tx.as_ref().expect("tip sender is set").send(tip).map_err(|_| {

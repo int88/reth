@@ -610,6 +610,7 @@ mod tests {
         let gap_tip = random_header(2, Some(gap_fill.hash()));
 
         // Empty database
+        // 空的数据库
         assert_matches!(
             stage.get_sync_gap(&tx, checkpoint).await,
             Err(StageError::DatabaseIntegrity(ProviderError::HeaderNotFound(block_number)))
@@ -617,6 +618,7 @@ mod tests {
         );
 
         // Checkpoint and no gap
+        // Checkpoint并且没有gap
         tx.put::<tables::CanonicalHeaders>(head.number, head.hash())
             .expect("failed to write canonical");
         tx.put::<tables::Headers>(head.number, head.clone().unseal())
@@ -627,6 +629,7 @@ mod tests {
         assert_eq!(gap.target.tip(), consensus_tip.into());
 
         // Checkpoint and gap
+        // Checkpoint并且有gap
         tx.put::<tables::CanonicalHeaders>(gap_tip.number, gap_tip.hash())
             .expect("failed to write canonical");
         tx.put::<tables::Headers>(gap_tip.number, gap_tip.clone().unseal())
@@ -637,6 +640,7 @@ mod tests {
         assert_eq!(gap.target.tip(), gap_tip.parent_hash.into());
 
         // Checkpoint and gap closed
+        // Checkpoint并且gap被关闭
         tx.put::<tables::CanonicalHeaders>(gap_fill.number, gap_fill.hash())
             .expect("failed to write canonical");
         tx.put::<tables::Headers>(gap_fill.number, gap_fill.clone().unseal())

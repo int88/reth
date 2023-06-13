@@ -53,6 +53,7 @@ pub use config::SessionsConfig;
 pub struct SessionId(usize);
 
 /// Manages a set of sessions.
+/// 管理一系列的sessions
 #[must_use = "Session Manager must be polled to process session events."]
 #[derive(Debug)]
 pub(crate) struct SessionManager {

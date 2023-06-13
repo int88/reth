@@ -1,4 +1,5 @@
 //! Sync management for the engine implementation.
+//! engine implementation的同步管理
 
 use futures::FutureExt;
 use reth_db::database::Database;
@@ -94,6 +95,7 @@ where
     }
 
     /// Cancels all full block requests that are in progress.
+    /// 清除所有正在进行的full block requests
     pub(crate) fn clear_full_block_requests(&mut self) {
         self.inflight_full_block_requests.clear();
     }
@@ -145,8 +147,10 @@ where
     }
 
     /// Check if the engine reached max block as specified by `max_block` parameter.
+    /// 检查engine是否到达了由`max_block`参数指定的max block
     ///
     /// Note: this is mainly for debugging purposes.
+    /// 注意：这主要是为了调试目的
     pub(crate) fn has_reached_max_block(&self, progress: BlockNumber) -> bool {
         let has_reached_max_block =
             self.max_block.map(|target| progress >= target).unwrap_or_default();
@@ -196,16 +200,19 @@ where
     fn try_spawn_pipeline(&mut self) -> Option<EngineSyncEvent> {
         match &mut self.pipeline_state {
             PipelineState::Idle(pipeline) => {
+                // 获取一个target
                 let target = self.pending_pipeline_target.take();
 
                 if target.is_none() && !self.run_pipeline_continuously {
                     // nothing to sync
+                    // 不需要同步
                     return None
                 }
 
                 let (tx, rx) = oneshot::channel();
 
                 let pipeline = pipeline.take().expect("exists");
+                // 生成pipeline task
                 self.pipeline_task_spawner.spawn_critical_blocking(
                     "pipeline task",
                     Box::pin(async move {
@@ -217,10 +224,12 @@ where
 
                 // we also clear any pending full block requests because we expect them to be
                 // outdated (included in the range the pipeline is syncing anyway)
+                // 我们同时清理任何挂起的full block requests，因为我们期望它们是过时的（包含在pipeline正在同步的范围内）
                 self.clear_full_block_requests();
 
                 Some(EngineSyncEvent::PipelineStarted(target))
             }
+            // 正在运行，返回None
             PipelineState::Running(_) => None,
         }
     }

@@ -190,6 +190,7 @@ where
             ..
         } = config;
 
+        // 构建peer manager
         let peers_manager = PeersManager::new(peers_config);
         let peers_handle = peers_manager.handle();
 
@@ -263,6 +264,7 @@ where
 
     /// Create a new [`NetworkManager`] instance and start a [`NetworkBuilder`] to configure all
     /// components of the network
+    /// 创建一个新的[`NetworkManager`]实例并且启动一个[`NetworkBuilder`]来配置网络的所有组件
     ///
     /// ```
     /// use reth_provider::test_utils::NoopProvider;
@@ -275,12 +277,14 @@ where
     ///     let client = NoopProvider::default();
     ///
     ///     // The key that's used for encrypting sessions and to identify our node.
+    ///     // 整个key用来加密sessions并且用来标识我们的节点
     ///     let local_key = rng_secret_key();
     ///
     ///     let config =
     ///         NetworkConfig::<NoopProvider>::builder(local_key).boot_nodes(mainnet_nodes()).build(client.clone());
     ///
     ///     // create the network instance
+    ///     // 创建network实例
     ///     let (handle, network, transactions, request_handler) = NetworkManager::builder(config)
     ///         .await
     ///         .unwrap()
@@ -382,6 +386,7 @@ where
 
     /// Sends an event to the [`EthRequestManager`](crate::eth_requests::EthRequestHandler) if
     /// configured.
+    /// 发送一个event到[`EthRequestManager`](crate::eth_requests::EthRequestHandler)如果配置了
     fn delegate_eth_request(&self, event: IncomingEthRequest) {
         if let Some(ref reqs) = self.to_eth_request_handler {
             let _ = reqs.try_send(event).map_err(|e| {
@@ -394,6 +399,7 @@ where
     }
 
     /// Handle an incoming request from the peer
+    /// 处理来自peer的incoming request
     fn on_eth_request(&mut self, peer_id: PeerId, req: PeerRequest) {
         match req {
             PeerRequest::GetBlockHeaders { request, response } => {
@@ -417,6 +423,7 @@ where
                     response,
                 })
             }
+            // 获取receipts
             PeerRequest::GetReceipts { request, response } => {
                 self.delegate_eth_request(IncomingEthRequest::GetReceipts {
                     peer_id,
@@ -424,6 +431,7 @@ where
                     response,
                 })
             }
+            // 获取pooled transactions
             PeerRequest::GetPooledTransactions { request, response } => {
                 self.notify_tx_manager(NetworkTransactionEvent::GetPooledTransactions {
                     peer_id,
@@ -477,6 +485,7 @@ where
     }
 
     /// Handles a received Message from the peer's session.
+    /// 处理来自peer session的received message
     fn on_peer_message(&mut self, peer_id: PeerId, msg: PeerMessage) {
         match msg {
             PeerMessage::NewBlockHashes(hashes) => {
@@ -517,6 +526,7 @@ where
     }
 
     /// Handler for received messages from a handle
+    /// 用于处理来自handle的received messages
     fn on_handle_message(&mut self, msg: NetworkHandleMessage) {
         match msg {
             NetworkHandleMessage::EventListener(tx) => {
