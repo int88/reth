@@ -21,10 +21,12 @@ pub trait StageSet<DB: Database>: Sized {
     fn builder(self) -> StageSetBuilder<DB>;
 
     /// Overrides the given [`Stage`], if it is in this set.
+    /// 覆盖给定的Stage，如果它在这个set中
     ///
     /// # Panics
     ///
     /// Panics if the [`Stage`] is not in this set.
+    /// Panics如果Stage不在这个set中
     fn set<S: Stage<DB> + 'static>(self, stage: S) -> StageSetBuilder<DB> {
         self.builder().set(stage)
     }
@@ -45,11 +47,14 @@ impl<DB: Database> Debug for StageEntry<DB> {
 }
 
 /// Helper to create and configure a [`StageSet`].
+/// 用于创建和配置StageSet的帮助程序
 ///
 /// The builder provides ordering helpers to ensure that stages that depend on each other are added
 /// to the final sync pipeline before/after their dependencies.
+/// builder提供了排序帮助程序，以确保相互依赖的stages在它们的依赖之前/之后添加到最终的同步pipeline中
 ///
 /// Stages inside the set can be disabled, enabled, overridden and reordered.
+/// set中的stages可以被禁用，启用，覆盖和重新排序
 pub struct StageSetBuilder<DB> {
     stages: HashMap<StageId, StageEntry<DB>>,
     order: Vec<StageId>,
@@ -96,6 +101,7 @@ where
     }
 
     /// Overrides the given [`Stage`], if it is in this set.
+    /// 覆盖给定的Stage，如果它在这个set中
     ///
     /// # Panics
     ///

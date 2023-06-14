@@ -31,23 +31,28 @@ impl ExecInput {
     }
 
     /// Return the progress of the previous stage or default.
+    /// 返回之前的stage的progress或者默认
     pub fn previous_stage_checkpoint(&self) -> StageCheckpoint {
         self.previous_stage.map(|(_, checkpoint)| checkpoint).unwrap_or_default()
     }
 
     /// Return next block range that needs to be executed.
+    /// 返回下一个需要执行的block range
     pub fn next_block_range(&self) -> RangeInclusive<BlockNumber> {
         let (range, _) = self.next_block_range_with_threshold(u64::MAX);
         range
     }
 
     /// Return true if this is the first block range to execute.
+    /// 返回true，如果这是第一个需要执行的block range
     pub fn is_first_range(&self) -> bool {
         self.checkpoint.is_none()
     }
 
     /// Return the next block range to execute.
+    /// 返回下一个需要执行的block range
     /// Return pair of the block range and if this is final block range.
+    /// 返回block range的pair和是否是最后一个block range
     pub fn next_block_range_with_threshold(
         &self,
         threshold: u64,
@@ -55,6 +60,7 @@ impl ExecInput {
         let current_block = self.checkpoint();
         // +1 is to skip present block and always start from block number 1, not 0.
         let start = current_block.block_number + 1;
+        // 将上一个stage的block number作为target
         let target = self.previous_stage_checkpoint().block_number;
 
         let end = min(target, current_block.block_number.saturating_add(threshold));
@@ -68,10 +74,13 @@ impl ExecInput {
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct UnwindInput {
     /// The current highest progress of the stage.
+    /// stage的当前最高进度
     pub checkpoint: StageCheckpoint,
     /// The block to unwind to.
+    /// 用于unwind的block
     pub unwind_to: BlockNumber,
     /// The bad block that caused the unwind, if any.
+    /// 导致unwind的bad block，如果有的话
     pub bad_block: Option<BlockNumber>,
 }
 
@@ -113,6 +122,7 @@ pub struct ExecOutput {
 
 impl ExecOutput {
     /// Mark the stage as done, checkpointing at the given place.
+    /// 将stage标记为done，在给定的地方做checkpoint
     pub fn done(checkpoint: StageCheckpoint) -> Self {
         Self { checkpoint, done: true }
     }
@@ -147,8 +157,10 @@ pub struct UnwindOutput {
 #[async_trait]
 pub trait Stage<DB: Database>: Send + Sync {
     /// Get the ID of the stage.
+    /// 获取stage的ID
     ///
     /// Stage IDs must be unique.
+    /// Stage IDs必须是唯一的
     fn id(&self) -> StageId;
 
     /// Execute the stage.

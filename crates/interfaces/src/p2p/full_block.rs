@@ -72,16 +72,19 @@ where
     Client: BodiesClient + HeadersClient,
 {
     /// Returns the hash of the block being requested.
+    /// 返回被请求的block的hash
     pub fn hash(&self) -> &H256 {
         &self.hash
     }
 
     /// If the header request is already complete, this returns the block number
+    /// 如果header requests已经完成了，这将返回block number
     pub fn block_number(&self) -> Option<u64> {
         self.header.as_ref().map(|h| h.number)
     }
 
     /// Returns the [SealedBlock] if the request is complete.
+    /// 返回SealedBlock，如果请求完成
     fn take_block(&mut self) -> Option<SealedBlock> {
         if self.header.is_none() || self.body.is_none() {
             return None

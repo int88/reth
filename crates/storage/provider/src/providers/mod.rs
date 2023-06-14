@@ -62,6 +62,7 @@ pub struct BlockchainProvider<DB, Tree> {
 impl<DB, Tree> BlockchainProvider<DB, Tree> {
     /// Create new  provider instance that wraps the database and the blockchain tree, using the
     /// provided latest header to initialize the chain info tracker.
+    /// 创建新的provider实例，封装数据库和blockchain tree，使用提供的最新header来初始化chain info tracker
     pub fn with_latest(database: ShareableDatabase<DB>, tree: Tree, latest: SealedHeader) -> Self {
         Self { database, tree, chain_info: ChainInfoTracker::new(latest) }
     }

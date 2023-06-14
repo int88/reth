@@ -7,6 +7,7 @@ use crate::H512;
 pub type PeerId = H512;
 
 /// Generic wrapper with peer id
+/// peer id的通用包装
 #[derive(Debug)]
 pub struct WithPeerId<T>(PeerId, pub T);
 

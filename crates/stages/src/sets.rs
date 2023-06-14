@@ -2,9 +2,11 @@
 //!
 //! The easiest set to use is [`DefaultStages`], which provides all stages required to run an
 //! instance of reth.
+//! 最简单的set是DefaultStages，它提供了运行reth实例所需的所有stages
 //!
 //! It is also possible to run parts of reth standalone given the required data is present in
 //! the environment, such as [`ExecutionStages`] or [`HashingStages`].
+//! 同时也可能运行reth的部分独立的，给定所需的数据在环境中是存在的，例如ExecutionStages或HashingStages
 //!
 //!
 //! # Examples
@@ -20,6 +22,7 @@
 //! # let factory = Factory::new(Arc::new(MAINNET.clone()));
 //! # let db = create_test_rw_db();
 //! // Build a pipeline with all offline stages.
+//! // 用所有的offline stages构建一个pipeline
 //! # let pipeline =
 //! Pipeline::builder().add_stages(OfflineStages::new(factory)).build(db);
 //! ```
@@ -31,6 +34,7 @@
 //! # use reth_primitives::MAINNET;
 //! # use std::sync::Arc;
 //! // Build a pipeline with all offline stages and a custom stage at the end.
+//! // 用所有的offline stages和一个自定义的stage构建一个pipeline
 //! # let factory = Factory::new(Arc::new(MAINNET.clone()));
 //! Pipeline::builder()
 //!     .add_stages(
@@ -58,6 +62,7 @@ use std::sync::Arc;
 /// 一个集合包含所有的stages来运行一个完全同步的实例
 ///
 /// A combination of (in order)
+/// 包含了OnlineStages, OfflineStages, FinishStage
 ///
 /// - [`OnlineStages`]
 /// - [`OfflineStages`]
@@ -111,6 +116,7 @@ where
     EF: ExecutorFactory,
 {
     /// Appends the default offline stages and default finish stage to the given builder.
+    /// 扩展默认的offline stages和默认的finish stage到给定的builder
     pub fn add_offline_stages<DB: Database>(
         default_offline: StageSetBuilder<DB>,
         executor_factory: EF,
@@ -140,17 +146,22 @@ where
 #[derive(Debug)]
 pub struct OnlineStages<H, B> {
     /// The sync mode for the headers stage.
+    /// 对于headers stage的同步模式
     header_mode: HeaderSyncMode,
     /// The consensus engine used to validate incoming data.
+    /// 用于校验传入数据的共识引擎
     consensus: Arc<dyn Consensus>,
     /// The block header downloader
+    /// block header的downloader
     header_downloader: H,
     /// The block body downloader
+    /// block body的downloader
     body_downloader: B,
 }
 
 impl<H, B> OnlineStages<H, B> {
     /// Create a new set of online stages with default values.
+    /// 创建一个新的默认值的online stages集合
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,
@@ -167,6 +178,7 @@ where
     B: BodyDownloader + 'static,
 {
     /// Create a new builder using the given headers stage.
+    /// 创建一个新的builder，使用给定的headers stage
     pub fn builder_with_headers<DB: Database>(
         headers: HeaderStage<H>,
         body_downloader: B,
@@ -179,6 +191,7 @@ where
     }
 
     /// Create a new builder using the given bodies stage.
+    /// 创建一个新的builder，使用给定的bodies stage
     pub fn builder_with_bodies<DB: Database>(
         bodies: BodyStage<B>,
         mode: HeaderSyncMode,
@@ -200,8 +213,11 @@ where
 {
     fn builder(self) -> StageSetBuilder<DB> {
         StageSetBuilder::default()
+            // 设置了header stage
             .add_stage(HeaderStage::new(self.header_downloader, self.header_mode))
+            // 设置了total difficulty stage
             .add_stage(TotalDifficultyStage::new(self.consensus.clone()))
+            // 设置了body stage
             .add_stage(BodyStage { downloader: self.body_downloader, consensus: self.consensus })
     }
 }
@@ -218,11 +234,13 @@ where
 #[non_exhaustive]
 pub struct OfflineStages<EF: ExecutorFactory> {
     /// Executor factory needs for execution stage
+    /// 用于execution stage的factory
     pub executor_factory: EF,
 }
 
 impl<EF: ExecutorFactory> OfflineStages<EF> {
     /// Create a new set of offline stages with default values.
+    /// 用默认值创建一个新的offline stages集合
     pub fn new(executor_factory: EF) -> Self {
         Self { executor_factory }
     }
@@ -238,6 +256,7 @@ impl<EF: ExecutorFactory, DB: Database> StageSet<DB> for OfflineStages<EF> {
 }
 
 /// A set containing all stages that are required to execute pre-existing block data.
+/// 一系列包含所有的stages，这些stages需要执行预先存在的block数据
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct ExecutionStages<EF: ExecutorFactory> {
@@ -261,6 +280,7 @@ impl<EF: ExecutorFactory, DB: Database> StageSet<DB> for ExecutionStages<EF> {
 }
 
 /// A set containing all stages that hash account state.
+/// 一个set包含所有的stages，这些stageshash account state
 #[derive(Debug, Default)]
 #[non_exhaustive]
 pub struct HashingStages;
@@ -276,6 +296,7 @@ impl<DB: Database> StageSet<DB> for HashingStages {
 }
 
 /// A set containing all stages that do additional indexing for historical state.
+/// 一个set包含所有的stages，这些stages为历史状态做额外的索引
 #[derive(Debug, Default)]
 #[non_exhaustive]
 pub struct HistoryIndexingStages;

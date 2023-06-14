@@ -14,11 +14,14 @@ use std::path::PathBuf;
 #[serde(default)]
 pub struct Config {
     /// Configuration for each stage in the pipeline.
+    /// 对于pipeline中的每个stage的配置
     // TODO(onbjerg): Can we make this easier to maintain when we add/remove stages?
     pub stages: StageConfig,
     /// Configuration for the discovery service.
+    /// 对于发现服务的配置
     pub peers: PeersConfig,
     /// Configuration for peer sessions.
+    /// 对于peer sessions的配置
     pub sessions: SessionsConfig,
 }
 
@@ -46,18 +49,24 @@ impl Config {
 }
 
 /// Configuration for each stage in the pipeline.
+/// 用于配置pipeline中的每个stage
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct StageConfig {
     /// Header stage configuration.
+    /// Header stage的配置
     pub headers: HeadersConfig,
     /// Total difficulty stage configuration
+    /// Total difficulty stage的配置
     pub total_difficulty: TotalDifficultyConfig,
     /// Body stage configuration.
+    /// Body stage的配置
     pub bodies: BodiesConfig,
     /// Sender recovery stage configuration.
+    /// Sender recovery stage的配置
     pub sender_recovery: SenderRecoveryConfig,
     /// Execution stage configuration.
+    /// Execution stage的配置
     pub execution: ExecutionConfig,
 }
 

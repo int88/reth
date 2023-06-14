@@ -481,6 +481,7 @@ where
                 Err(error) => {
                     if let Error::Execution(ref err) = error {
                         if err.is_fatal() {
+                            // 遇到了致命的错误
                             tracing::error!(target: "consensus::engine", ?err, "Encountered fatal error");
                             return Err(error)
                         }
@@ -499,6 +500,7 @@ where
         self.listeners.notify(BeaconConsensusEngineEvent::ForkchoiceUpdated(state));
 
         trace!(target: "consensus::engine", ?status, ?state, "Returning forkchoice status");
+        // 返回forkchoice status
         Ok(OnForkChoiceUpdated::valid(status))
     }
 
@@ -555,10 +557,13 @@ where
     }
 
     /// Handler for a failed a forkchoice update due to a canonicalization error.
+    /// 对于一个失败的forkchoice update的处理程序，由于一个规范化的错误。
     ///
     /// This will determine if the state's head is invalid, and if so, return immediately.
+    /// 这会决定状态的head是否无效，如果是，则立即返回。
     ///
     /// If the newest head is not invalid, then this will trigger a new pipeline run to sync the gap
+    /// 如果最新的head不是无效的，那么这将触发一个新的pipeline run来同步gap
     ///
     /// See [Self::forkchoice_updated] and [BlockchainTreeEngine::make_canonical].
     fn on_failed_canonical_forkchoice_update(
@@ -571,6 +576,7 @@ where
 
         // check if the new head was previously invalidated, if so then we deem this FCU
         // as invalid
+        // 检查是否新的head之前被无效，如果是，那么我们认为这个FCU是无效的
         if let Some(invalid_ancestor) = self.check_invalid_ancestor(state.head_block_hash) {
             debug!(target: "consensus::engine", head=?state.head_block_hash, "Head was previously marked as invalid");
             return invalid_ancestor
@@ -592,12 +598,15 @@ where
 
         // we assume the FCU is valid and at least the head is missing, so we need to start syncing
         // to it
+        // 我们假设FCU是有效的，至少head是缺失的，所以我们需要开始同步它
 
         // if this is the first FCU we received from the beacon node, then we start triggering the
         // pipeline
+        // 如果这是我们从beacon node收到的第一个FCU，那么我们开始触发pipeline
         if self.forkchoice_state_tracker.is_empty() {
             // find the appropriate target to sync to, if we don't have the safe block hash then we
             // start syncing to the safe block via pipeline first
+            // 找到适当的目标来同步，如果我们没有安全的块哈希，那么我们首先通过pipeline开始同步到安全的块
             let target = if !state.safe_block_hash.is_zero() &&
                 self.blockchain.block_number(state.safe_block_hash).ok().flatten().is_none()
             {
@@ -607,6 +616,7 @@ where
             };
 
             // we need to first check the buffer for the head and its ancestors
+            // 我们首先检查head和它的祖先的缓冲区
             let lowest_unknown_hash = self.lowest_buffered_ancestor_or(target);
 
             trace!(target: "consensus::engine", request=?lowest_unknown_hash, "Triggering pipeline with target instead of downloading");
@@ -614,12 +624,14 @@ where
             self.sync.set_pipeline_sync_target(lowest_unknown_hash);
         } else {
             // we need to first check the buffer for the head and its ancestors
+            // 我们需要首先检查buffer，对于head以及它的祖先
             let lowest_unknown_hash = self.lowest_buffered_ancestor_or(state.head_block_hash);
 
             trace!(target: "consensus::engine", request=?lowest_unknown_hash, "Triggering full block download for missing ancestors of the new head");
 
             // trigger a full block download for missing hash, or the parent of its lowest buffered
             // ancestor
+            // 触发一个full block download，用于缺失的哈希，或者它的最低缓冲祖先的父哈希
             self.sync.download_full_block(lowest_unknown_hash);
         }
 
@@ -1178,6 +1190,7 @@ mod tests {
         // 保持tip接收器，这样它就不会被丢弃。
         #[allow(dead_code)]
         tip_rx: watch::Receiver<H256>,
+        // consensus engine handle
         engine_handle: BeaconConsensusEngineHandle,
     }
 
@@ -1190,6 +1203,7 @@ mod tests {
             Self { db, tip_rx, engine_handle }
         }
 
+        // 发送新的payload
         async fn send_new_payload(
             &self,
             payload: ExecutionPayload,
@@ -1212,6 +1226,7 @@ mod tests {
             }
         }
 
+        // 发送forkchoice update
         async fn send_forkchoice_updated(
             &self,
             state: ForkchoiceState,
@@ -1500,6 +1515,7 @@ mod tests {
                     .paris_activated()
                     .build(),
             );
+            // 设置consensus engine
             let (consensus_engine, env) = setup_consensus_engine(
                 chain_spec,
                 VecDeque::from([Ok(ExecOutput {
@@ -1514,6 +1530,7 @@ mod tests {
             // 插入blocks
             insert_blocks(env.db.as_ref(), [&genesis, &block1].into_iter());
             env.db
+                // 更新db，插入stage checkpoint
                 .update(|tx| {
                     tx.put::<tables::SyncStage>(
                         StageId::Finish.to_string(),
@@ -1535,6 +1552,7 @@ mod tests {
             // 期望的结果
             let expected_result = ForkchoiceUpdated::new(PayloadStatus::new(
                 PayloadStatusEnum::Valid,
+                // block1的hash
                 Some(block1.hash),
             ));
             assert_eq!(result, expected_result);

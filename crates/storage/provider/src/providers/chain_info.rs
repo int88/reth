@@ -17,6 +17,7 @@ pub(crate) struct ChainInfoTracker {
 
 impl ChainInfoTracker {
     /// Create a new chain info container for the given canonical head.
+    /// 用给定的canonical head创建一个新的chain info容器
     pub(crate) fn new(head: SealedHeader) -> Self {
         Self {
             inner: Arc::new(ChainInfoInner {
@@ -30,35 +31,41 @@ impl ChainInfoTracker {
     }
 
     /// Returns the [ChainInfo] for the canonical head.
+    /// 返回canonical head的[ChainInfo]
     pub(crate) fn chain_info(&self) -> ChainInfo {
         let inner = self.inner.canonical_head.read();
         ChainInfo { best_hash: inner.hash(), best_number: inner.number }
     }
 
     /// Update the timestamp when we received a forkchoice update.
+    /// 更新我们接收到forkchoice update的时间戳
     pub(crate) fn on_forkchoice_update_received(&self) {
         self.inner.last_forkchoice_update.write().replace(Instant::now());
     }
 
     /// Returns the instant when we received the latest forkchoice update.
+    /// 返回我们接收到最新的forkchoice update的时间
     #[allow(unused)]
     pub(crate) fn last_forkchoice_update_received_at(&self) -> Option<Instant> {
         *self.inner.last_forkchoice_update.read()
     }
 
     /// Returns the canonical head of the chain.
+    /// 返回chain的canonical head
     #[allow(unused)]
     pub(crate) fn get_canonical_head(&self) -> SealedHeader {
         self.inner.canonical_head.read().clone()
     }
 
     /// Returns the safe header of the chain.
+    /// 返回chain的safe header
     #[allow(unused)]
     pub(crate) fn get_safe_header(&self) -> Option<SealedHeader> {
         self.inner.safe_block.read().clone()
     }
 
     /// Returns the finalized header of the chain.
+    /// 返回chain的finalized header
     #[allow(unused)]
     pub(crate) fn get_finalized_header(&self) -> Option<SealedHeader> {
         self.inner.finalized_block.read().clone()
@@ -90,6 +97,7 @@ impl ChainInfoTracker {
     }
 
     /// Sets the canonical head of the chain.
+    /// 设置chain的canonical head
     pub(crate) fn set_canonical_head(&self, header: SealedHeader) {
         let number = header.number;
         *self.inner.canonical_head.write() = header;
@@ -99,11 +107,13 @@ impl ChainInfoTracker {
     }
 
     /// Sets the safe header of the chain.
+    /// 设置chain的safe header
     pub(crate) fn set_safe(&self, header: SealedHeader) {
         self.inner.safe_block.write().replace(header);
     }
 
     /// Sets the finalized header of the chain.
+    /// 设置chain的finalized header
     pub(crate) fn set_finalized(&self, header: SealedHeader) {
         self.inner.finalized_block.write().replace(header);
     }

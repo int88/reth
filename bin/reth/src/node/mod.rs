@@ -496,6 +496,7 @@ impl Command {
     }
 
     /// Loads the reth config with the given datadir root
+    /// 从给定的datadir的root加载reth config
     fn load_config(&self, config_path: PathBuf) -> eyre::Result<Config> {
         confy::load_path::<Config>(config_path.clone())
             .wrap_err_with(|| format!("Could not load config file {:?}", config_path))

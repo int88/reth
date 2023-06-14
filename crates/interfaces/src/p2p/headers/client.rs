@@ -28,6 +28,7 @@ pub type HeadersFut = Pin<Box<dyn Future<Output = PeerRequestResult<Vec<Header>>
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait HeadersClient: DownloadClient {
     /// The headers future type
+    /// headers的future类型
     type Output: Future<Output = PeerRequestResult<Vec<Header>>> + Sync + Send + Unpin;
 
     /// Sends the header request to the p2p network and returns the header response received from a

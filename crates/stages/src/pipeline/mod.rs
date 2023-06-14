@@ -96,6 +96,7 @@ pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineErr
 /// # Defaults
 ///
 /// The [DefaultStages](crate::sets::DefaultStages) are used to fully sync reth.
+/// [DefaultStages](crate::sets::DefaultStages)用于完全同步reth。
 pub struct Pipeline<DB: Database> {
     /// The Database
     /// 数据库

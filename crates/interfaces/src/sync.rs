@@ -50,8 +50,10 @@ pub enum SyncState {
 
 impl SyncState {
     /// Whether the node is currently syncing.
+    /// node当前是不是在同步
     ///
     /// Note: this does not include keep-up sync when the state is idle.
+    /// 注意：这不包含状态为idle时的keep-up sync
     pub fn is_syncing(&self) -> bool {
         !matches!(self, SyncState::Idle)
     }

@@ -118,14 +118,17 @@ where
     }
 
     /// Returns true if there's already a request for the given hash.
+    /// 返回true，如果给定的hash已经有一个请求
     pub(crate) fn is_inflight_request(&self, hash: H256) -> bool {
         self.inflight_full_block_requests.iter().any(|req| *req.hash() == hash)
     }
 
     /// Starts requesting a full block from the network.
+    /// 开始请求一个full block从network
     ///
     /// Returns `true` if the request was started, `false` if there's already a request for the
     /// given hash.
+    /// 返回`true`如果请求已经开始，如果给定的hash已经有一个请求，返回`false`
     pub(crate) fn download_full_block(&mut self, hash: H256) -> bool {
         if self.is_inflight_request(hash) {
             return false
@@ -220,6 +223,7 @@ where
                         let _ = tx.send(result);
                     }),
                 );
+                // 当pipeline处于running时，在State中包含了Receiver
                 self.pipeline_state = PipelineState::Running(rx);
 
                 // we also clear any pending full block requests because we expect them to be
@@ -261,6 +265,7 @@ where
             // advance all requests
             // 移动所有的requests
             for idx in (0..self.inflight_full_block_requests.len()).rev() {
+                // 获取requests
                 let mut request = self.inflight_full_block_requests.swap_remove(idx);
                 if let Poll::Ready(block) = request.poll_unpin(cx) {
                     self.queued_events.push_back(EngineSyncEvent::FetchedFullBlock(block));

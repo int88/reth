@@ -52,6 +52,7 @@ impl<DB: Database> ShareableDatabase<DB> {
 
 impl<DB> ShareableDatabase<DB> {
     /// create new database provider
+    /// 创建新的database provider
     pub fn new(db: DB, chain_spec: Arc<ChainSpec>) -> Self {
         Self { db, chain_spec }
     }
