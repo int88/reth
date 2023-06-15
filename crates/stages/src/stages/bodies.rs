@@ -27,13 +27,16 @@ use tracing::*;
 /// Blocks with an ommers hash corresponding to no ommers *and* a transaction root corresponding to
 /// no transactions will not have a block body downloaded for them, since it would be meaningless to
 /// do so.
+/// Blocks有着ommers hash对应没有ommers，和transaction root对应没有transactions，将不会下载block body，因为这样做没有意义
 ///
 /// This also means that if there is no body for the block in the database (assuming the
 /// block number <= the synced block of this stage), then the block can be considered empty.
+/// 同时这也意味着，如果数据库中没有block的body（假设block number <= 这个stage的synced block），那么这个block可以被认为是空的
 ///
 /// # Tables
 ///
 /// The bodies are processed and data is inserted into these tables:
+/// 被处理过的bodies，数据被插入到这些tables中
 ///
 /// - [`BlockOmmers`][reth_db::tables::BlockOmmers]
 /// - [`BlockBodies`][reth_db::tables::BlockBodyIndices]
@@ -43,6 +46,7 @@ use tracing::*;
 /// # Genesis
 ///
 /// This stage expects that the genesis has been inserted into the appropriate tables:
+/// stage期望genesis已经被插入到了适当的tables中
 ///
 /// - The header tables (see [`HeaderStage`][crate::stages::HeaderStage])
 /// - The [`BlockOmmers`][reth_db::tables::BlockOmmers] table
@@ -51,6 +55,7 @@ use tracing::*;
 #[derive(Debug)]
 pub struct BodyStage<D: BodyDownloader> {
     /// The body downloader.
+    /// body的downloader
     pub downloader: D,
     /// The consensus engine.
     pub consensus: Arc<dyn Consensus>,
@@ -65,6 +70,7 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
 
     /// Download block bodies from the last checkpoint for this stage up until the latest synced
     /// header, limited by the stage's batch size.
+    /// 从这个stage的最后一个checkpoint下载block bodies，直到最新的synced header，被stage的batch size限制
     async fn execute(
         &mut self,
         tx: &mut Transaction<'_, DB>,
@@ -73,15 +79,18 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         let range = input.next_block_range();
         if range.is_empty() {
             let (from, to) = range.into_inner();
+            // 已经到了target block
             info!(target: "sync::stages::bodies", from, "Target block already reached");
             return Ok(ExecOutput::done(StageCheckpoint::new(to)))
         }
 
         // Update the header range on the downloader
+        // 更新downloader的header range
         self.downloader.set_download_range(range.clone())?;
         let (from_block, to_block) = range.into_inner();
 
         // Cursors used to write bodies, ommers and transactions
+        // Cursors用于写入bodies，ommers和transactions
         let mut block_indices_cursor = tx.cursor_write::<tables::BlockBodyIndices>()?;
         let mut tx_cursor = tx.cursor_write::<tables::Transactions>()?;
         let mut tx_block_cursor = tx.cursor_write::<tables::TransactionBlock>()?;
@@ -89,20 +98,24 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         let mut withdrawals_cursor = tx.cursor_write::<tables::BlockWithdrawals>()?;
 
         // Get id for the next tx_num of zero if there are no transactions.
+        // 获取下一个tx_num的id，如果没有transactions
         let mut next_tx_num = tx_cursor.last()?.map(|(id, _)| id + 1).unwrap_or_default();
 
         debug!(target: "sync::stages::bodies", stage_progress = from_block, target = to_block, start_tx_id = next_tx_num, "Commencing sync");
 
         // Task downloader can return `None` only if the response relaying channel was closed. This
         // is a fatal error to prevent the pipeline from running forever.
+        // Task downloader可以返回None，只有当response relaying channel被关闭的时候，这是一个致命的错误，防止pipeline永远运行
         let downloaded_bodies =
             self.downloader.try_next().await?.ok_or(StageError::ChannelClosed)?;
 
+        // 写入bodies
         trace!(target: "sync::stages::bodies", bodies_len = downloaded_bodies.len(), "Writing blocks");
 
         let mut highest_block = from_block;
         for response in downloaded_bodies {
             // Write block
+            // 写入block
             let block_number = response.block_number();
 
             let block_indices = StoredBlockBodyIndices {
@@ -115,11 +128,13 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             match response {
                 BlockResponse::Full(block) => {
                     // write transaction block index
+                    // 写入transaction block index
                     if !block.body.is_empty() {
                         tx_block_cursor.append(block_indices.last_tx_num(), block.number)?;
                     }
 
                     // Write transactions
+                    // 写入transactions
                     for transaction in block.body {
                         // Append the transaction
                         tx_cursor.append(next_tx_num, transaction.into())?;
@@ -128,12 +143,14 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
                     }
 
                     // Write ommers if any
+                    // 写入ommers，如果有的话
                     if !block.ommers.is_empty() {
                         ommers_cursor
                             .append(block_number, StoredBlockOmmers { ommers: block.ommers })?;
                     }
 
                     // Write withdrawals if any
+                    // 写入withdrawals，如果有的话
                     if let Some(withdrawals) = block.withdrawals {
                         if !withdrawals.is_empty() {
                             withdrawals_cursor
@@ -145,14 +162,18 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             };
 
             // insert block meta
+            // 插入block meta
             block_indices_cursor.append(block_number, block_indices)?;
 
             highest_block = block_number;
         }
 
         // The stage is "done" if:
+        // stage结束的条件
         // - We got fewer blocks than our target
+        // - 我们得到的blocks比我们的target少
         // - We reached our target and the target was not limited by the batch size of the stage
+        // - 我们到达了target，而且target不是被stage的batch size限制的
         let done = highest_block == to_block;
         info!(target: "sync::stages::bodies", stage_progress = highest_block, target = to_block, is_final_range = done, "Stage iteration finished");
         Ok(ExecOutput { checkpoint: StageCheckpoint::new(highest_block), done })
@@ -230,6 +251,7 @@ mod tests {
         let (stage_progress, previous_stage) = (1, 200);
 
         // Set up test runner
+        // 设置test runner
         let mut runner = BodyTestRunner::default();
         let input = ExecInput {
             previous_stage: Some((PREV_STAGE_ID, StageCheckpoint::new(previous_stage))),
@@ -239,13 +261,16 @@ mod tests {
 
         // Set the batch size (max we sync per stage execution) to less than the number of blocks
         // the previous stage synced (10 vs 20)
+        // 设置batch size（每个stage执行的最大值）小于之前stage同步的blocks数量（10 vs 20）
         runner.set_batch_size(10);
 
         // Run the stage
+        // 运行stage
         let rx = runner.execute(input);
 
         // Check that we only synced around `batch_size` blocks even though the number of blocks
         // synced by the previous stage is higher
+        // 检查我们只同步了大约batch_size的blocks，即使之前stage同步的blocks数量更高
         let output = rx.await.unwrap();
         assert_matches!(
             output,
@@ -255,6 +280,7 @@ mod tests {
     }
 
     /// Same as [partial_body_download] except the `batch_size` is not hit.
+    /// 和partial_body_download一样，除了batch_size没有达到
     #[tokio::test]
     async fn full_body_download() {
         let (stage_progress, previous_stage) = (1, 20);
@@ -287,6 +313,7 @@ mod tests {
     }
 
     /// Same as [full_body_download] except we have made progress before
+    /// 和full_body_download一样，除了我们之前已经有了进展
     #[tokio::test]
     async fn sync_from_previous_progress() {
         let (stage_progress, previous_stage) = (1, 21);
@@ -305,6 +332,7 @@ mod tests {
         let rx = runner.execute(input);
 
         // Check that we synced at least 10 blocks
+        // 检查我们已经同步了至少10个blocks
         let first_run = rx.await.unwrap();
         assert_matches!(
             first_run,
@@ -313,6 +341,7 @@ mod tests {
         let first_run_checkpoint = first_run.unwrap().checkpoint;
 
         // Execute again on top of the previous run
+        // 在之前的run的基础上再次执行
         let input = ExecInput {
             previous_stage: Some((PREV_STAGE_ID, StageCheckpoint::new(previous_stage))),
             checkpoint: Some(first_run_checkpoint),
@@ -320,6 +349,7 @@ mod tests {
         let rx = runner.execute(input);
 
         // Check that we synced more blocks
+        // 检查我们同步了更多的blocks
         let output = rx.await.unwrap();
         assert_matches!(
             output,
@@ -333,11 +363,13 @@ mod tests {
     }
 
     /// Checks that the stage unwinds correctly, even if a transaction in a block is missing.
+    /// 检查stage正确地unwind，即使一个block中的transaction丢失了
     #[tokio::test]
     async fn unwind_missing_tx() {
         let (stage_progress, previous_stage) = (1, 20);
 
         // Set up test runner
+        // 设置test runner
         let mut runner = BodyTestRunner::default();
         let input = ExecInput {
             previous_stage: Some((PREV_STAGE_ID, StageCheckpoint::new(previous_stage))),
@@ -346,13 +378,16 @@ mod tests {
         runner.seed_execution(input).expect("failed to seed execution");
 
         // Set the batch size to more than what the previous stage synced (40 vs 20)
+        // 设置batch size大于之前stage同步的blocks数量
         runner.set_batch_size(40);
 
         // Run the stage
+        // 运行stage
         let rx = runner.execute(input);
 
         // Check that we synced all blocks successfully, even though our `batch_size` allows us to
         // sync more (if there were more headers)
+        // 检查我们已经成功同步了所有的blocks，即使我们的batch_size允许我们同步更多（如果有更多的headers）
         let output = rx.await.unwrap();
         assert_matches!(
             output,
@@ -364,6 +399,7 @@ mod tests {
             .expect("Written block data invalid");
 
         // Delete a transaction
+        // 删除一个transaction
         runner
             .tx()
             .commit(|tx| {
@@ -375,11 +411,13 @@ mod tests {
             .expect("Could not delete a transaction");
 
         // Unwind all of it
+        // Unwind所有
         let unwind_to = 1;
         let input = UnwindInput { bad_block: None, checkpoint, unwind_to };
         let res = runner.unwind(input).await;
         assert_matches!(
             res,
+            // 回到了之前的stage
             Ok(UnwindOutput { checkpoint: StageCheckpoint { block_number: 1, .. } })
         );
 
@@ -445,6 +483,7 @@ mod tests {
         }
 
         /// A helper struct for running the [BodyStage].
+        /// 一个helper结构用于运行BodyStage
         pub(crate) struct BodyTestRunner {
             pub(crate) consensus: Arc<TestConsensus>,
             responses: HashMap<H256, BlockBody>,
@@ -458,6 +497,7 @@ mod tests {
                     consensus: Arc::new(TestConsensus::default()),
                     responses: HashMap::default(),
                     tx: TestTransaction::default(),
+                    // 设置了batch size
                     batch_size: 1000,
                 }
             }
@@ -465,6 +505,7 @@ mod tests {
 
         impl BodyTestRunner {
             pub(crate) fn set_batch_size(&mut self, batch_size: u64) {
+                // 设置batch size
                 self.batch_size = batch_size;
             }
 

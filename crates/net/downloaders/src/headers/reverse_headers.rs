@@ -607,6 +607,7 @@ where
 {
     fn update_local_head(&mut self, head: SealedHeader) {
         // ensure we're only yielding headers that are in range and follow the current local head.
+        // 确保我们只产生在范围内的头部，并且遵循当前的本地头部。
         while self
             .queued_validated_headers
             .last()
@@ -614,13 +615,16 @@ where
             .unwrap_or_default()
         {
             // headers are sorted high to low
+            // headers从高到底排序
             self.queued_validated_headers.pop();
         }
         // update the local head
+        // 更新local head
         self.local_head = Some(head);
     }
 
     /// If the given target is different from the current target, we need to update the sync target
+    /// 如果给定的target和当前的target不同，我们需要更新sync target
     fn update_sync_target(&mut self, target: SyncTarget) {
         let current_tip = self.sync_target.as_ref().and_then(|t| t.hash());
         match target {

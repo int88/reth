@@ -25,6 +25,7 @@ use std::{
 
 /// The [TestTransaction] is used as an internal
 /// database for testing stage implementation.
+/// [TestTransaction]用于测试stage的内部数据库
 ///
 /// ```rust,ignore
 /// let tx = TestTransaction::default();

@@ -19,6 +19,7 @@ use tokio::sync::watch;
 use tracing::*;
 
 /// The header sync mode.
+/// header的同步模式
 #[derive(Debug)]
 pub enum HeaderSyncMode {
     /// A sync mode in which the stage continuously requests the downloader for
@@ -38,6 +39,7 @@ pub enum HeaderSyncMode {
 /// headers stage下载所有的block headers，从本地数据库中的最高block到网络中感知到的最高block。
 ///
 /// The headers are processed and data is inserted into these tables:
+/// headers被处理并且data被插入这些tables中：
 ///
 /// - [`HeaderNumbers`][reth_db::tables::HeaderNumbers]
 /// - [`Headers`][reth_db::tables::Headers]
@@ -98,17 +100,20 @@ where
         let mut header_cursor = tx.cursor_read::<tables::Headers>()?;
 
         // Get head hash and reposition the cursor
+        // 获取header hash以及重新定位cursor
         let (head_num, head_hash) = cursor
             .seek_exact(checkpoint)?
             .ok_or_else(|| ProviderError::HeaderNotFound(checkpoint.into()))?;
 
         // Construct head
+        // 构建head
         let (_, head) = header_cursor
             .seek_exact(head_num)?
             .ok_or_else(|| ProviderError::HeaderNotFound(head_num.into()))?;
         let local_head = head.seal(head_hash);
 
         // Look up the next header
+        // 查找下一个header
         let next_header = cursor
             .next()?
             .map(|(next_num, next_hash)| -> Result<SealedHeader, StageError> {
@@ -120,9 +125,12 @@ where
             .transpose()?;
 
         // Decide the tip or error out on invalid input.
+        // 决定tip或者在无效的输入上报错。
         // If the next element found in the cursor is not the "expected" next block per our current
         // checkpoint, then there is a gap in the database and we should start downloading in
         // reverse from there. Else, it should use whatever the forkchoice state reports.
+        // 如果在cursor中找到的下一个元素不是我们当前checkpoint的“预期”下一个block，那么数据库中就有一个gap，
+        // 我们应该从那里开始反向下载。否则，它应该使用forkchoice state报告的任何内容。
         let target = match next_header {
             Some(header) if checkpoint + 1 != header.number => SyncTarget::Gap(header),
             None => self.next_sync_target(head_num).await,
@@ -144,6 +152,7 @@ where
                 }
             }
             HeaderSyncMode::Continuous => {
+                // 没有找到next header，使用continuous sync strategy
                 tracing::trace!(target: "sync::stages::headers", head, "No next header found, using continuous sync strategy");
                 SyncTarget::TipNum(head + 1)
             }
@@ -151,8 +160,10 @@ where
     }
 
     /// Write downloaded headers to the given transaction
+    /// 写入下载的headers到给定的transaction
     ///
     /// Note: this writes the headers with rising block numbers.
+    /// 注意：写入headers，block number是上升的。
     fn write_headers<DB: Database>(
         &self,
         tx: &Transaction<'_, DB>,
@@ -205,6 +216,7 @@ where
         tx: &mut Transaction<'_, DB>,
         input: ExecInput,
     ) -> Result<ExecOutput, StageError> {
+        // 获取当前的checkpoint
         let current_checkpoint = input.checkpoint();
 
         // Lookup the head and tip of the sync range
@@ -257,7 +269,11 @@ where
         // syncing towards, we need to take into account already synced headers from the database.
         // It is `None`, if tip didn't change and we're still downloading headers for previously
         // calculated gap.
+        // 因为我们正在批量同步headers，gap tip将在每次迭代中向我们的本地head反向移动。
+        // 为了获得我们正在同步的实际目标block number，我们需要考虑从数据库中同步的headers。
+        // 如果是`None`，如果tip没有改变，并且我们仍然在为之前计算的gap下载headers。
         let target_block_number = if let Some(tip_block_number) = tip_block_number {
+            // 本地最大的block number
             let local_max_block_number = tx
                 .cursor_read::<tables::CanonicalHeaders>()?
                 .last()?
@@ -274,10 +290,13 @@ where
             // If for some reason (e.g. due to DB migration) we don't have `processed`
             // in the middle of headers sync, set it to the local head block number +
             // number of block already filled in the gap.
+            // 如果因为一些原因（例如由于DB migration）我们在headers sync的中间没有`processed`，
+            // 设置到本地head block number + block number的数量，已经填充了gap。
             processed: local_head +
                 (target_block_number.unwrap_or_default() - tip_block_number.unwrap_or_default()),
             // Shouldn't fail because on the first iteration, we download the header for missing
             // tip, and use its block number.
+            // 在第一次迭代中，我们下载缺失tip的header，并使用它的block number，不应该失败。
             total: target_block_number.or_else(|| {
                 warn!(target: "sync::stages::headers", ?tip, "No downloaded header for tip found");
                 // Safe, because `Display` impl for `EntitiesCheckpoint` will fallback to displaying
@@ -399,6 +418,7 @@ mod tests {
         use std::sync::Arc;
 
         pub(crate) struct HeadersTestRunner<D: HeaderDownloader> {
+            // 包含test header client
             pub(crate) client: TestHeadersClient,
             channel: (watch::Sender<H256>, watch::Receiver<H256>),
             downloader_factory: Box<dyn Fn() -> D + Send + Sync + 'static>,

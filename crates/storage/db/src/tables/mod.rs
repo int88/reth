@@ -149,6 +149,7 @@ table!(
 
 table!(
     /// Stores header bodies.
+    /// 存储header bodies
     ( Headers ) BlockNumber | Header
 );
 
