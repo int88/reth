@@ -161,8 +161,10 @@ impl Chain {
     }
 
     /// Merge two chains by appending the given chain into the current one.
+    /// 合并两个chains，通过将给定的chain附加到当前的chain中
     ///
     /// The state of accounts for this chain is set to the state of the newest chain.
+    /// 对于这个chain的accounts的状态被设置为最新chain的状态
     pub fn append_chain(&mut self, chain: Chain) -> Result<(), Error> {
         let chain_tip = self.tip();
         if chain_tip.hash != chain.fork_block_hash() {

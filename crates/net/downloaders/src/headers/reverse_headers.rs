@@ -1075,6 +1075,7 @@ impl ReverseHeadersDownloaderBuilder {
 
     /// Build [ReverseHeadersDownloader] with provided consensus
     /// and header client implementations
+    /// 用提供的consensus和header client实现构建[ReverseHeadersDownloader]
     pub fn build<H>(self, client: H, consensus: Arc<dyn Consensus>) -> ReverseHeadersDownloader<H>
     where
         H: HeadersClient + 'static,

@@ -257,6 +257,7 @@ where
         rx: UnboundedReceiver<BeaconEngineMessage>,
     ) -> (Self, BeaconConsensusEngineHandle) {
         let handle = BeaconConsensusEngineHandle { to_engine };
+        // 构建sync
         let sync = EngineSyncController::new(
             pipeline,
             client,
@@ -627,6 +628,7 @@ where
             // 我们需要首先检查buffer，对于head以及它的祖先
             let lowest_unknown_hash = self.lowest_buffered_ancestor_or(state.head_block_hash);
 
+            // 为缺失的哈希，或者它的最低缓冲祖先的父哈希触发一个full block download
             trace!(target: "consensus::engine", request=?lowest_unknown_hash, "Triggering full block download for missing ancestors of the new head");
 
             // trigger a full block download for missing hash, or the parent of its lowest buffered
@@ -829,6 +831,7 @@ where
         &mut self,
         block: SealedBlock,
     ) -> Result<PayloadStatus, InsertBlockError> {
+        // pipeline必须是空闲的
         debug_assert!(self.sync.is_pipeline_idle(), "pipeline must be idle");
 
         let block_hash = block.hash;
@@ -935,6 +938,7 @@ where
                 //  [head..FCU.number]
 
                 if self
+                    // 插入新的payload
                     .try_insert_new_payload(block)
                     .map(|status| status.is_valid())
                     .unwrap_or_default()

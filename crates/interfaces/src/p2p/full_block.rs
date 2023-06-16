@@ -114,6 +114,7 @@ where
                                 maybe_header.map(|h| h.map(|h| h.seal_slow())).split();
                             if let Some(header) = maybe_header {
                                 if header.hash() != this.hash {
+                                    // 收到了错误的header
                                     debug!(target: "downloaders", expected=?this.hash, received=?header.hash, "Received wrong header");
                                     // received bad header
                                     this.client.report_bad_message(peer)
@@ -123,12 +124,14 @@ where
                             }
                         }
                         Err(err) => {
+                            // downloader下载header失败
                             debug!(target: "downloaders", %err, ?this.hash, "Header download failed");
                         }
                     }
 
                     if this.header.is_none() {
                         // received bad response
+                        // 收到了错误的响应
                         this.request.header = Some(this.client.get_header(this.hash.into()));
                     }
                 }
@@ -143,6 +146,7 @@ where
                     }
                     if this.body.is_none() {
                         // received bad response
+                        // 收到了错误的响应
                         this.request.body = Some(this.client.get_block_body(this.hash));
                     }
                 }

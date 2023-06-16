@@ -37,19 +37,23 @@ pub const BODIES_DOWNLOADER_SCOPE: &str = "downloaders.bodies";
 #[derive(Debug)]
 pub struct BodiesDownloader<B: BodiesClient, DB> {
     /// The bodies client
+    /// bodies的client
     client: Arc<B>,
     /// The consensus client
+    /// consensus的client
     consensus: Arc<dyn Consensus>,
     // TODO: make this a [HeaderProvider]
     /// The database handle
     db: DB,
     /// The maximum number of non-empty blocks per one request
+    /// 每个requests的最大非空块数
     request_limit: u64,
     /// The maximum number of block bodies returned at once from the stream
     stream_batch_size: usize,
     /// The allowed range for number of concurrent requests.
     concurrent_requests_range: RangeInclusive<usize>,
     /// Maximum amount of received blocks to buffer internally.
+    /// 最大的接收的blocks的内部缓冲区
     max_buffered_blocks: usize,
     /// Current number of buffered blocks
     num_buffered_blocks: usize,
@@ -64,6 +68,7 @@ pub struct BodiesDownloader<B: BodiesClient, DB> {
     /// Queued body responses that can be returned for insertion into the database.
     queued_bodies: Vec<BlockResponse>,
     /// The bodies downloader metrics.
+    /// bodies downloader的metrics
     metrics: DownloaderMetrics,
 }
 
@@ -546,6 +551,7 @@ impl BodiesDownloaderBuilder {
     }
 
     /// Consume self and return the concurrent downloader.
+    /// 消费self并且返回并行下载器
     pub fn build<B, DB>(
         self,
         client: B,

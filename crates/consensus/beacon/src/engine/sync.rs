@@ -101,6 +101,7 @@ where
     }
 
     /// Cancels the full block request with the given hash.
+    /// 用给定的hash取消full block request
     pub(crate) fn cancel_full_block_request(&mut self, hash: H256) {
         self.inflight_full_block_requests.retain(|req| *req.hash() != hash);
     }

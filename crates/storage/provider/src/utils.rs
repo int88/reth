@@ -94,6 +94,7 @@ pub fn insert_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
 
 /// Inserts canonical block in blockchain. Parent tx num and transition id is taken from
 /// parent block in database.
+/// 插入canonical block到区块链中，父tx num和transition id从数据库中的parent block中获取。
 pub fn insert_canonical_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
     tx: &TX,
     block: SealedBlock,

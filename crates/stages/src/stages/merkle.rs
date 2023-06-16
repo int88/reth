@@ -21,16 +21,20 @@ use tracing::*;
 /// [`AccountHashingStage`][crate::stages::AccountHashingStage] and
 /// [`StorageHashingStage`][crate::stages::AccountHashingStage] to calculate intermediate hashes
 /// and state roots.
+/// merkle hashing stage使用来自AccountHashingStage和StorageHashingStage的输入来计算中间哈希和状态根。
 ///
 /// This stage should be run with the above two stages, otherwise it is a no-op.
+/// 这个stage应该运行在上面两个stage之后，否则它是一个no-op。
 ///
 /// This stage is split in two: one for calculating hashes and one for unwinding.
+/// 这个stage分为两个部分：一个用于计算哈希，一个用于unwinding。
 ///
 /// When run in execution, it's going to be executed AFTER the hashing stages, to generate
 /// the state root. When run in unwind mode, it's going to be executed BEFORE the hashing stages,
 /// so that it unwinds the intermediate hashes based on the unwound hashed state from the hashing
 /// stages. The order of these two variants is important. The unwind variant should be added to the
 /// pipeline before the execution variant.
+/// 当运行在execution模式下时，它将在hashing stages之后执行，以生成state root。当运行在unwind模式下时，
 ///
 /// An example pipeline to only hash state would be:
 ///

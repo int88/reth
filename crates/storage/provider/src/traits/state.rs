@@ -11,6 +11,7 @@ use reth_primitives::{
 pub type StateProviderBox<'a> = Box<dyn StateProvider + 'a>;
 
 /// An abstraction for a type that provides state data.
+/// 对于一个提供state data的类型的抽象
 #[auto_impl(&, Arc, Box)]
 pub trait StateProvider:
     BlockHashProvider + AccountProvider + StateRootProvider + Send + Sync
@@ -75,9 +76,11 @@ pub trait StateProvider:
 
 /// Light wrapper that returns `StateProvider` implementations that correspond to the given
 /// `BlockNumber`, the latest state, or the pending state.
+/// 轻量化的wrapper，返回对应于给定的`BlockNumber`，最新的state，或者pending state的`StateProvider`实现
 ///
 /// This type differentiates states into `historical`, `latest` and `pending`, where the `latest`
 /// block determines what is historical or pending: `[historical..latest..pending]`.
+/// 类型将state区分为`historical`，`latest`和`pending`，其中`latest` block决定了什么是`historical`或者`pending`
 ///
 /// The `latest` state represents the state after the most recent block has been committed to the
 /// database, `historical` states are states that have been committed to the database before the

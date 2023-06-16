@@ -31,6 +31,7 @@ pub use providers::{
 };
 
 /// Execution result
+/// 执行结果
 pub mod post_state;
 pub use post_state::PostState;
 
@@ -40,11 +41,13 @@ mod transaction;
 pub use transaction::{Transaction, TransactionError};
 
 /// Common database utilities.
+/// 公共的database工具
 mod utils;
 pub use utils::{insert_block, insert_canonical_block};
 
 #[cfg(any(test, feature = "test-utils"))]
 /// Common test helpers for mocking the Provider.
+/// 公共的测试帮助函数，用于mock Provider
 pub mod test_utils;
 
 /// Re-export provider error.

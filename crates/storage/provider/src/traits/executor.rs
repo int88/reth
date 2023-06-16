@@ -19,15 +19,20 @@ pub trait ExecutorFactory: Send + Sync + 'static {
 }
 
 /// An executor capable of executing a block.
+/// 一个executor可以执行一个block
 pub trait BlockExecutor<SP: StateProvider> {
     /// Execute a block.
+    /// 执行一个block
     ///
     /// The number of `senders` should be equal to the number of transactions in the block.
+    /// `senders`的数目应该等于block中的transactions的数目
     ///
     /// If no senders are specified, the `execute` function MUST recover the senders for the
     /// provided block's transactions internally. We use this to allow for calculating senders in
     /// parallel in e.g. staged sync, so that execution can happen without paying for sender
     /// recovery costs.
+    /// 如果没有指定senders，execute函数必须在提供的block的transactions内部恢复senders
+    /// 我们使用这个来允许在staged sync中并行计算senders，所以execution可以在不支付sender恢复成本的情况下发生
     fn execute(
         &mut self,
         block: &Block,
@@ -36,6 +41,7 @@ pub trait BlockExecutor<SP: StateProvider> {
     ) -> Result<PostState, BlockExecutionError>;
 
     /// Executes the block and checks receipts
+    /// 执行block并且检查receipts
     fn execute_and_verify_receipt(
         &mut self,
         block: &Block,

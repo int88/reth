@@ -35,6 +35,7 @@ use std::{
 
 /// A container for any DB transaction that will open a new inner transaction when the current
 /// one is committed.
+/// 一个container用于任何的DB transaction，当当前的transaction被commit时，会打开一个新的inner transaction
 // NOTE: This container is needed since `Transaction::commit` takes `mut self`, so methods in
 // the pipeline that just take a reference will not be able to commit their transaction and let
 // the pipeline continue. Is there a better way to do this?
@@ -87,8 +88,10 @@ where
     DB: Database,
 {
     /// Create a new container with the given database handle.
+    /// 用给定的database handle创建一个新的container
     ///
     /// A new inner transaction will be opened.
+    /// 一个新的inner transaction会被打开
     pub fn new(db: &'this DB) -> Result<Self, DbError> {
         Ok(Self { db, tx: Some(db.tx_mut()?) })
     }
@@ -126,6 +129,7 @@ where
     }
 
     /// Commit the current inner transaction and open a new one.
+    /// 提交当前的inner transaction并且打开一个新的
     ///
     /// # Panics
     ///
@@ -277,6 +281,7 @@ where
     DB: Database,
 {
     /// Get range of blocks and its execution result
+    /// 获取一系列的blocks和它们的执行结果
     pub fn get_block_and_execution_range(
         &self,
         chain_spec: &ChainSpec,
@@ -460,7 +465,9 @@ where
     }
 
     /// Append blocks and insert its post state.
+    /// 扩展blocks并且插入它的post state
     /// This will insert block data to all related tables and will update pipeline progress.
+    /// 这会插入block数据到所有相关的tables并且会更新pipeline的进度
     pub fn append_blocks_with_post_state(
         &mut self,
         blocks: Vec<SealedBlockWithSenders>,
@@ -533,6 +540,7 @@ where
 
     /// Calculate the hashes of all changed accounts and storages, and finally calculate the state
     /// root.
+    /// 计算所有变更了的accounts和storages的hashes，最后计算state root
     ///
     /// The chain goes from `fork_block_number + 1` to `current_block_number`, and hashes are
     /// calculated from `from_transition_id` to `to_transition_id`.
@@ -1296,6 +1304,7 @@ where
     }
 
     /// Save stage checkpoint.
+    /// 保存stage checkpoint
     pub fn save_stage_checkpoint(
         &self,
         id: StageId,

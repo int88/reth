@@ -17,11 +17,14 @@ pub struct Command {
 #[derive(Subcommand, Debug)]
 pub enum Subcommands {
     /// Run a single stage.
+    /// 运行单个的stage
     ///
     /// Note that this won't use the Pipeline and as a result runs stages
     /// assuming that all the data can be held in memory. It is not recommended
     /// to run a stage for really large block ranges if your computer does not have
     /// a lot of memory to store all the data.
+    /// 注意这个不会使用Pipeline，因此运行stage的时候假设所有的数据都可以被存储在内存中。
+    /// 如果你的电脑没有足够的内存来存储所有的数据，那么不建议运行一个非常大的block range。
     Run(run::Command),
     /// Drop a stage's tables from the database.
     Drop(drop::Command),

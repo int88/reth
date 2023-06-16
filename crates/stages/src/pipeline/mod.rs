@@ -32,9 +32,11 @@ pub(crate) type BoxedStage<DB> = Box<dyn Stage<DB>>;
 
 /// The future that returns the owned pipeline and the result of the pipeline run. See
 /// [Pipeline::run_as_fut].
+/// 这个future返回pipeline和pipeline运行的结果。见Pipeline::run_as_future
 pub type PipelineFut<DB> = Pin<Box<dyn Future<Output = PipelineWithResult<DB>> + Send>>;
 
 /// The pipeline type itself with the result of [Pipeline::run_as_fut]
+/// pipeline类型本身与Pipeline::run_as_fut的结果
 pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineError>);
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
@@ -166,10 +168,12 @@ where
 
     /// Consume the pipeline and run it until it reaches the provided tip, if set. Return the
     /// pipeline and its result as a future.
+    /// 消费pipeline并运行它，直到它达到提供的tip，如果设置了的话。将pipeline及其结果作为future返回。
     #[track_caller]
     pub fn run_as_fut(mut self, tip: Option<H256>) -> PipelineFut<DB> {
         // TODO: fix this in a follow up PR. ideally, consensus engine would be responsible for
         // updating metrics.
+        // consensus engine应该负责更新metrics
         let _ = self.register_metrics(); // ignore error
         Box::pin(async move {
             // NOTE: the tip should only be None if we are in continuous sync mode.
@@ -303,6 +307,7 @@ where
                             stage_progress,
                             // We assume it was set in the previous execute iteration, so it
                             // doesn't change when we unwind.
+                            // 我们假设它被设置为前一个执行迭代，所以当我们解开时它不会改变。
                             None,
                         );
                         tx.save_stage_checkpoint(stage_id, stage_progress)?;
@@ -348,6 +353,7 @@ where
                     stage = %stage_id,
                     max_block = self.max_block,
                     prev_block = prev_checkpoint.map(|progress| progress.block_number),
+                    // stage到达了最大的block
                     "Stage reached maximum block, skipping."
                 );
                 self.listeners.notify(PipelineEvent::Skipped { stage_id });

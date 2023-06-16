@@ -9,9 +9,11 @@ use std::sync::Arc;
 use tracing::info;
 
 /// Initializes the database with the genesis block.
+/// 用genesis block初始化数据库
 #[derive(Debug, Parser)]
 pub struct InitCommand {
     /// The path to the data dir for all reth files and subdirectories.
+    /// 到data dir的路径，用于所有的reth文件和子目录
     ///
     /// Defaults to the OS-specific data directory:
     ///
@@ -22,8 +24,10 @@ pub struct InitCommand {
     datadir: MaybePlatformPath<DataDirPath>,
 
     /// The chain this node is running.
+    /// 这个node正在运行的chain
     ///
     /// Possible values are either a built-in chain or the path to a chain specification file.
+    /// 可能的值是内置的chain或者chain specification文件的路径
     ///
     /// Built-in chains:
     /// - mainnet
@@ -45,6 +49,7 @@ impl InitCommand {
         info!(target: "reth::cli", "reth init starting");
 
         // add network name to data dir
+        // 添加网络名称到data dir
         let data_dir = self.datadir.unwrap_or_chain_default(self.chain.chain);
         let db_path = data_dir.db_path();
         info!(target: "reth::cli", path = ?db_path, "Opening database");

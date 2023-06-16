@@ -32,6 +32,7 @@ use tokio::sync::watch;
 use tracing::{debug, info};
 
 /// Syncs RLP encoded blocks from a file.
+/// 从一个文件中同步RLP编码的blocks
 #[derive(Debug, Parser)]
 pub struct ImportCommand {
     /// The path to the configuration file to use.
@@ -99,10 +100,12 @@ impl ImportCommand {
         info!(target: "reth::cli", "Consensus engine initialized");
 
         // create a new FileClient
+        // 创建一个新的FileClient
         info!(target: "reth::cli", "Importing chain file");
         let file_client = Arc::new(FileClient::new(&self.path).await?);
 
         // override the tip
+        // 覆盖tip
         let tip = file_client.tip().expect("file client has no tip");
         info!(target: "reth::cli", "Chain file imported");
 
@@ -116,6 +119,7 @@ impl ImportCommand {
         tokio::spawn(handle_events(None, events));
 
         // Run pipeline
+        // 运行pipeline
         info!(target: "reth::cli", "Starting sync pipeline");
         tokio::select! {
             res = pipeline.run() => res?,
@@ -141,6 +145,7 @@ impl ImportCommand {
             eyre::bail!("unable to import non canonical blocks");
         }
 
+        // 构建header和body downloader
         let header_downloader = ReverseHeadersDownloaderBuilder::from(config.stages.headers)
             .build(file_client.clone(), consensus.clone())
             .into_task();
@@ -153,8 +158,10 @@ impl ImportCommand {
         let factory = reth_revm::Factory::new(self.chain.clone());
 
         let mut pipeline = Pipeline::builder()
+            // 设置tip sender
             .with_tip_sender(tip_tx)
             // we want to sync all blocks the file client provides or 0 if empty
+            // 我们想要同步所有的blocks，file client提供的或者0，如果是空的
             .with_max_block(file_client.max_block().unwrap_or(0))
             .add_stages(
                 DefaultStages::new(
@@ -188,6 +195,7 @@ impl ImportCommand {
     }
 
     /// Loads the reth config
+    /// 加载reth的配置
     fn load_config(&self, config_path: PathBuf) -> eyre::Result<Config> {
         confy::load_path::<Config>(config_path.clone())
             .wrap_err_with(|| format!("Could not load config file {:?}", config_path))

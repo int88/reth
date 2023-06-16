@@ -69,6 +69,7 @@ pub trait HeadersClient: DownloadClient {
 }
 
 /// A Future that resolves to a single block body.
+/// 一个Future，解析为单个block body
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled"]
 pub struct SingleHeaderRequest<Fut> {

@@ -5,9 +5,11 @@ use reth_metrics::{
 };
 
 /// Common downloader metrics.
+/// 通用的downloader metrics
 ///
 /// These metrics will be dynamically initialized with the provided scope
 /// by corresponding downloaders.
+/// metrics会被动态的初始化，通过相应的downloader
 /// ```
 /// use reth_downloaders::metrics::DownloaderMetrics;
 /// use reth_interfaces::p2p::error::DownloadError;

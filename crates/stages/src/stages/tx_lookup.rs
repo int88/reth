@@ -18,10 +18,13 @@ use tokio::sync::mpsc;
 use tracing::*;
 
 /// The transaction lookup stage.
+/// 查找transaction的stage
 ///
 /// This stage walks over the bodies table, and sets the transaction hash of each transaction in a
 /// block to the corresponding `BlockNumber` at each block. This is written to the
 /// [`tables::TxHashNumber`] This is used for looking up changesets via the transaction hash.
+/// 这个stage会遍历bodies table，并且设置每个block中的每个transaction的transaction hash为对应的`BlockNumber`。
+/// 它会写入[`tables::TxHashNumber`]，这个用于通过transaction hash查找changesets
 #[derive(Debug, Clone)]
 pub struct TransactionLookupStage {
     /// The number of blocks to commit at once

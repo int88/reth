@@ -95,10 +95,14 @@ pub trait BlockProvider:
 }
 
 /// Trait extension for `BlockProvider`, for types that implement `BlockId` conversion.
+/// `BlockProvider`的trait扩展，用于实现`BlockId`转换的类型
 ///
 /// The `BlockProvider` trait should be implemented on types that can retrieve a block from either
 /// a block number or hash. However, it might be desirable to fetch a block from a `BlockId` type,
 /// which can be a number, hash, or tag such as `BlockNumberOrTag::Safe`.
+/// `BlockProvider` trait应该被实现在可以从block number或者hash中检索到block的类型上。然而，
+/// 从`BlockId`类型中获取block可能是可取的，这个类型可以是number，hash，或者tag，比如`BlockNumberOrTag::Safe`
+/// 
 ///
 /// Resolving tags requires keeping track of block hashes or block numbers associated with the tag,
 /// so this trait can only be implemented for types that implement `BlockIdProvider`. The

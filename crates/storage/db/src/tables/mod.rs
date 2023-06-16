@@ -202,11 +202,13 @@ table!(
 
 table!(
     /// Stores the current state of an [`Account`].
+    /// 存储当前的account state
     ( PlainAccountState ) Address | Account
 );
 
 dupsort!(
     /// Stores the current value of a storage key.
+    /// 存储当前的storage key的value
     ( PlainStorageState ) Address | [H256] StorageEntry
 );
 
