@@ -20,22 +20,29 @@ pub enum PipelineEvent {
         /// 1-indexed ID of the stage that is about to be run out of total stages in the pipeline.
         pipeline_position: usize,
         /// Total number of stages in the pipeline.
+        /// pipeline中的stage的总和
         pipeline_total: usize,
         /// The stage that is about to be run.
+        /// 准备运行的stage
         stage_id: StageId,
         /// The previous checkpoint of the stage.
+        /// stage之前的checkpoint
         checkpoint: Option<StageCheckpoint>,
     },
     /// Emitted when a stage has run a single time.
     /// 当一个stage运行了一次的时候，发出
     Ran {
         /// 1-indexed ID of the stage that was run out of total stages in the pipeline.
+        /// 1-索引的stage的ID，这个stage是pipeline中所有stages的总和
         pipeline_position: usize,
         /// Total number of stages in the pipeline.
+        /// pipeline中的所有stages的总和
         pipeline_total: usize,
         /// The stage that was run.
+        /// 正在运行的stage
         stage_id: StageId,
         /// The result of executing the stage.
+        /// 执行stage的结果
         result: ExecOutput,
     },
     /// Emitted when a stage is about to be unwound.

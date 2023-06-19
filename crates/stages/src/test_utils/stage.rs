@@ -53,6 +53,7 @@ impl<DB: Database> Stage<DB> for TestStage {
         _: &mut Transaction<'_, DB>,
         _input: ExecInput,
     ) -> Result<ExecOutput, StageError> {
+        // 弹出exec output
         self.exec_outputs
             .pop_front()
             .unwrap_or_else(|| panic!("Test stage {} executed too many times.", self.id))
@@ -64,6 +65,7 @@ impl<DB: Database> Stage<DB> for TestStage {
         _input: UnwindInput,
     ) -> Result<UnwindOutput, StageError> {
         self.unwind_outputs
+            // 弹出unwind output
             .pop_front()
             .unwrap_or_else(|| panic!("Test stage {} unwound too many times.", self.id))
     }

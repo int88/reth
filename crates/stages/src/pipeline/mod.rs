@@ -147,6 +147,7 @@ where
     }
 
     /// Listen for events on the pipeline.
+    /// 在pipeline上监听事件
     pub fn events(&mut self) -> UnboundedReceiverStream<PipelineEvent> {
         self.listeners.new_listener()
     }
@@ -540,6 +541,7 @@ mod tests {
         // Check that the stages were run in order
         // 检查stages是否按顺序运行
         assert_eq!(
+            // 收集一系列pipe events
             events.collect::<Vec<PipelineEvent>>().await,
             vec![
                 PipelineEvent::Running {
@@ -571,6 +573,7 @@ mod tests {
     }
 
     /// Unwinds a simple pipeline.
+    /// 解开一个简单的pipeline
     #[tokio::test]
     async fn unwind_pipeline() {
         let db = test_utils::create_test_db::<mdbx::WriteMap>(EnvKind::RW);
@@ -596,8 +599,10 @@ mod tests {
         let events = pipeline.events();
 
         // Run pipeline
+        // 运行pipeline
         tokio::spawn(async move {
             // Sync first
+            // 首先进行同步
             pipeline.run().await.expect("Could not run pipeline");
 
             // Unwind
@@ -605,6 +610,7 @@ mod tests {
         });
 
         // Check that the stages were unwound in reverse order
+        // 检查stages是否按相反的顺序解开
         assert_eq!(
             events.collect::<Vec<PipelineEvent>>().await,
             vec![
@@ -763,17 +769,25 @@ mod tests {
     }
 
     /// Runs a pipeline that unwinds during sync.
+    /// 运行一个pipeline，在同步期间解开。
     ///
     /// The flow is:
     ///
     /// - Stage A syncs to block 10
+    /// - Stage A同步到block 10
     /// - Stage B triggers an unwind, marking block 5 as bad
+    /// - Stage B触发一个unwind，将block 5标记为bad
     /// - Stage B unwinds to it's previous progress, block 0 but since it is still at block 0, it is
     ///   skipped entirely (there is nothing to unwind)
+    /// - Stage B解开到它的前一个进度，block 0，但是因为它仍然在block 0，所以它被完全跳过了（没有什么可以解开的）
     /// - Stage A unwinds to it's previous progress, block 0
+    /// - Stage A 解开到它的前一个进度，block 0
     /// - Stage A syncs back up to block 10
+    /// - Stage A同步到block 10
     /// - Stage B syncs to block 10
+    /// - Stage B同步到block 10
     /// - The pipeline finishes
+    /// - pipeline结束
     #[tokio::test]
     async fn run_pipeline_with_unwind() {
         let db = test_utils::create_test_db::<mdbx::WriteMap>(EnvKind::RW);
@@ -799,11 +813,13 @@ mod tests {
         let events = pipeline.events();
 
         // Run pipeline
+        // 运行pipeline
         tokio::spawn(async move {
             pipeline.run().await.expect("Could not run pipeline");
         });
 
         // Check that the stages were unwound in reverse order
+        // 检查stages是否按相反的顺序解开
         assert_eq!(
             events.collect::<Vec<PipelineEvent>>().await,
             vec![
@@ -867,6 +883,7 @@ mod tests {
     }
 
     /// Checks that the pipeline re-runs stages on non-fatal errors and stops on fatal ones.
+    /// 检查pipeline在非致命错误上重新运行stages，并在致命错误上停止。
     #[tokio::test]
     async fn pipeline_error_handling() {
         // Non-fatal
@@ -874,6 +891,7 @@ mod tests {
         let mut pipeline = Pipeline::builder()
             .add_stage(
                 TestStage::new(StageId::Other("NonFatal"))
+                    // 非致命错误
                     .add_exec(Err(StageError::Recoverable(Box::new(std::fmt::Error))))
                     .add_exec(Ok(ExecOutput { checkpoint: StageCheckpoint::new(10), done: true })),
             )
@@ -885,6 +903,7 @@ mod tests {
         // Fatal
         let db = test_utils::create_test_db::<mdbx::WriteMap>(EnvKind::RW);
         let mut pipeline = Pipeline::builder()
+            // 致命错误
             .add_stage(TestStage::new(StageId::Other("Fatal")).add_exec(Err(
                 StageError::DatabaseIntegrity(ProviderError::BlockBodyIndicesNotFound(5)),
             )))

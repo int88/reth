@@ -24,6 +24,7 @@ reth-provider = { path = "../storage/provider" }
 parking_lot = { version = "0.12"}
 lru = "0.10"
 tracing = { workspace = true }
+tracing-test = "0.1"
 
 # mics
 aquamarine = "0.3.0"

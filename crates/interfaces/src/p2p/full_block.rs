@@ -226,6 +226,7 @@ mod tests {
 
     impl TestSingleFullBlockClient {
         fn insert(&self, header: SealedHeader, body: BlockBody) {
+            // 插入header和body
             let hash = header.hash();
             let header = header.unseal();
             self.headers.lock().insert(hash, header);
@@ -251,6 +252,7 @@ mod tests {
         ) -> Self::Output {
             let headers = self.headers.lock();
             let resp = match request.start {
+                // 从headers获取相应的值
                 BlockHashOrNumber::Hash(hash) => headers.get(&hash).cloned(),
                 BlockHashOrNumber::Number(num) => {
                     headers.values().find(|h| h.number == num).cloned()
@@ -273,6 +275,7 @@ mod tests {
             let bodies = self.bodies.lock();
             let mut all_bodies = Vec::new();
             for hash in hashes {
+                // 从bodies获取相应的值
                 if let Some(body) = bodies.get(&hash) {
                     all_bodies.push(body.clone());
                 }
@@ -283,6 +286,7 @@ mod tests {
 
     #[tokio::test]
     async fn download_single_full_block() {
+        // 下载单个的full block
         let client = TestSingleFullBlockClient::default();
         let header = SealedHeader::default();
         let body = BlockBody::default();

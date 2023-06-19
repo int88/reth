@@ -1033,6 +1033,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             new_canon_chain.blocks().iter().map(|(_, b)| b.num_hash()).collect::<Vec<_>>()
         );
         // if joins to the tip;
+        // 如果加入到tip
         if new_canon_chain.fork_block_hash() == old_tip.hash {
             chain_notification =
                 CanonStateNotification::Commit { new: Arc::new(new_canon_chain.clone()) };
@@ -1191,6 +1192,7 @@ mod tests {
         test_utils::{blocks::BlockChainTestData, TestExecutorFactory},
     };
     use std::{collections::HashSet, sync::Arc};
+    use tracing_test::traced_test;
 
     fn setup_externals(
         exec_res: Vec<PostState>,
@@ -1303,6 +1305,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[traced_test]
     async fn sanity_path() {
         let data = BlockChainTestData::default_with_numbers(11, 12);
         let (block1, exec1) = data.blocks[0].clone();

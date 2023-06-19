@@ -9,14 +9,18 @@ use thiserror::Error;
 use tokio::sync::mpsc::error::SendError;
 
 /// A stage execution error.
+/// stage执行的错误
 #[derive(Error, Debug)]
 pub enum StageError {
     /// The stage encountered a state validation error.
+    /// 这个stage遇到了一个state validation的错误
     #[error("Stage encountered a validation error in block {number}: {error}.", number = block.number)]
     Validation {
         /// The block that failed validation.
+        /// validation失败的block
         block: SealedHeader,
         /// The underlying consensus error.
+        /// 底层的consensus错误
         #[source]
         error: consensus::ConsensusError,
     },
@@ -40,6 +44,7 @@ pub enum StageError {
     #[error("Download channel closed")]
     ChannelClosed,
     /// The stage encountered a database integrity error.
+    /// stage遇到一个database integrity的错误
     #[error("A database integrity error occurred: {0}")]
     DatabaseIntegrity(#[from] ProviderError),
     /// The stage encountered an error related to the current database transaction.
@@ -50,14 +55,18 @@ pub enum StageError {
     #[error("Invalid download response: {0}")]
     Download(#[from] DownloadError),
     /// The stage encountered a recoverable error.
+    /// stage遇到一个可恢复的错误
     ///
     /// These types of errors are caught by the [Pipeline][crate::Pipeline] and trigger a restart
     /// of the stage.
+    /// 这些类型的错误被Pipeline捕获，触发stage的重启
     #[error(transparent)]
     Recoverable(Box<dyn std::error::Error + Send + Sync>),
     /// The stage encountered a fatal error.
+    /// 这个stage遇到一个致命的错误
     ///
     /// These types of errors stop the pipeline.
+    /// 这些类型的错误停止pipeline
     #[error(transparent)]
     Fatal(Box<dyn std::error::Error + Send + Sync>),
 }
