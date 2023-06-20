@@ -39,6 +39,8 @@ use std::{
 // NOTE: This container is needed since `Transaction::commit` takes `mut self`, so methods in
 // the pipeline that just take a reference will not be able to commit their transaction and let
 // the pipeline continue. Is there a better way to do this?
+// 注意：这个container是需要的，因为`Transaction::commit`需要`mut self`，所以pipeline中的方法只需要一个reference
+// 将不能commit他们的transaction并且让pipeline继续。有没有更好的方法来做这个？
 //
 // TODO: Re-evaluate if this is actually needed, this was introduced as a way to manage the
 // lifetime of the `TXMut` and having a nice API for re-opening a new transaction after `commit`
@@ -149,11 +151,13 @@ where
     DB: Database,
 {
     /// Get lastest block number.
+    /// 获取最后一个block的number
     pub fn tip_number(&self) -> Result<u64, DbError> {
         Ok(self.cursor_read::<tables::CanonicalHeaders>()?.last()?.unwrap_or_default().0)
     }
 
     /// Query [tables::CanonicalHeaders] table for block hash by block number
+    /// 查询[tables::CanonicalHeaders] table，通过block number查询block hash
     pub fn get_block_hash(&self, block_number: BlockNumber) -> Result<BlockHash, TransactionError> {
         let hash = self
             .get::<tables::CanonicalHeaders>(block_number)?
@@ -162,6 +166,7 @@ where
     }
 
     /// Query the block body by number.
+    /// 通过number查询block body
     pub fn block_body_indices(
         &self,
         number: BlockNumber,
@@ -190,6 +195,8 @@ where
 
     /// Unwind table by some number key.
     /// Returns number of rows unwound.
+    /// 通过一些number key来unwind table
+    /// 返回unwound的rows的数量
     ///
     /// Note: Key is not inclusive and specified key would stay in db.
     #[inline]
@@ -291,6 +298,7 @@ where
     }
 
     /// Take range of blocks and its execution result
+    /// 获取一系列的blocks和它们的执行结果
     pub fn take_block_and_execution_range(
         &self,
         chain_spec: &ChainSpec,
@@ -487,17 +495,22 @@ where
         let expected_state_root = last.state_root;
 
         // Insert the blocks
+        // 插入blocks
         for block in blocks {
+            // 插入block
             self.insert_block(block)?;
         }
 
         // Write state and changesets to the database.
+        // 写入state和changesets到数据库
         // Must be written after blocks because of the receipt lookup.
+        // 必须在blocks之后写入，因为receipt lookup
         state.write_to_db(self.deref_mut())?;
 
         self.insert_hashes(first_number..=last_block_number, last_block_hash, expected_state_root)?;
 
         // Update pipeline progress
+        // 更新pipeline progress
         self.update_pipeline_stages(new_tip_number)?;
 
         Ok(())
@@ -524,12 +537,14 @@ where
         insert_canonical_block(self.deref_mut(), block, Some(senders)).unwrap();
 
         // account history stage
+        // account的history stage
         {
             let indices = self.get_account_transition_ids_from_changeset(range.clone())?;
             self.insert_account_history_index(indices)?;
         }
 
         // storage history stage
+        // storage的history stage
         {
             let indices = self.get_storage_transition_ids_from_changeset(range)?;
             self.insert_storage_history_index(indices)?;
@@ -552,6 +567,7 @@ where
         end_block_hash: H256,
         expected_state_root: H256,
     ) -> Result<(), TransactionError> {
+        // storage hashing stage
         // storage hashing stage
         {
             let lists = self.get_addresses_and_keys_of_changed_storages(range.clone())?;
@@ -684,6 +700,7 @@ where
     }
 
     /// Return range of blocks and its execution result
+    /// 返回一系列的blocks和它们的执行结果
     fn get_take_block_range<const TAKE: bool>(
         &self,
         chain_spec: &ChainSpec,
@@ -772,12 +789,15 @@ where
 
     /// Traverse over changesets and plain state and recreate the [`PostState`]s for the given range
     /// of blocks.
+    /// 遍历changesets以及plain state并创建给定range的blocks的[`PostState`]
     ///
     /// 1. Iterate over the [BlockBodyIndices][tables::BlockBodyIndices] table to get all
     /// the transition indices.
+    /// 1. 遍历[BlockBodyIndices][tables::BlockBodyIndices]表来获取所有的transition indices
     /// 2. Iterate over the [StorageChangeSet][tables::StorageChangeSet] table
     /// and the [AccountChangeSet][tables::AccountChangeSet] tables in reverse order to reconstruct
     /// the changesets.
+    /// 2. 遍历[StorageChangeSet][tables::StorageChangeSet]表和[AccountChangeSet][tables::AccountChangeSet]表来重建changesets
     ///     - In order to have both the old and new values in the changesets, we also access the
     ///       plain state tables.
     /// 3. While iterating over the changeset tables, if we encounter a new account or storage slot,
@@ -952,6 +972,7 @@ where
     }
 
     /// Return range of blocks and its execution result
+    /// 返回一系列的blocks以及它的execution result
     pub fn get_take_block_and_execution_range<const TAKE: bool>(
         &self,
         chain_spec: &ChainSpec,
@@ -966,6 +987,7 @@ where
             self.unwind_storage_history_indices(storage_range)?;
 
             // merkle tree
+            // merkle树
             let (new_state_root, trie_updates) =
                 StateRoot::incremental_root_with_updates(self.deref(), range.clone())?;
 
@@ -986,21 +1008,27 @@ where
             trie_updates.flush(self.deref())?;
         }
         // get blocks
+        // 获取block
         let blocks = self.get_take_block_range::<TAKE>(chain_spec, range.clone())?;
         let unwind_to = blocks.first().map(|b| b.number.saturating_sub(1));
         // get execution res
+        // 获取执行结果
         let execution_res = self.get_take_block_execution_result_range::<TAKE>(range.clone())?;
         // combine them
+        // 将两者组合
         let blocks_with_exec_result: Vec<_> =
             blocks.into_iter().zip(execution_res.into_iter()).collect();
 
         // remove block bodies it is needed for both get block range and get block execution results
         // that is why it is deleted afterwards.
+        // 移除block bodies，它对于get block range和get block execution results都是必要的，这就是为什么它之后被删除的原因
         if TAKE {
             // rm block bodies
+            // 移除block bodies
             self.get_or_take::<tables::BlockBodyIndices, TAKE>(range)?;
 
             // Update pipeline progress
+            // 更新pipeline progress
             if let Some(fork_number) = unwind_to {
                 self.update_pipeline_stages(fork_number)?;
             }
@@ -1011,11 +1039,13 @@ where
     }
 
     /// Update all pipeline sync stage progress.
+    /// 更新所有的pipeline sync stage进度
     pub fn update_pipeline_stages(
         &self,
         block_number: BlockNumber,
     ) -> Result<(), TransactionError> {
         // iterate over all existing stages in the table and update its progress.
+        // 遍历所有已经存在的stages在table中并且更新它的进度
         let mut cursor = self.cursor_write::<tables::SyncStage>()?;
         while let Some((stage_name, checkpoint)) = cursor.next()? {
             // TODO(alexey): do we want to invalidate stage-specific checkpoint data?
@@ -1464,10 +1494,13 @@ mod test {
         let (block1, exec_res1) = data.blocks[0].clone();
         let (block2, exec_res2) = data.blocks[1].clone();
 
+        // 插入canonical block
         insert_canonical_block(tx.deref_mut(), data.genesis.clone(), None).unwrap();
 
+        // 插入genesis block
         assert_genesis_block(&tx, data.genesis);
 
+        // 用post state扩展blocks
         tx.append_blocks_with_post_state(vec![block1.clone()], exec_res1.clone()).unwrap();
 
         // get one block
@@ -1487,6 +1520,7 @@ mod test {
         tx.commit().unwrap();
 
         // Check that transactions map onto blocks correctly.
+        // 检查transactions是否正确映射到blocks
         {
             let provider = ShareableDatabase::new(tx.db, Arc::new(MAINNET.clone()));
             assert_eq!(
@@ -1522,6 +1556,7 @@ mod test {
         assert_eq!(get, vec![(block1, exec_res1), (block2, exec_res2)]);
 
         // assert genesis state
+        // 校验genesis state
         assert_genesis_block(&tx, genesis);
     }
 
@@ -1558,6 +1593,7 @@ mod test {
         assert_genesis_block(&tx, genesis.clone());
 
         // insert two blocks
+        // 插入两个blocks
         let mut merged_state = exec_res1.clone();
         merged_state.extend(exec_res2.clone());
         tx.append_blocks_with_post_state(
@@ -1567,10 +1603,12 @@ mod test {
         .unwrap();
 
         // get second block
+        // 获取第二个block
         let get = tx.get_block_and_execution_range(&chain_spec, 2..=2).unwrap();
         assert_eq!(get, vec![(block2.clone(), exec_res2.clone())]);
 
         // get two blocks
+        // 获取两个blocks
         let get = tx.get_block_and_execution_range(&chain_spec, 1..=2).unwrap();
         assert_eq!(
             get,
@@ -1582,6 +1620,7 @@ mod test {
         assert_eq!(get, vec![(block1, exec_res1), (block2, exec_res2)]);
 
         // assert genesis state
+        // 校验genesis state
         assert_genesis_block(&tx, genesis);
     }
 }

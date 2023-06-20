@@ -311,6 +311,7 @@ table!(
 
 table!(
     /// Stores arbitrary data to keep track of a stage first-sync progress.
+    /// 存储任意的数据来追踪一个stage的first-sync progress
     ( SyncStageProgress ) StageId | Vec<u8>
 );
 

@@ -51,8 +51,10 @@ pub trait DbTx<'tx>: for<'a> DbTxGAT<'a> {
 }
 
 /// Read write transaction that allows writing to database
+/// 读写transaction，允许写入到数据库
 pub trait DbTxMut<'tx>: for<'a> DbTxMutGAT<'a> {
     /// Put value to database
+    /// 输入值到数据库
     fn put<T: Table>(&self, key: T::Key, value: T::Value) -> Result<(), DatabaseError>;
     /// Delete value from database
     fn delete<T: Table>(&self, key: T::Key, value: Option<T::Value>)

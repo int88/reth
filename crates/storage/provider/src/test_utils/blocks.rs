@@ -10,10 +10,12 @@ use reth_rlp::Decodable;
 use std::collections::BTreeMap;
 
 /// Assert genesis block
+/// 校验genesis block
 pub fn assert_genesis_block<DB: Database>(tx: &Transaction<'_, DB>, g: SealedBlock) {
     let n = g.number;
     let h = H256::zero();
     // check if all tables are empty
+    // 检查所有tables是否为空
     assert_eq!(tx.table::<tables::Headers>().unwrap(), vec![(g.number, g.header.clone().unseal())]);
 
     assert_eq!(tx.table::<tables::HeaderNumbers>().unwrap(), vec![(h, n)]);
@@ -43,6 +45,7 @@ pub fn assert_genesis_block<DB: Database>(tx: &Transaction<'_, DB>, g: SealedBlo
     assert_eq!(tx.table::<tables::StoragesTrie>().unwrap(), vec![]);
     assert_eq!(tx.table::<tables::TxSenders>().unwrap(), vec![]);
     // SyncStage is not updated in tests
+    // SyncStage在tests中不更新
 }
 
 /// Test chain with genesis, blocks, execution results

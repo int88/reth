@@ -200,6 +200,7 @@ impl StageCheckpoint {
     }
 
     /// Sets the stage checkpoint to account hashing.
+    /// 设置stage checkpoint为account hashing
     pub fn with_account_hashing_stage_checkpoint(
         mut self,
         checkpoint: AccountHashingCheckpoint,
@@ -209,6 +210,7 @@ impl StageCheckpoint {
     }
 
     /// Sets the stage checkpoint to storage hashing.
+    /// 设置stage checkpoint到storage hashing
     pub fn with_storage_hashing_stage_checkpoint(
         mut self,
         checkpoint: StorageHashingCheckpoint,

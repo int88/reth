@@ -131,6 +131,7 @@ pub mod test_utils {
     /// Error during table creation
     pub const ERROR_TABLE_CREATION: &str = "Not able to create tables in the database.";
     /// Error during tempdir creation
+    /// 不能创建临时目录
     pub const ERROR_TEMPDIR: &str = "Not able to create a temporary directory.";
 
     /// Create rw database for testing

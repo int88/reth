@@ -319,6 +319,7 @@ pub fn get_stage_checkpoint<'a, TX>(
 where
     TX: DbTx<'a> + Send + Sync,
 {
+    // 获取stage对应的checkpoint
     tx.get::<tables::SyncStage>(id.to_string())
 }
 

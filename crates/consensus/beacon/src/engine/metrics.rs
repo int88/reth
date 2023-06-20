@@ -4,6 +4,7 @@ use reth_metrics::{
 };
 
 /// Beacon consensus engine metrics.
+/// Beacon coneensus引擎的metrics
 #[derive(Metrics)]
 #[metrics(scope = "consensus.engine.beacon")]
 pub(crate) struct Metrics {

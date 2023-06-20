@@ -79,6 +79,7 @@ impl Chain {
 
     /// Destructure the chain into its inner components, the blocks and the state at the tip of the
     /// chain.
+    /// 析构chain为它的内部组件，blocks和chain tip的状态
     pub fn into_inner(self) -> (ChainBlocks<'static>, PostState) {
         (ChainBlocks { blocks: Cow::Owned(self.blocks) }, self.state)
     }

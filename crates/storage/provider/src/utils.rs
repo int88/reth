@@ -8,6 +8,7 @@ use reth_interfaces::Result;
 use reth_primitives::{Address, SealedBlock};
 
 /// Insert block data into corresponding tables. Used mainly for testing & internal tooling.
+/// 插入block data到对应的tables，主要用于测试和内部工具。
 ///
 ///
 /// Check parent dependency in [tables::HeaderNumbers] and in [tables::BlockBodyIndices] tables.
@@ -15,9 +16,14 @@ use reth_primitives::{Address, SealedBlock};
 /// and transactions data to [tables::TxSenders], [tables::Transactions], [tables::TxHashNumber].
 /// and transition/transaction meta data to [tables::BlockBodyIndices]
 /// and block data to [tables::BlockOmmers] and [tables::BlockWithdrawals].
+/// 检查paretn dependency在[tables::HeaderNumbers]和[tables::BlockBodyIndices] tables中。
+/// 插入header data到[tables::CanonicalHeaders], [tables::Headers], [tables::HeaderNumbers].
+/// 和transactions data到[tables::TxSenders], [tables::Transactions], [tables::TxHashNumber].
+/// 和transition/transaction meta data到[tables::BlockBodyIndices]
 ///
 /// Return [StoredBlockBodyIndices] that contains indices of the first and last transactions and
 /// transition in the block.
+/// 返回[StoredBlockBodyIndices]，包含block中第一个和最后一个transaction和transition的indices。
 pub fn insert_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
     tx: &TX,
     block: SealedBlock,
@@ -26,6 +32,7 @@ pub fn insert_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
     let block_number = block.number;
     tx.put::<tables::CanonicalHeaders>(block.number, block.hash())?;
     // Put header with canonical hashes.
+    // 插入header和canonical hashes。
     tx.put::<tables::Headers>(block.number, block.header.as_ref().clone())?;
     tx.put::<tables::HeaderNumbers>(block.hash(), block.number)?;
 
@@ -41,6 +48,7 @@ pub fn insert_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
     tx.put::<tables::HeaderTD>(block.number, ttd.into())?;
 
     // insert body ommers data
+    // 插入body ommers data
     if !block.ommers.is_empty() {
         tx.put::<tables::BlockOmmers>(block.number, StoredBlockOmmers { ommers: block.ommers })?;
     }

@@ -1041,9 +1041,11 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             self.commit_canonical(new_canon_chain)?;
         } else {
             // it forks to canonical block that is not the tip.
+            // 它forks到canonical block，这个block不是tip
 
             let canon_fork: BlockNumHash = new_canon_chain.fork_block();
             // sanity check
+            // 完整性检查
             if self.block_indices.canonical_hash(&canon_fork.number) != Some(canon_fork.hash) {
                 unreachable!("all chains should point to canonical chain.");
             }
@@ -1108,6 +1110,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     /// Canonicalize the given chain and commit it to the database.
     /// 将给定的chain进行canonical化，并且提交到数据库中
     fn commit_canonical(&mut self, chain: Chain) -> Result<(), Error> {
+        // 构建新的transaction
         let mut tx = Transaction::new(&self.externals.db)?;
 
         let (blocks, state) = chain.into_inner();

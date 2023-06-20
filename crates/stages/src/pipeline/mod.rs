@@ -294,11 +294,13 @@ where
                 continue
             }
 
+            // 开始unwind
             debug!(target: "sync::pipeline", from = %stage_progress, %to, ?bad_block, "Starting unwind");
             while stage_progress.block_number > to {
                 let input = UnwindInput { checkpoint: stage_progress, unwind_to: to, bad_block };
                 self.listeners.notify(PipelineEvent::Unwinding { stage_id, input });
 
+                // 执行stage的unwind
                 let output = stage.unwind(&mut tx, input).await;
                 match output {
                     Ok(unwind_output) => {
