@@ -26,6 +26,7 @@ use tracing::*;
 pub struct SenderRecoveryStage {
     /// The size of inserted items after which the control
     /// flow will be returned to the pipeline for commit
+    /// 插入的items的大小，超过这个阈值，控制流将被返回到管道进行提交
     pub commit_threshold: u64,
 }
 
@@ -52,8 +53,10 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
     /// Retrieve the range of transactions to iterate over by querying
     /// [`BlockBodyIndices`][reth_db::tables::BlockBodyIndices],
     /// collect transactions within that range,
+    /// 获取要迭代的transactions范围，通过查询BlockBodyIndices，收集该范围内的事务
     /// recover signer for each transaction and store entries in
     /// the [`TxSenders`][reth_db::tables::TxSenders] table.
+    /// 恢复每个transaction的signer并将条目存储在TxSenders表中
     async fn execute(
         &mut self,
         provider: &mut DatabaseProviderRW<'_, &DB>,
@@ -370,9 +373,11 @@ mod tests {
         ///
         /// 1. If there are any entries in the [tables::TxSenders] table above
         ///    a given block number.
+        /// 1. 如果在[tables::TxSenders]表中有任何条目在给定的块号之上
         ///
         /// 2. If the is no requested block entry in the bodies table,
         ///    but [tables::TxSenders] is not empty.
+        /// 2. 如果在bodies表中没有请求的块条目，但是[tables::TxSenders]不为空
         fn ensure_no_senders_by_block(&self, block: BlockNumber) -> Result<(), TestRunnerError> {
             let body_result = self.tx.inner_rw().block_body_indices(block);
             match body_result {
@@ -407,7 +412,9 @@ mod tests {
             let stage_progress = input.checkpoint().block_number;
             let end = input.target();
 
+            // 产生一定范围内的随机块
             let blocks = random_block_range(stage_progress..=end, H256::zero(), 0..2);
+            // 插入blocks
             self.tx.insert_blocks(blocks.iter(), None)?;
             Ok(blocks)
         }
@@ -418,6 +425,7 @@ mod tests {
             output: Option<ExecOutput>,
         ) -> Result<(), TestRunnerError> {
             match output {
+                // 校验exec output
                 Some(output) => {
                     let provider = self.tx.inner();
                     let start_block = input.next_block();

@@ -7,10 +7,12 @@ use std::fmt::Debug;
 /// Stage is indexing history the account changesets generated in
 /// [`ExecutionStage`][crate::stages::ExecutionStage]. For more information
 /// on index sharding take a look at [`reth_db::tables::AccountHistory`]
+/// Stage是在ExecutionStage中生成的account changesets的索引历史。有关索引分片的更多信息，请参见reth_db::tables::AccountHistory
 #[derive(Debug)]
 pub struct IndexAccountHistoryStage {
     /// Number of blocks after which the control
     /// flow will be returned to the pipeline for commit.
+    /// blocks的数目，之后控制流将被返回到pipeline中进行commit
     pub commit_threshold: u64,
 }
 
@@ -48,6 +50,7 @@ impl<DB: Database> Stage<DB> for IndexAccountHistoryStage {
 
         let indices = provider.changed_accounts_and_blocks_with_range(range.clone())?;
         // Insert changeset to history index
+        // 插入changeset到history index
         provider.insert_account_history_index(indices)?;
 
         Ok(ExecOutput { checkpoint: StageCheckpoint::new(*range.end()), done: is_final_range })
@@ -131,6 +134,7 @@ mod tests {
             .unwrap();
 
             // setup changeset that are going to be applied to history index
+            // 设置change set，只应用到history index
             tx.put::<tables::AccountChangeSet>(4, acc()).unwrap();
             tx.put::<tables::AccountChangeSet>(5, acc()).unwrap();
             Ok(())

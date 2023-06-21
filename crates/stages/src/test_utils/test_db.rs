@@ -64,6 +64,7 @@ impl TestTransaction {
     }
 
     /// Return a database wrapped in [DatabaseProviderRO].
+    /// 返回一个封装在[DatabaseProviderRO]中的数据库
     pub fn inner(&self) -> DatabaseProviderRO<'_, Arc<Env<WriteMap>>> {
         self.factory.provider().expect("failed to create db container")
     }
@@ -233,9 +234,12 @@ impl TestTransaction {
     }
 
     /// Insert ordered collection of [SealedBlock] into corresponding tables.
+    /// 插入有序的[SealedBlock]集合到相应的表中
     /// Superset functionality of [TestTransaction::insert_headers].
+    /// 是对于TestTransaction::insert_headers的超集功能
     ///
     /// Assumes that there's a single transition for each transaction (i.e. no block rewards).
+    /// 假设每个transaction都有一个单独的transition（例如没有block rewards）
     pub fn insert_blocks<'a, I>(&self, blocks: I, tx_offset: Option<u64>) -> Result<(), DbError>
     where
         I: Iterator<Item = &'a SealedBlock>,

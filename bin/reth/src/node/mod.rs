@@ -145,6 +145,7 @@ pub struct Command {
 
 impl Command {
     /// Execute `node` command
+    /// 执行`node`命令
     pub async fn execute(self, ctx: CliContext) -> eyre::Result<()> {
         info!(target: "reth::cli", "reth {} starting", SHORT_VERSION);
 
@@ -677,9 +678,11 @@ impl Command {
                     factory.clone(),
                 )
                 .set(
+                    // 设置total difficulty stage
                     TotalDifficultyStage::new(consensus)
                         .with_commit_threshold(stage_config.total_difficulty.commit_threshold),
                 )
+                // 设置sender recovery stage
                 .set(SenderRecoveryStage {
                     commit_threshold: stage_config.sender_recovery.commit_threshold,
                 })
@@ -700,6 +703,7 @@ impl Command {
                 ))
                 .set(MerkleStage::new_execution(stage_config.merkle.clean_threshold))
                 .set(TransactionLookupStage::new(stage_config.transaction_lookup.commit_threshold))
+                // 设置Index Account History stage和Index Storage History stage
                 .set(IndexAccountHistoryStage::new(
                     stage_config.index_account_history.commit_threshold,
                 ))

@@ -153,6 +153,7 @@ table!(
 
 table!(
     /// Stores block indices that contains indexes of transaction and the count of them.
+    /// 存储block indices，包含transaction的索引以及它们的数目
     ///
     /// More information about stored indices can be found in the [`StoredBlockBodyIndices`] struct.
     ( BlockBodyIndices ) BlockNumber | StoredBlockBodyIndices
@@ -210,6 +211,7 @@ dupsort!(
 
 table!(
     /// Stores pointers to block changeset with changes for each account key.
+    /// 存储到block changeset 的指针，每个account key的变化
     ///
     /// Last shard key of the storage will contain `u64::MAX` `BlockNumber`,
     /// this would allows us small optimization on db access when change is in plain state.
@@ -256,6 +258,8 @@ dupsort!(
     /// Stores the state of an account before a certain transaction changed it.
     /// Change on state can be: account is created, selfdestructed, touched while empty
     /// or changed (balance,nonce).
+    /// 存储一个account的state，在一个特定的transaction改变它之前。
+    /// state的改变可以为：account被创建，自毁，空的时候被touch，或者改变（balance，nonce）
     ( AccountChangeSet ) BlockNumber | [Address] AccountBeforeTx
 );
 
@@ -263,6 +267,7 @@ dupsort!(
     /// Stores the state of a storage key before a certain transaction changed it.
     /// If [`StorageEntry::value`] is zero, this means storage was not existing
     /// and needs to be removed.
+    /// 存储一个storage的state，在一个特定的transaction改变它之前。如果[`StorageEntry::value`]为0，这意味着storage不存在，需要被移除。
     ( StorageChangeSet ) BlockNumberAddress | [H256] StorageEntry
 );
 

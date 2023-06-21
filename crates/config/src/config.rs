@@ -68,6 +68,7 @@ pub struct StageConfig {
     /// Transaction Lookup stage configuration.
     pub transaction_lookup: TransactionLookupConfig,
     /// Index Account History stage configuration.
+    /// Index Account History stage的配置
     pub index_account_history: IndexHistoryConfig,
     /// Index Storage History stage configuration.
     pub index_storage_history: IndexHistoryConfig,
@@ -222,13 +223,16 @@ impl Default for ExecutionConfig {
 pub struct HashingConfig {
     /// The threshold (in number of blocks) for switching between
     /// incremental hashing and full hashing.
+    /// 从增量哈希切换到全哈希的阈值（以块数表示）。
     pub clean_threshold: u64,
     /// The maximum number of entities to process before committing progress to the database.
+    /// 提交到数据库之前要处理的最大实体数。
     pub commit_threshold: u64,
 }
 
 impl Default for HashingConfig {
     fn default() -> Self {
+        // 默认值
         Self { clean_threshold: 500_000, commit_threshold: 100_000 }
     }
 }
@@ -267,6 +271,7 @@ impl Default for TransactionLookupConfig {
 #[serde(default)]
 pub struct IndexHistoryConfig {
     /// The maximum number of blocks to process before committing progress to the database.
+    /// 在提交进度到数据库之前，要处理的最大块数。
     pub commit_threshold: u64,
 }
 

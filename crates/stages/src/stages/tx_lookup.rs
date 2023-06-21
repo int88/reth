@@ -22,9 +22,12 @@ use tracing::*;
 /// This stage walks over the bodies table, and sets the transaction hash of each transaction in a
 /// block to the corresponding `BlockNumber` at each block. This is written to the
 /// [`tables::TxHashNumber`] This is used for looking up changesets via the transaction hash.
+/// 这个stage遍历bodies table，然后设置每个block中的每个transaction的transaction hash到对应的BlockNumber。
+/// 这会被写入到tables::TxHashNumber。这个用于通过transaction hash来查找changesets
 #[derive(Debug, Clone)]
 pub struct TransactionLookupStage {
     /// The number of lookup entries to commit at once
+    /// 一次性提交的表entries的数量
     commit_threshold: u64,
 }
 
@@ -49,6 +52,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
     }
 
     /// Write transaction hash -> id entries
+    /// 写入transaction hash -> id entries
     async fn execute(
         &mut self,
         provider: &mut DatabaseProviderRW<'_, &DB>,
@@ -62,6 +66,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         let end_block = *block_range.end();
         let tx_range_size = tx_range.clone().count();
 
+        // 更新transaction lookup
         debug!(target: "sync::stages::transaction_lookup", ?tx_range, "Updating transaction lookup");
 
         let tx = provider.tx_ref();
@@ -143,6 +148,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         let (range, unwind_to, _) = input.unwind_block_range_with_threshold(self.commit_threshold);
 
         // Cursors to unwind tx hash to number
+        // 用来unwind tx hash to number的cursors
         let mut body_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
         let mut tx_hash_number_cursor = tx.cursor_write::<tables::TxHashNumber>()?;
         let mut transaction_cursor = tx.cursor_read::<tables::Transactions>()?;
@@ -329,9 +335,11 @@ mod tests {
         ///
         /// 1. If there are any entries in the [tables::TxHashNumber] table above
         ///    a given block number.
+        /// 1. 如果在[tables::TxHashNumber]表中有任何entries在给定的block number之上
         ///
         /// 2. If the is no requested block entry in the bodies table,
         ///    but [tables::TxHashNumber] is not empty.
+        /// 2. 如果在bodies table中没有请求的block entry，但是[tables::TxHashNumber]不是空的
         fn ensure_no_hash_by_block(&self, number: BlockNumber) -> Result<(), TestRunnerError> {
             let body_result = self.tx.inner_rw().block_body_indices(number);
             match body_result {
@@ -368,6 +376,7 @@ mod tests {
             let end = input.target();
 
             let blocks = random_block_range(stage_progress + 1..=end, H256::zero(), 0..2);
+            // 插入一系列的blocks
             self.tx.insert_blocks(blocks.iter(), None)?;
             Ok(blocks)
         }
@@ -394,6 +403,7 @@ mod tests {
 
                     while let Some((_, body)) = body_cursor.next()? {
                         for tx_id in body.tx_num_range() {
+                            // 遍历transaction id
                             let transaction =
                                 provider.transaction_by_id(tx_id)?.expect("no transaction entry");
                             assert_eq!(Some(tx_id), provider.transaction_id(transaction.hash())?);

@@ -15,11 +15,14 @@ use std::{
 // relevant crates?
 
 /// Generates a range of random [SealedHeader]s.
+/// 生成一系列随机的SealedHeader
 ///
 /// The parent hash of the first header
 /// in the result will be equal to `head`.
+/// 第一个header的parent hash会等于head
 ///
 /// The headers are assumed to not be correct if validated.
+/// headers假设是不正确的，如果被校验
 pub fn random_header_range(rng: std::ops::Range<u64>, head: H256) -> Vec<SealedHeader> {
     let mut headers = Vec::with_capacity(rng.end.saturating_sub(rng.start) as usize);
     for idx in rng {
@@ -32,8 +35,10 @@ pub fn random_header_range(rng: std::ops::Range<u64>, head: H256) -> Vec<SealedH
 }
 
 /// Generate a random [SealedHeader].
+/// 生成一个随机的SealedHeader
 ///
 /// The header is assumed to not be correct if validated.
+/// 这个header假设是不正确的，如果被校验
 pub fn random_header(number: u64, parent: Option<H256>) -> SealedHeader {
     let header = reth_primitives::Header {
         number,

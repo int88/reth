@@ -20,11 +20,14 @@ use tracing::*;
 /// This stage walks over inserted headers and computes total difficulty
 /// at each block. The entries are inserted into [`HeaderTD`][reth_db::tables::HeaderTD]
 /// table.
+/// 这个stage遍历插入的headers并且计算每个块的total difficulty。这些entries被插入到HeaderTD表中
 #[derive(Debug, Clone)]
 pub struct TotalDifficultyStage {
     /// Consensus client implementation
+    /// Consensus client的实现
     consensus: Arc<dyn Consensus>,
     /// The number of table entries to commit at once
+    /// 一次性提交的表entries的数量
     commit_threshold: u64,
 }
 
@@ -65,10 +68,12 @@ impl<DB: Database> Stage<DB> for TotalDifficultyStage {
         debug!(target: "sync::stages::total_difficulty", start_block, end_block, "Commencing sync");
 
         // Acquire cursor over total difficulty and headers tables
+        // 获取total difficulty和headers表的cursor
         let mut cursor_td = tx.cursor_write::<tables::HeaderTD>()?;
         let mut cursor_headers = tx.cursor_read::<tables::Headers>()?;
 
         // Get latest total difficulty
+        // 获取最新的total difficulty
         let last_header_number = input.checkpoint().block_number;
         let last_entry = cursor_td
             .seek_exact(last_header_number)?
@@ -78,6 +83,7 @@ impl<DB: Database> Stage<DB> for TotalDifficultyStage {
         debug!(target: "sync::stages::total_difficulty", ?td, block_number = last_header_number, "Last total difficulty entry");
 
         // Walk over newly inserted headers, update & insert td
+        // 遍历新插入的headers，更新并且插入td
         for entry in cursor_headers.walk_range(range)? {
             let (block_number, header) = entry?;
             td += header.difficulty;

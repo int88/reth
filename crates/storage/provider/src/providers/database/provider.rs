@@ -251,8 +251,10 @@ impl<'this, TX: DbTx<'this>> DatabaseProvider<'this, TX> {
     }
 
     /// Get all block numbers where account got changed.
+    /// 获取所有的block numbers，其中account发生了变化
     ///
     /// NOTE: Get inclusive range of blocks.
+    /// 注意：获取包含区块的范围
     pub fn get_storage_block_numbers_from_changesets(
         &self,
         range: RangeInclusive<BlockNumber>,
@@ -269,6 +271,7 @@ impl<'this, TX: DbTx<'this>> DatabaseProvider<'this, TX> {
                     storages
                         .entry((index.address(), storage.key))
                         .or_default()
+                        // 推入block number
                         .push(index.block_number());
                     Ok(storages)
                 },
@@ -355,8 +358,10 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
     }
 
     /// Unwind and clear storage history indices.
+    /// unwind并且清理storage history indices
     ///
     /// Returns number of changesets walked.
+    /// 返回走过的changesets的数量
     pub fn unwind_storage_history_indices(
         &self,
         range: Range<BlockNumberAddress>,
@@ -838,6 +843,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
     }
 
     /// Insert storage change index to database. Used inside StorageHistoryIndex stage
+    /// 插入storage change index到数据库。在StorageHistoryIndex阶段使用
     pub fn insert_storage_history_index(
         &self,
         storage_transitions: BTreeMap<(Address, H256), Vec<u64>>,
@@ -847,6 +853,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
             last_shard.append(&mut indices);
 
             // chunk indices and insert them in shards of N size.
+            // chunk indices并且插入它们到N大小的shards中
             let mut chunks = last_shard
                 .iter()
                 .chunks(storage_sharded_key::NUM_OF_INDICES_IN_SHARD)
@@ -948,6 +955,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
 
     /// Load last shard and check if it is full and remove if it is not. If list is empty, last
     /// shard was full or there is no shards at all.
+    /// 加载最新的shard并且检查是否已满，如果没有满则删除。如果列表为空，则最后一个shard已满或者根本没有shard。
     pub fn take_last_storage_shard(
         &self,
         address: Address,
@@ -957,6 +965,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
         let last = cursor.seek_exact(StorageShardedKey::new(address, storage_key, u64::MAX))?;
         if let Some((storage_shard_key, list)) = last {
             // delete old shard so new one can be inserted.
+            // 删除老的shard，这样就可以插入新的shard。
             self.tx.delete::<tables::StorageHistory>(storage_shard_key, None)?;
             let list = list.iter(0).map(|i| i as u64).collect::<Vec<_>>();
             return Ok(list)
@@ -1157,6 +1166,7 @@ impl<'this, TX: DbTx<'this>> AccountExtReader for DatabaseProvider<'this, TX> {
             BTreeMap::new(),
             |mut accounts: BTreeMap<Address, Vec<u64>>, entry| -> Result<_> {
                 let (index, account) = entry?;
+                // 针对account地址，推入索引
                 accounts.entry(account.address).or_default().push(index);
                 Ok(accounts)
             },

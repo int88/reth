@@ -7,6 +7,7 @@ use reth_provider::DatabaseProviderRW;
 ///
 /// This stage does not write anything; it's checkpoint is used to denote the highest fully synced
 /// block.
+/// 这个stage不会写入任何东西，它的检查点用来表示最高的完全同步的block
 #[derive(Default, Debug, Clone)]
 pub struct FinishStage;
 
@@ -71,12 +72,14 @@ mod tests {
             self.tx.insert_headers_with_td(std::iter::once(&head))?;
 
             // use previous progress as seed size
+            // 使用之前的进度作为seed size
             let end = input.target.unwrap_or_default() + 1;
 
             if start + 1 >= end {
                 return Ok(Vec::default())
             }
 
+            // 生成随机的headers
             let mut headers = random_header_range(start + 1..end, head.hash());
             self.tx.insert_headers_with_td(headers.iter())?;
             headers.insert(0, head);
@@ -89,10 +92,12 @@ mod tests {
             output: Option<ExecOutput>,
         ) -> Result<(), TestRunnerError> {
             if let Some(output) = output {
+                // stage总为done
                 assert!(output.done, "stage should always be done");
                 assert_eq!(
                     output.checkpoint.block_number,
                     input.target(),
+                    // stage progress总是匹配上一个stage的progress
                     "stage progress should always match progress of previous stage"
                 );
             }

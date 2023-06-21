@@ -1,4 +1,5 @@
 /// Stage IDs for all known stages.
+/// 所有已知的stage的stage id
 ///
 /// For custom stages, use [`StageId::Other`]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

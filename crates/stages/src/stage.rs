@@ -15,8 +15,10 @@ use std::{
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct ExecInput {
     /// The target block number the stage needs to execute towards.
+    /// stage需要执行到的target block number
     pub target: Option<BlockNumber>,
     /// The checkpoint of this stage the last time it was executed.
+    /// 这个stage上一次执行的检查点
     pub checkpoint: Option<StageCheckpoint>,
 }
 
@@ -34,6 +36,7 @@ impl ExecInput {
     }
 
     /// Returns `true` if the target block number has already been reached.
+    /// 返回`true`如果目标块号已经被到达
     pub fn target_reached(&self) -> bool {
         self.checkpoint().block_number >= self.target()
     }
@@ -55,7 +58,9 @@ impl ExecInput {
     }
 
     /// Return the next block range to execute.
+    /// 返回下一个需要执行的块范围
     /// Return pair of the block range and if this is final block range.
+    /// 返回pair of the block range以及它是否是最后的块范围
     pub fn next_block_range_with_threshold(
         &self,
         threshold: u64,
@@ -103,13 +108,17 @@ impl ExecInput {
 }
 
 /// Stage unwind input, see [Stage::unwind].
+/// Stage unwind的输入
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct UnwindInput {
     /// The current highest checkpoint of the stage.
+    /// 当前最高的stage检查点
     pub checkpoint: StageCheckpoint,
     /// The block to unwind to.
+    /// unwind到的block
     pub unwind_to: BlockNumber,
     /// The bad block that caused the unwind, if any.
+    /// 导致unwind的坏块，如果有的话
     pub bad_block: Option<BlockNumber>,
 }
 
@@ -120,6 +129,7 @@ impl UnwindInput {
     }
 
     /// Return the next block range to unwind and the block we're unwinding to.
+    /// 返回下一个要unwind的block range以及我们准备unwind到的block
     pub fn unwind_block_range_with_threshold(
         &self,
         threshold: u64,

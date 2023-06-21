@@ -7,6 +7,7 @@ use std::fmt::Debug;
 /// Stage is indexing history the account changesets generated in
 /// [`ExecutionStage`][crate::stages::ExecutionStage]. For more information
 /// on index sharding take a look at [`reth_db::tables::StorageHistory`].
+/// Stage是在ExecutionStage中生成的account changesets的索引历史。
 #[derive(Debug)]
 pub struct IndexStorageHistoryStage {
     /// Number of blocks after which the control
@@ -16,6 +17,7 @@ pub struct IndexStorageHistoryStage {
 
 impl IndexStorageHistoryStage {
     /// Create new instance of [IndexStorageHistoryStage].
+    /// 创建新的IndexStorageHistoryStage实例
     pub fn new(commit_threshold: u64) -> Self {
         Self { commit_threshold }
     }
@@ -30,6 +32,7 @@ impl Default for IndexStorageHistoryStage {
 #[async_trait::async_trait]
 impl<DB: Database> Stage<DB> for IndexStorageHistoryStage {
     /// Return the id of the stage
+    /// 返回这个stage的id
     fn id(&self) -> StageId {
         StageId::IndexStorageHistory
     }
@@ -126,6 +129,7 @@ mod tests {
         // setup
         tx.commit(|tx| {
             // we just need first and last
+            // 我们只需要first和last
             tx.put::<tables::BlockBodyIndices>(
                 0,
                 StoredBlockBodyIndices { tx_count: 3, ..Default::default() },
@@ -139,6 +143,7 @@ mod tests {
             .unwrap();
 
             // setup changeset that are going to be applied to history index
+            // setup changeset准备被应用到history index
             tx.put::<tables::StorageChangeSet>(trns(4), storage(STORAGE_KEY)).unwrap();
             tx.put::<tables::StorageChangeSet>(trns(5), storage(STORAGE_KEY)).unwrap();
             Ok(())
@@ -151,6 +156,7 @@ mod tests {
         let mut stage = IndexStorageHistoryStage::default();
         let factory = ProviderFactory::new(tx.tx.as_ref(), MAINNET.clone());
         let mut provider = factory.provider_rw().unwrap();
+        // 执行输出
         let out = stage.execute(&mut provider, input).await.unwrap();
         assert_eq!(out, ExecOutput { checkpoint: StageCheckpoint::new(5), done: true });
         provider.commit().unwrap();
@@ -173,6 +179,7 @@ mod tests {
     #[tokio::test]
     async fn insert_index_to_empty() {
         // init
+        // 初始化transaction
         let tx = TestTransaction::default();
 
         // setup
@@ -190,6 +197,7 @@ mod tests {
 
         // verify initial state
         let table = tx.table::<tables::StorageHistory>().unwrap();
+        // table变为空
         assert!(table.is_empty());
     }
 
@@ -217,6 +225,7 @@ mod tests {
         unwind(&tx, 5, 0).await;
 
         // verify initial state
+        // 校验初始状态
         let table = cast(tx.table::<tables::StorageHistory>().unwrap());
         assert_eq!(table, BTreeMap::from([(shard(u64::MAX), vec![1, 2, 3]),]));
     }

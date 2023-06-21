@@ -35,6 +35,7 @@ pub struct ExecutionStageMetrics {
 
 /// The execution stage executes all transactions and
 /// update history indexes.
+/// execution stage执行所有的transactions并且更新history indexes
 ///
 /// Input tables:
 /// - [tables::CanonicalHeaders] get next block to execute.
@@ -279,6 +280,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
                 .stack_size(BIG_STACK_SIZE)
                 .spawn_scoped(scope, || {
                     // execute and store output to results
+                    // 执行并且存储output到results
                     self.execute_inner(provider, input)
                 })
                 .expect("Expects that thread name is not null");

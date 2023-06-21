@@ -502,6 +502,7 @@ mod tests {
         }
 
         /// A helper struct for running the [BodyStage].
+        /// 一个helper结构用于运行BodyStage
         pub(crate) struct BodyTestRunner {
             pub(crate) consensus: Arc<TestConsensus>,
             responses: HashMap<H256, BlockBody>,
@@ -514,6 +515,7 @@ mod tests {
                 Self {
                     consensus: Arc::new(TestConsensus::default()),
                     responses: HashMap::default(),
+                    // 构建test transaction
                     tx: TestTransaction::default(),
                     batch_size: 1000,
                 }

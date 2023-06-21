@@ -84,6 +84,7 @@ pub struct DefaultStages<H, B, EF> {
 
 impl<H, B, EF> DefaultStages<H, B, EF> {
     /// Create a new set of default stages with default values.
+    /// 创建一系列新的default stages，有着默认值
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,
@@ -144,6 +145,7 @@ pub struct OnlineStages<H, B> {
 
 impl<H, B> OnlineStages<H, B> {
     /// Create a new set of online stages with default values.
+    /// 创建一系列新的online stages，有着默认值
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,

@@ -26,7 +26,9 @@ use tokio::sync::mpsc;
 use tracing::*;
 
 /// Account hashing stage hashes plain account.
+/// Account hashing stage对plain account进行哈希。
 /// This is preparation before generating intermediate hashes and calculating Merkle tree root.
+/// 这是在生成中间哈希和计算Merkle树根之前的准备工作。
 #[derive(Clone, Debug)]
 pub struct AccountHashingStage {
     /// The threshold (in number of blocks) for switching between incremental
@@ -241,17 +243,21 @@ impl<DB: Database> Stage<DB> for AccountHashingStage {
         } else {
             // Aggregate all transition changesets and make a list of accounts that have been
             // changed.
+            // 聚合所有的transition changesets并且生成一个已经被改变的账户列表
             let lists = provider.changed_accounts_with_range(from_block..=to_block)?;
             // Iterate over plain state and get newest value.
+            // 遍历plain state并且获取最新的值
             // Assumption we are okay to make is that plainstate represent
             // `previous_stage_progress` state.
             let accounts = provider.basic_accounts(lists)?;
             // Insert and hash accounts to hashing table
+            // 插入并且hash accounts到hashing table
             provider.insert_account_for_hashing(accounts.into_iter())?;
         }
 
         // We finished the hashing stage, no future iterations is expected for the same block range,
         // so no checkpoint is needed.
+        // 我们结束了hashing stage，没有后续的迭代会对同一块范围进行，因此不需要checkpoint
         let checkpoint = StageCheckpoint::new(input.target())
             .with_account_hashing_stage_checkpoint(AccountHashingCheckpoint {
                 progress: stage_checkpoint_progress(provider)?,
