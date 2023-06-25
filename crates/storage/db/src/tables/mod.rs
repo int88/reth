@@ -82,6 +82,7 @@ pub const TABLES: [(TableType, &str); NUM_TABLES] = [
 
 #[macro_export]
 /// Macro to declare key value table.
+/// 用来申明key value table的宏
 macro_rules! table {
     ($(#[$docs:meta])+ ( $table_name:ident ) $key:ty | $value:ty) => {
         $(#[$docs])+
@@ -113,6 +114,7 @@ macro_rules! table {
 
 #[macro_export]
 /// Macro to declare duplicate key value table.
+/// 宏用于声明重复的key value table
 macro_rules! dupsort {
     ($(#[$docs:meta])+ ( $table_name:ident ) $key:ty | [$subkey:ty] $value:ty) => {
         table!(
@@ -214,7 +216,9 @@ table!(
     /// 存储到block changeset 的指针，每个account key的变化
     ///
     /// Last shard key of the storage will contain `u64::MAX` `BlockNumber`,
+    /// storage的最后一个shard会保存`u64::MAX` `BlockNumber`
     /// this would allows us small optimization on db access when change is in plain state.
+    /// 这会允许small optimization，对于db的访问，当在plain state发生变更的时候
     ///
     /// Imagine having shards as:
     /// * `Address | 100`
@@ -222,11 +226,15 @@ table!(
     ///
     /// What we need to find is number that is one greater than N. Db `seek` function allows us to fetch
     /// the shard that equal or more than asked. For example:
+    /// 我们需要找到的是大于N的数字
     /// * For N=50 we would get first shard.
+    /// * 对于N=50，我们会找到第一个shard
     /// * for N=150 we would get second shard.
     /// * If max block number is 200 and we ask for N=250 we would fetch last shard and
     ///     know that needed entry is in `AccountPlainState`.
+    /// * 如果max block number是200并且我们寻找N=250，我们会
     /// * If there were no shard we would get `None` entry or entry of different storage key.
+    /// * 如果没有shard，我们会获取`None` entry或者有着不同storage key的entry
     ///
     /// Code example can be found in `reth_provider::HistoricalStateProviderRef`
     ( AccountHistory ) ShardedKey<Address> | BlockNumberList
@@ -234,6 +242,7 @@ table!(
 
 table!(
     /// Stores pointers to block number changeset with changes for each storage key.
+    /// 存储指针指向block number changeset，对于每个storage key的变更
     ///
     /// Last shard key of the storage will contain `u64::MAX` `BlockNumber`,
     /// this would allows us small optimization on db access when change is in plain state.
@@ -317,6 +326,7 @@ table!(
 /// Alias Types
 
 /// List with transaction numbers.
+/// 一系列的transaction numbers
 pub type BlockNumberList = IntegerList;
 /// Encoded stage id.
 pub type StageId = String;

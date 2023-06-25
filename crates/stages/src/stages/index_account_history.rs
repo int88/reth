@@ -18,6 +18,7 @@ pub struct IndexAccountHistoryStage {
 
 impl IndexAccountHistoryStage {
     /// Create new instance of [IndexAccountHistoryStage].
+    /// 创建新的[IndexAccountHistoryStage]实例
     pub fn new(commit_threshold: u64) -> Self {
         Self { commit_threshold }
     }
@@ -25,6 +26,7 @@ impl IndexAccountHistoryStage {
 
 impl Default for IndexAccountHistoryStage {
     fn default() -> Self {
+        // 设置threshold为100_000
         Self { commit_threshold: 100_000 }
     }
 }
@@ -32,6 +34,7 @@ impl Default for IndexAccountHistoryStage {
 #[async_trait::async_trait]
 impl<DB: Database> Stage<DB> for IndexAccountHistoryStage {
     /// Return the id of the stage
+    /// 返回stage的id
     fn id(&self) -> StageId {
         StageId::IndexAccountHistory
     }
@@ -68,6 +71,7 @@ impl<DB: Database> Stage<DB> for IndexAccountHistoryStage {
         provider.unwind_account_history_indices(range)?;
 
         // from HistoryIndex higher than that number.
+        // 从HistoryIndex高于这个数目
         Ok(UnwindOutput { checkpoint: StageCheckpoint::new(unwind_progress) })
     }
 }
@@ -97,7 +101,9 @@ mod tests {
     }
 
     /// Shard for account
+    /// 对于account的shard
     fn shard(shard_index: u64) -> ShardedKey<H160> {
+        // 第二个参数是最高的block number
         ShardedKey { key: ADDRESS, highest_block_number: shard_index }
     }
 
@@ -119,14 +125,17 @@ mod tests {
 
     fn partial_setup(tx: &TestTransaction) {
         // setup
+        // 设置
         tx.commit(|tx| {
             // we just need first and last
+            // 我们只需要第一个和最后一个
             tx.put::<tables::BlockBodyIndices>(
                 0,
                 StoredBlockBodyIndices { tx_count: 3, ..Default::default() },
             )
             .unwrap();
 
+            // key也是block number
             tx.put::<tables::BlockBodyIndices>(
                 5,
                 StoredBlockBodyIndices { tx_count: 5, ..Default::default() },
@@ -135,6 +144,7 @@ mod tests {
 
             // setup changeset that are going to be applied to history index
             // 设置change set，只应用到history index
+            // 第一个参数是block number
             tx.put::<tables::AccountChangeSet>(4, acc()).unwrap();
             tx.put::<tables::AccountChangeSet>(5, acc()).unwrap();
             Ok(())
@@ -147,6 +157,7 @@ mod tests {
         let mut stage = IndexAccountHistoryStage::default();
         let factory = ProviderFactory::new(tx.tx.as_ref(), MAINNET.clone());
         let mut provider = factory.provider_rw().unwrap();
+        // 执行stage
         let out = stage.execute(&mut provider, input).await.unwrap();
         assert_eq!(out, ExecOutput { checkpoint: StageCheckpoint::new(5), done: true });
         provider.commit().unwrap();
@@ -175,9 +186,11 @@ mod tests {
         partial_setup(&tx);
 
         // run
+        // 运行到第五个block
         run(&tx, 5).await;
 
         // verify
+        // 校验
         let table = cast(tx.table::<tables::AccountHistory>().unwrap());
         assert_eq!(table, BTreeMap::from([(shard(u64::MAX), vec![4, 5])]));
 
@@ -185,6 +198,7 @@ mod tests {
         unwind(&tx, 5, 0).await;
 
         // verify initial state
+        // 校验初始状态
         let table = tx.table::<tables::AccountHistory>().unwrap();
         assert!(table.is_empty());
     }
@@ -197,12 +211,14 @@ mod tests {
         // setup
         partial_setup(&tx);
         tx.commit(|tx| {
+            // 设置一个account history
             tx.put::<tables::AccountHistory>(shard(u64::MAX), list(&[1, 2, 3])).unwrap();
             Ok(())
         })
         .unwrap();
 
         // run
+        // 运行到account 5
         run(&tx, 5).await;
 
         // verify
@@ -213,6 +229,7 @@ mod tests {
         unwind(&tx, 5, 0).await;
 
         // verify initial state
+        // 校验初始的state
         let table = cast(tx.table::<tables::AccountHistory>().unwrap());
         assert_eq!(table, BTreeMap::from([(shard(u64::MAX), vec![1, 2, 3]),]));
     }
@@ -226,6 +243,7 @@ mod tests {
         // setup
         partial_setup(&tx);
         tx.commit(|tx| {
+            // 输入account history
             tx.put::<tables::AccountHistory>(shard(u64::MAX), list(&full_list)).unwrap();
             Ok(())
         })
@@ -245,6 +263,7 @@ mod tests {
         unwind(&tx, 5, 0).await;
 
         // verify initial state
+        // 校验初始的state
         let table = cast(tx.table::<tables::AccountHistory>().unwrap());
         assert_eq!(table, BTreeMap::from([(shard(u64::MAX), full_list)]));
     }
@@ -253,6 +272,7 @@ mod tests {
     async fn insert_index_to_fill_shard() {
         // init
         let tx = TestTransaction::default();
+        // 一个接近full的list
         let mut close_full_list = vec![1; NUM_OF_INDICES_IN_SHARD - 2];
 
         // setup
@@ -293,6 +313,7 @@ mod tests {
         // setup
         partial_setup(&tx);
         tx.commit(|tx| {
+            // 校验初始的state
             tx.put::<tables::AccountHistory>(shard(u64::MAX), list(&close_full_list)).unwrap();
             Ok(())
         })
@@ -313,6 +334,7 @@ mod tests {
         unwind(&tx, 5, 0).await;
 
         // verify initial state
+        // 校验初始的state
         close_full_list.pop();
         let table = cast(tx.table::<tables::AccountHistory>().unwrap());
         assert_eq!(table, BTreeMap::from([(shard(u64::MAX), close_full_list),]));
@@ -337,6 +359,7 @@ mod tests {
         run(&tx, 5).await;
 
         // verify
+        // 校验
         let table = cast(tx.table::<tables::AccountHistory>().unwrap());
         assert_eq!(
             table,

@@ -49,6 +49,7 @@ impl<DB: Database> Stage<DB> for IndexStorageHistoryStage {
 
         let (range, is_final_range) = input.next_block_range_with_threshold(self.commit_threshold);
 
+        // 从changesets中获取storage block number
         let indices = provider.get_storage_block_numbers_from_changesets(range.clone())?;
         provider.insert_storage_history_index(indices)?;
 
@@ -94,6 +95,7 @@ mod tests {
 
     fn storage(key: H256) -> StorageEntry {
         // Value is not used in indexing stage.
+        // 在indexing stage中，value没有被使用
         StorageEntry { key, value: U256::ZERO }
     }
 
@@ -102,6 +104,7 @@ mod tests {
     }
 
     /// Shard for account
+    /// account的shard
     fn shard(shard_index: u64) -> StorageShardedKey {
         StorageShardedKey {
             address: ADDRESS,

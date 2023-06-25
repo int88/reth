@@ -35,6 +35,8 @@ impl<DB: Database> ProviderFactory<DB> {
     /// Returns a provider with a created `DbTx` inside, which allows fetching data from the
     /// database using different types of providers. Example: [`HeaderProvider`]
     /// [`BlockHashProvider`]. This may fail if the inner read database transaction fails to open.
+    /// 返回一个provider，有着一个创建的`DbTx`，允许使用不同类型的provider从数据库中获取数据。
+    /// 例如：[`HeaderProvider`] [`BlockHashProvider`]。如果内部的read database transaction打开失败，这可能会失败。
     pub fn provider(&self) -> Result<DatabaseProviderRO<'_, DB>> {
         Ok(DatabaseProvider::new(self.db.tx()?, self.chain_spec.clone()))
     }
@@ -43,6 +45,8 @@ impl<DB: Database> ProviderFactory<DB> {
     /// data from the database using different types of providers. Example: [`HeaderProvider`]
     /// [`BlockHashProvider`].  This may fail if the inner read/write database transaction fails to
     /// open.
+    /// 返回一个provider，有着一个创建的`DbTxMut`，允许使用不同类型的provider从数据库中获取和更新数据。
+    /// 例如：[`HeaderProvider`] [`BlockHashProvider`]。如果内部的read/write database transaction打开失败，这可能会失败。
     pub fn provider_rw(&self) -> Result<DatabaseProviderRW<'_, DB>> {
         Ok(DatabaseProviderRW(DatabaseProvider::new_rw(self.db.tx_mut()?, self.chain_spec.clone())))
     }

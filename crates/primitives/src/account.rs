@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
 /// An Ethereum account.
+/// 一个Ethereum账号
 #[main_codec]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Account {
@@ -15,6 +16,7 @@ pub struct Account {
     /// Account balance.
     pub balance: U256,
     /// Hash of the account's bytecode.
+    /// account的字节码的哈希值
     pub bytecode_hash: Option<H256>,
 }
 

@@ -11,10 +11,12 @@ use serde::{Deserialize, Serialize};
 use super::ShardedKey;
 
 /// Number of indices in one shard.
+/// shard中的index的数目
 pub const NUM_OF_INDICES_IN_SHARD: usize = 2_000;
 
 /// Sometimes data can be too big to be saved for a single key. This helps out by dividing the data
 /// into different shards. Example:
+/// 有时候data太大了，不能被保存在一个key中，这个结构将data分成不同的shard
 ///
 /// `Address | Storagekey | 200` -> data is from transition 0 to 200.
 ///
@@ -22,13 +24,16 @@ pub const NUM_OF_INDICES_IN_SHARD: usize = 2_000;
 #[derive(Debug, Default, Clone, Eq, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub struct StorageShardedKey {
     /// Storage account address.
+    /// Storage account的地址
     pub address: H160,
     /// Storage slot with highest transition id.
+    /// 有着最高transaction id的storage slot
     pub sharded_key: ShardedKey<H256>,
 }
 
 impl StorageShardedKey {
     /// Creates a new `StorageShardedKey`.
+    /// 创建一个新的`StorageShardedKey`
     pub fn new(address: H160, storage_key: H256, highest_block_number: BlockNumber) -> Self {
         Self { address, sharded_key: ShardedKey { key: storage_key, highest_block_number } }
     }

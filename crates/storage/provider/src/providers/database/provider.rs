@@ -71,6 +71,7 @@ impl<'this, DB: Database> DerefMut for DatabaseProviderRW<'this, DB> {
 
 impl<'this, DB: Database> DatabaseProviderRW<'this, DB> {
     /// Commit database transaction
+    /// 提交database transaction
     pub fn commit(self) -> Result<bool> {
         self.0.commit()
     }
@@ -366,6 +367,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
         &self,
         range: Range<BlockNumberAddress>,
     ) -> std::result::Result<usize, TransactionError> {
+        // 遍历storage changset
         let storage_changesets = self
             .tx
             .cursor_read::<tables::StorageChangeSet>()?
@@ -376,12 +378,15 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
         let last_indices = storage_changesets
             .into_iter()
             // reverse so we can get lowest block number where we need to unwind account.
+            // 反向开始，这样我们可以获取需要unwind account的最低block number
             .rev()
             // fold all storages and get last block number
+            // 折叠所有的storage并且获取最后的block number
             .fold(
                 BTreeMap::new(),
                 |mut accounts: BTreeMap<(Address, H256), u64>, (index, storage)| {
                     // we just need address and lowest block number.
+                    // 我们只需要address和最低的block number
                     accounts.insert((index.address(), storage.key), index.block_number());
                     accounts
                 },
@@ -393,8 +398,10 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
                 unwind_storage_history_shards::<TX>(&mut cursor, address, storage_key, rem_index)?;
 
             // check last shard_part, if present, items needs to be reinserted.
+            // 检查最后的shard_part，如果存在，items需要被重新插入
             if !shard_part.is_empty() {
                 // there are items in list
+                // list中有items
                 self.tx.put::<tables::StorageHistory>(
                     StorageShardedKey::new(address, storage_key, u64::MAX),
                     BlockNumberList::new(shard_part)
@@ -863,6 +870,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
             let last_chunk = chunks.pop();
 
             // chunk indices and insert them in shards of N size.
+            // chunk indices并且插入它们到N大小的shards中
             chunks.into_iter().try_for_each(|list| {
                 self.tx.put::<tables::StorageHistory>(
                     StorageShardedKey::new(
@@ -874,6 +882,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
                 )
             })?;
             // Insert last list with u64::MAX
+            // 插入最后一个list和u64::MAX
             if let Some(last_list) = last_chunk {
                 self.tx.put::<tables::StorageHistory>(
                     StorageShardedKey::new(address, storage_key, u64::MAX),
@@ -1172,6 +1181,7 @@ impl<'this, TX: DbTx<'this>> AccountExtReader for DatabaseProvider<'this, TX> {
             },
         )?;
 
+        // 构建account transitions
         Ok(account_transitions)
     }
 }
@@ -1181,6 +1191,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
         let mut hashed_accounts = self.tx.cursor_write::<tables::HashedAccount>()?;
 
         // Aggregate all block changesets and make a list of accounts that have been changed.
+        // 聚合所有的block changesets并且创建一个已经改变的account列表。
         self.tx
             .cursor_read::<tables::AccountChangeSet>()?
             .walk_range(range)?
@@ -1225,21 +1236,27 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
         let last_indices = account_changeset
             .into_iter()
             // reverse so we can get lowest block number where we need to unwind account.
+            // 反向，这样我们可以获取需要撤销账户的最低块编号。
             .rev()
             // fold all account and get last block number
+            // 折叠所有的account并且获取最后的块编号
             .fold(BTreeMap::new(), |mut accounts: BTreeMap<Address, u64>, (index, account)| {
                 // we just need address and lowest block number.
+                // 我们只需要地址和最低的块编号。
                 accounts.insert(account.address, index);
                 accounts
             });
         // try to unwind the index
+        // 试着unwind index
         let mut cursor = self.tx.cursor_write::<tables::AccountHistory>()?;
         for (address, rem_index) in last_indices {
             let shard_part = unwind_account_history_shards::<TX>(&mut cursor, address, rem_index)?;
 
             // check last shard_part, if present, items needs to be reinserted.
+            // 检查最后的shard_part，如果存在，则需要重新插入items。
             if !shard_part.is_empty() {
                 // there are items in list
+                // list中有items
                 self.tx.put::<tables::AccountHistory>(
                     ShardedKey::new(address, u64::MAX),
                     BlockNumberList::new(shard_part)
@@ -1256,14 +1273,18 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
         account_transitions: BTreeMap<Address, Vec<u64>>,
     ) -> Result<()> {
         // insert indexes to AccountHistory.
+        // 插入indexes到AccountHistory
         for (address, mut indices) in account_transitions {
             // Load last shard and check if it is full and remove if it is not. If list is empty,
             // last shard was full or there is no shards at all.
+            // 加载最后一个shard并且检查它是否满了，如果没有满则删除。如果列表为空，则最后一个shard已满或者根本没有shard。
             let mut last_shard = {
+                // 获取last shard
                 let mut cursor = self.tx.cursor_read::<tables::AccountHistory>()?;
                 let last = cursor.seek_exact(ShardedKey::new(address, u64::MAX))?;
                 if let Some((shard_key, list)) = last {
                     // delete old shard so new one can be inserted.
+                    // 删除老的shard，这样就可以插入新的shard。
                     self.tx.delete::<tables::AccountHistory>(shard_key, None)?;
                     let list = list.iter(0).map(|i| i as u64).collect::<Vec<_>>();
                     list
@@ -1272,8 +1293,11 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
                 }
             };
 
+            // 扩展indices
             last_shard.append(&mut indices);
             // chunk indices and insert them in shards of N size.
+            // chunk indices并且插入它们到N大小的shards中
+            // 将最后一个shard，根据NUM_OF_INDICES_IN_SHARD分割为chunks
             let mut chunks = last_shard
                 .iter()
                 .chunks(sharded_key::NUM_OF_INDICES_IN_SHARD)
@@ -1284,18 +1308,23 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
 
             chunks.into_iter().try_for_each(|list| {
                 self.tx.put::<tables::AccountHistory>(
+                    // 构建sharded key
                     ShardedKey::new(
                         address,
+                        // 获取list的最后一个block作为block number
                         *list.last().expect("Chuck does not return empty list") as BlockNumber,
                     ),
+                    // indices是提前排序并且不为空
                     BlockNumberList::new(list).expect("Indices are presorted and not empty"),
                 )
             })?;
 
             // Insert last list with u64::MAX
+            // 插入最后的list，使用u64::MAX
             if let Some(last_list) = last_chunk {
                 self.tx.put::<tables::AccountHistory>(
                     ShardedKey::new(address, u64::MAX),
+                    // indices被重新排序并且不为空
                     BlockNumberList::new(last_list).expect("Indices are presorted and not empty"),
                 )?
             }

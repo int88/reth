@@ -33,8 +33,10 @@ use tracing::*;
 pub struct AccountHashingStage {
     /// The threshold (in number of blocks) for switching between incremental
     /// hashing and full storage hashing.
+    /// threshold用于在incremental hashing和full storage hashing之间转换
     pub clean_threshold: u64,
     /// The maximum number of accounts to process before committing.
+    /// 在committing之前最大的accounts的数目
     pub commit_threshold: u64,
 }
 

@@ -1,4 +1,5 @@
 //! Implements data structures specific to the database
+//! 实现和地址相关的数据结构
 use crate::{
     table::{Decode, Encode},
     DatabaseError,

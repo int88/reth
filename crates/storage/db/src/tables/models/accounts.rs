@@ -1,4 +1,5 @@
 //! Account related models and types.
+//! Account相关的models和types
 
 use std::ops::{Range, RangeInclusive};
 
@@ -13,14 +14,17 @@ use reth_primitives::{Account, Address, BlockNumber};
 use serde::{Deserialize, Serialize};
 
 /// Account as it is saved inside [`AccountChangeSet`][crate::tables::AccountChangeSet].
+/// Account被保存在[`AccountChangeSet`][crate::tables::AccountChangeSet]中
 ///
 /// [`Address`] is the subkey.
 #[derive_arbitrary(compact)]
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize)]
 pub struct AccountBeforeTx {
     /// Address for the account. Acts as `DupSort::SubKey`.
+    /// account的地址，作为`DupSort::SubKey`
     pub address: Address,
     /// Account state before the transaction.
+    /// 在transaction之前的account state
     pub info: Option<Account>,
 }
 
@@ -62,30 +66,37 @@ impl Compact for AccountBeforeTx {
 
 /// [`BlockNumber`] concatenated with [`Address`]. Used as the key for
 /// [`StorageChangeSet`](crate::tables::StorageChangeSet)
+/// [`BlockNumber`]和[`Address`]拼接在一起，作为[`StorageChangeSet`](crate::tables::StorageChangeSet)的key
 ///
 /// Since it's used as a key, it isn't compressed when encoding it.
+/// 因为它作为key，所以在编码时不会被压缩
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Ord, PartialOrd)]
 pub struct BlockNumberAddress(pub (BlockNumber, Address));
 
 impl BlockNumberAddress {
     /// Create a new Range from `start` to `end`
+    /// 创建一个从`start`到`end`的Range
     ///
     /// Note: End is inclusive
+    /// 注意：包含End
     pub fn range(range: RangeInclusive<BlockNumber>) -> Range<Self> {
         (*range.start(), Address::zero()).into()..(*range.end() + 1, Address::zero()).into()
     }
 
     /// Return the transition id
+    /// 返回transaction id
     pub fn block_number(&self) -> BlockNumber {
         self.0 .0
     }
 
     /// Return the address
+    /// 返回地址
     pub fn address(&self) -> Address {
         self.0 .1
     }
 
     /// Consumes `Self` and returns [`BlockNumber`], [`Address`]
+    /// 消费`Self`并返回[`BlockNumber`], [`Address`]
     pub fn take(self) -> (BlockNumber, Address) {
         (self.0 .0, self.0 .1)
     }
@@ -138,6 +149,7 @@ mod test {
         let key = BlockNumberAddress((num, hash));
 
         let mut bytes = [0u8; 28];
+        // 加入block number和哈希值
         bytes[..8].copy_from_slice(&num.to_be_bytes());
         bytes[8..].copy_from_slice(&hash.0);
 

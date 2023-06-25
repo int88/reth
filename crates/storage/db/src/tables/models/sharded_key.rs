@@ -8,10 +8,12 @@ use reth_primitives::BlockNumber;
 use serde::{Deserialize, Serialize};
 
 /// Number of indices in one shard.
+/// 一个shard最多2000个indices
 pub const NUM_OF_INDICES_IN_SHARD: usize = 2_000;
 
 /// Sometimes data can be too big to be saved for a single key. This helps out by dividing the data
 /// into different shards. Example:
+/// 有的时候data太大了，不能被保存在一个key中，这个结构将data分成不同的shard
 ///
 /// `Address | 200` -> data is from block 0 to 200.
 ///
@@ -19,8 +21,10 @@ pub const NUM_OF_INDICES_IN_SHARD: usize = 2_000;
 #[derive(Debug, Default, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct ShardedKey<T> {
     /// The key for this type.
+    /// 这个key的类型
     pub key: T,
     /// Highest block number to which `value` is related to.
+    /// value相关的最高block number
     pub highest_block_number: BlockNumber,
 }
 

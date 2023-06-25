@@ -3,12 +3,15 @@ use reth_codecs::{derive_arbitrary, Compact};
 use serde::{Deserialize, Serialize};
 
 /// Account storage entry.
+/// Account的storage entry
 #[derive_arbitrary(compact)]
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub struct StorageEntry {
     /// Storage key.
+    /// Storage的key
     pub key: H256,
     /// Value on storage key.
+    /// storage的key的value
     pub value: U256,
 }
 

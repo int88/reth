@@ -24,6 +24,7 @@ pub struct ExecInput {
 
 impl ExecInput {
     /// Return the checkpoint of the stage or default.
+    /// 返回stage的checkpoint或者默认值
     pub fn checkpoint(&self) -> StageCheckpoint {
         self.checkpoint.unwrap_or_default()
     }
@@ -71,6 +72,7 @@ impl ExecInput {
 
         let end = min(target, current_block.block_number.saturating_add(threshold));
 
+        // 如果end等于target，说明到了final
         let is_final_range = end == target;
         (start..=end, is_final_range)
     }
@@ -164,9 +166,11 @@ impl ExecOutput {
 }
 
 /// The output of a stage unwinding.
+/// 一个stage unwinding的输出
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct UnwindOutput {
     /// The checkpoint at which the stage has unwound to.
+    /// stage unwind到的checkpoint
     pub checkpoint: StageCheckpoint,
 }
 
