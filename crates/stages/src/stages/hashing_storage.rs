@@ -28,8 +28,10 @@ use tracing::*;
 pub struct StorageHashingStage {
     /// The threshold (in number of blocks) for switching between incremental
     /// hashing and full storage hashing.
+    /// 在incremental hashing和full storage hashing转换的threshold
     pub clean_threshold: u64,
     /// The maximum number of slots to process before committing.
+    /// 在commiting之前处理的最大数目的slots
     pub commit_threshold: u64,
 }
 
@@ -248,6 +250,7 @@ mod tests {
     stage_test_suite_ext!(StorageHashingTestRunner, storage_hashing);
 
     /// Execute with low clean threshold so as to hash whole storage
+    /// 执行low clean threshold，为了对整个storage进行hash
     #[tokio::test]
     async fn execute_clean_storage_hashing() {
         let (previous_stage, stage_progress) = (500, 100);
@@ -256,6 +259,7 @@ mod tests {
         let mut runner = StorageHashingTestRunner::default();
 
         // set low clean threshold so we hash the whole storage
+        // 设置low clean threshold，这样我们哈希整个storage
         runner.set_clean_threshold(1);
 
         // set low commit threshold so we force each entry to be a tx.commit and make sure we don't

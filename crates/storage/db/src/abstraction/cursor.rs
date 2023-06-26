@@ -105,9 +105,12 @@ pub trait DbDupCursorRO<'tx, T: DupSort> {
 }
 
 /// Read write cursor over table.
+/// 对于table的read write cursor
 pub trait DbCursorRW<'tx, T: Table> {
     /// Database operation that will update an existing row if a specified value already
     /// exists in a table, and insert a new row if the specified value doesn't already exist
+    /// database操作，会更新一个已经存在的row，如果一个指定的value在table中存在，并且插入一个新的row
+    /// 如果指定的值不存在
     fn upsert(&mut self, key: T::Key, value: T::Value) -> Result<(), DatabaseError>;
 
     /// Database operation that will insert a row at a given key. If the key is already

@@ -1144,6 +1144,7 @@ impl<'this, TX: DbTx<'this>> AccountExtReader for DatabaseProvider<'this, TX> {
     fn changed_accounts_with_range(
         &self,
         range: impl RangeBounds<BlockNumber>,
+        // 收集一系列的account address
     ) -> Result<BTreeSet<Address>> {
         self.tx
             .cursor_read::<tables::AccountChangeSet>()?
@@ -1341,6 +1342,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
         let hashes_accounts = accounts.into_iter().fold(
             BTreeMap::new(),
             |mut map: BTreeMap<H256, Option<Account>>, (address, account)| {
+                // 对adress进行hash并且插入到map
                 map.insert(keccak256(address), account);
                 map
             },

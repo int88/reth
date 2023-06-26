@@ -8,16 +8,22 @@ use reth_db::{
 use reth_primitives::{Address, SealedBlock};
 
 /// Insert block data into corresponding tables. Used mainly for testing & internal tooling.
+/// 插入block data到对应的tables，主要用于测试和内部的tooling
 ///
 ///
 /// Check parent dependency in [tables::HeaderNumbers] and in [tables::BlockBodyIndices] tables.
+/// 检查[tables::HeaderNumbers]和[table::BlockBodyIndices] tables中的parent dependency
 /// Inserts header data to [tables::CanonicalHeaders], [tables::Headers], [tables::HeaderNumbers].
 /// and transactions data to [tables::TxSenders], [tables::Transactions], [tables::TxHashNumber].
 /// and transition/transaction meta data to [tables::BlockBodyIndices]
 /// and block data to [tables::BlockOmmers] and [tables::BlockWithdrawals].
+/// 插入header data到[tables::CanonicalHeaders], [tables::Headers]和[tables::HeaderNumbers]
+/// 以及transactions data到[tables::TxSenders], [tables::Transactions], [tables::TxHashNumber]
+/// 以及transition/transaction meta data到[tables::BlockBodyIndices]
 ///
 /// Return [StoredBlockBodyIndices] that contains indices of the first and last transactions and
 /// transition in the block.
+/// 返回[StoredBlockBodyIndices]包含了第一个和最后一个transactions的indices以及block中的transition
 pub fn insert_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
     tx: &TX,
     block: SealedBlock,
@@ -94,6 +100,8 @@ pub fn insert_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
 
 /// Inserts canonical block in blockchain. Parent tx num and transition id is taken from
 /// parent block in database.
+/// 插入canonical block到blockchain，Parent tx num以及transition id会从database的parent block
+/// 拿出来
 pub fn insert_canonical_block<'a, TX: DbTxMut<'a> + DbTx<'a>>(
     tx: &TX,
     block: SealedBlock,

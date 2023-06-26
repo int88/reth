@@ -12,8 +12,10 @@ use std::ops::Deref;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Account {
     /// Account nonce.
+    /// Account的nonce
     pub nonce: u64,
     /// Account balance.
+    /// Account的balance
     pub balance: U256,
     /// Hash of the account's bytecode.
     /// account的字节码的哈希值

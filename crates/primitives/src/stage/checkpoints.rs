@@ -157,12 +157,15 @@ pub struct IndexHistoryCheckpoint {
 }
 
 /// Saves the progress of abstract stage iterating over or downloading entities.
+/// 保存抽象的stage的进展，遍历或者下载entities
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct EntitiesCheckpoint {
     /// Number of entities already processed.
+    /// 已经处理的entities
     pub processed: u64,
     /// Total entities to be processed.
+    /// 所有等待处理的entities
     pub total: u64,
 }
 
@@ -260,12 +263,16 @@ impl Display for StageCheckpoint {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum StageUnitCheckpoint {
     /// Saves the progress of AccountHashing stage.
+    /// 保存AccountHashing stage的进展
     Account(AccountHashingCheckpoint),
     /// Saves the progress of StorageHashing stage.
+    /// 保存StorageHashing stage的进展
     Storage(StorageHashingCheckpoint),
     /// Saves the progress of abstract stage iterating over or downloading entities.
+    /// 保存迭代或者下载entities的抽象stage的进展
     Entities(EntitiesCheckpoint),
     /// Saves the progress of Execution stage.
+    /// 保存Execution stage的进展
     Execution(ExecutionCheckpoint),
     /// Saves the progress of Headers stage.
     Headers(HeadersCheckpoint),

@@ -48,6 +48,7 @@ impl ExecInput {
     }
 
     /// Return next block range that needs to be executed.
+    /// 返回下一个需要执行的block range
     pub fn next_block_range(&self) -> RangeInclusive<BlockNumber> {
         let (range, _) = self.next_block_range_with_threshold(u64::MAX);
         range

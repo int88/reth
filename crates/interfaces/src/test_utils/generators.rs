@@ -90,6 +90,8 @@ pub fn sign_tx_with_key_pair(key_pair: KeyPair, tx: Transaction) -> TransactionS
 /// Generate a random block filled with signed transactions (generated using
 /// [random_signed_tx]). If no transaction count is provided, the number of transactions
 /// will be random, otherwise the provided count will be used.
+/// 生成一个随机的block，用signed transactions填充（使用[random_signed_tx]生成），如果没有transaction
+/// count提供，生成的transactions是随机的，否则提供的count会被使用
 ///
 /// All fields use the default values (and are assumed to be invalid) except for:
 ///
@@ -142,11 +144,14 @@ pub fn random_block(
 }
 
 /// Generate a range of random blocks.
+/// 生成一系列随机的random blocks
 ///
 /// The parent hash of the first block
 /// in the result will be equal to `head`.
+/// 第一个block的parent hash会等于`head`的结果
 ///
 /// See [random_block] for considerations when validating the generated blocks.
+/// 考虑[random_blcok]，当校验generated blocks
 pub fn random_block_range(
     block_numbers: RangeInclusive<BlockNumber>,
     head: H256,
@@ -284,11 +289,13 @@ pub fn random_eoa_account() -> (Address, Account) {
 }
 
 /// Generate random Externally Owned Accounts
+/// 生成随机的Externally Owned Accounts
 pub fn random_eoa_account_range(acc_range: std::ops::Range<u64>) -> Vec<(Address, Account)> {
     let mut accounts = Vec::with_capacity(acc_range.end.saturating_sub(acc_range.start) as usize);
     for _ in acc_range {
         accounts.push(random_eoa_account())
     }
+    // 生成一系列地址和account
     accounts
 }
 

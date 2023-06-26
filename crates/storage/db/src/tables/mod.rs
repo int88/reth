@@ -203,6 +203,7 @@ table!(
 
 table!(
     /// Stores the current state of an [`Account`].
+    /// 存储一个[`Account`]的当前状态
     ( PlainAccountState ) Address | Account
 );
 
@@ -282,9 +283,13 @@ dupsort!(
 
 table!(
     /// Stores the current state of an [`Account`] indexed with `keccak256(Address)`
+    /// 存储一个Account的当前状态，用`keccak256(Address)`作为索引
     /// This table is in preparation for merkelization and calculation of state root.
+    /// 这个table在准备state root的merkelization和calculation
     /// We are saving whole account data as it is needed for partial update when
     /// part of storage is changed. Benefit for merkelization is that hashed addresses are sorted.
+    /// 我们保存整个account data，因为它在partial update，当storage部分改变的时候需要，merkelization的优势是
+    /// hashed account是有序的
     ( HashedAccount ) H256 | Account
 );
 

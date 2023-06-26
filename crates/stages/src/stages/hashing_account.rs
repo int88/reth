@@ -42,6 +42,7 @@ pub struct AccountHashingStage {
 
 impl AccountHashingStage {
     /// Create new instance of [AccountHashingStage].
+    /// 创建AccountHashingStage的新实例
     pub fn new(clean_threshold: u64, commit_threshold: u64) -> Self {
         Self { clean_threshold, commit_threshold }
     }
@@ -57,21 +58,29 @@ impl Default for AccountHashingStage {
 /// `SeedOpts` provides configuration parameters for calling `AccountHashingStage::seed`
 /// in unit tests or benchmarks to generate an initial database state for running the
 /// stage.
+/// `SeedOpts`提供了配置参数用于调用`AccountHashingStage::seed`在单元测试中或者benchmarks用于
+/// 产生一个初始的database state用于运行stage
 ///
 /// In order to check the "full hashing" mode of the stage you want to generate more
 /// transitions than `AccountHashingStage.clean_threshold`. This requires:
+/// 为了检查stage的`full hashing` mode，你想要生成更多的transitions，相对`AccountHashingStage.clean_threshold`
 /// 1. Creating enough blocks so there's enough transactions to generate
 /// the required transition keys in the `BlockTransitionIndex` (which depends on the
+/// 1. 创建足够多的blocks，这样有足够的transactions用于生成需要的transition keys，在`BlockTransitionIndex`
 /// `TxTransitionIndex` internally)
 /// 2. Setting `blocks.len() > clean_threshold` so that there's enough diffs to actually
 /// take the 2nd codepath
+/// 2. 设置`blocks.len()`大于clean_threshold，这样有足够的diffs来真正使用2nd codepath
 #[derive(Clone, Debug)]
 pub struct SeedOpts {
     /// The range of blocks to be generated
+    /// 需要生成的blocks
     pub blocks: RangeInclusive<u64>,
     /// The range of accounts to be generated
+    /// 需要生成的一系列accounts
     pub accounts: Range<u64>,
     /// The range of transactions to be generated per block.
+    /// 每个block需要生成的transactions
     pub txs: Range<u8>,
 }
 
@@ -79,9 +88,12 @@ pub struct SeedOpts {
 impl AccountHashingStage {
     /// Initializes the `PlainAccountState` table with `num_accounts` having some random state
     /// at the target block, with `txs_range` transactions in each block.
+    /// 初始化`PlainAccountState` table，有着`nums_accounts`，在target block有着随机的state，每个
+    /// block有着`txs_range`个transactions
     ///
     /// Proceeds to go to the `BlockTransitionIndex` end, go back `transitions` and change the
     /// account state in the `AccountChangeSet` table.
+    /// 处理到`blockTransitionIndex`，回到`transitions`并且改变`AccountChangeSet` table中的`txs_range`
     pub fn seed<DB: Database>(
         provider: &mut DatabaseProviderRW<'_, DB>,
         opts: SeedOpts,
@@ -101,6 +113,7 @@ impl AccountHashingStage {
         let mut accounts = random_eoa_account_range(opts.accounts);
         {
             // Account State generator
+            // Account Stage的generator
             let mut account_cursor =
                 provider.tx_ref().cursor_write::<tables::PlainAccountState>()?;
             accounts.sort_by(|a, b| a.0.cmp(&b.0));
@@ -108,6 +121,7 @@ impl AccountHashingStage {
                 account_cursor.append(*addr, *acc)?;
             }
 
+            // 保存account change set
             let mut acc_changeset_cursor =
                 provider.tx_ref().cursor_write::<tables::AccountChangeSet>()?;
             for (t, (addr, acc)) in (opts.blocks).zip(&accounts) {
@@ -149,6 +163,8 @@ impl<DB: Database> Stage<DB> for AccountHashingStage {
         // account otherwise take changesets aggregate the sets and apply hashing to
         // AccountHashing table. Also, if we start from genesis, we need to hash from scratch, as
         // genesis accounts are not in changeset.
+        // 如果有超过threshold的blocks，遍历plain state并且对所有accounts进行哈希是更快的，应用到AccountHashing table
+        // 同时，如果我们从genesis开始，我们需要从头开始hash，因为genesis state不在changeset
         if to_block - from_block > self.clean_threshold || from_block == 1 {
             let tx = provider.tx_ref();
             let stage_checkpoint = input
@@ -279,6 +295,7 @@ impl<DB: Database> Stage<DB> for AccountHashingStage {
             input.unwind_block_range_with_threshold(self.commit_threshold);
 
         // Aggregate all transition changesets and make a list of accounts that have been changed.
+        // 聚合所有的transition changesets并且构建一系列已经发生改变的accounts
         provider.unwind_account_hashing(range)?;
 
         let mut stage_checkpoint =
@@ -316,8 +333,10 @@ mod tests {
 
     #[tokio::test]
     async fn execute_clean_account_hashing() {
+        // 清理account hashing
         let (previous_stage, stage_progress) = (20, 10);
         // Set up the runner
+        // 设置runner
         let mut runner = AccountHashingTestRunner::default();
         runner.set_clean_threshold(1);
 
@@ -351,6 +370,7 @@ mod tests {
         );
 
         // Validate the stage execution
+        // 校验stage execution
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "execution validation");
     }
 
@@ -358,6 +378,7 @@ mod tests {
     async fn execute_clean_account_hashing_with_commit_threshold() {
         let (previous_stage, stage_progress) = (20, 10);
         // Set up the runner
+        // 设置runner
         let mut runner = AccountHashingTestRunner::default();
         runner.set_clean_threshold(1);
         runner.set_commit_threshold(5);
@@ -370,6 +391,7 @@ mod tests {
         runner.seed_execution(input).expect("failed to seed execution");
 
         // first run, hash first five accounts.
+        // 首先运行，对五个accounts进行哈希
         let rx = runner.execute(input);
         let result = rx.await.unwrap();
 
@@ -409,8 +431,10 @@ mod tests {
         assert_eq!(runner.tx.table::<tables::HashedAccount>().unwrap().len(), 5);
 
         // second run, hash next five accounts.
+        // 第二次运行，对接下来五个accounts进行hash
         input.checkpoint = Some(result.unwrap().checkpoint);
         let rx = runner.execute(input);
+        // 进行unwrap
         let result = rx.await.unwrap();
 
         assert_matches!(
@@ -436,6 +460,7 @@ mod tests {
         assert_eq!(runner.tx.table::<tables::HashedAccount>().unwrap().len(), 10);
 
         // Validate the stage execution
+        // 校验stage execution
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "execution validation");
     }
 
@@ -467,6 +492,7 @@ mod tests {
 
             /// Iterates over PlainAccount table and checks that the accounts match the ones
             /// in the HashedAccount table
+            /// 遍历PlainAccount table并且检查accounts匹配HashedAccount table中的值
             pub(crate) fn check_hashed_accounts(&self) -> Result<(), TestRunnerError> {
                 self.tx.query(|tx| {
                     let mut acc_cursor = tx.cursor_read::<tables::PlainAccountState>()?;
@@ -474,6 +500,7 @@ mod tests {
 
                     while let Some((address, account)) = acc_cursor.next()? {
                         let hashed_addr = keccak256(address);
+                        // account确实用对应的account hash进行保存
                         if let Some((_, acc)) = hashed_acc_cursor.seek_exact(hashed_addr)? {
                             assert_eq!(acc, account)
                         }
@@ -486,6 +513,8 @@ mod tests {
 
             /// Same as check_hashed_accounts, only that checks with the old account state,
             /// namely, the same account with nonce - 1 and balance - 1.
+            /// 和check_hashed_accounts相同，只检查老的account state，即同样的account，有着nonce - 1
+            /// 以及balance - 1
             pub(crate) fn check_old_hashed_accounts(&self) -> Result<(), TestRunnerError> {
                 self.tx.query(|tx| {
                     let mut acc_cursor = tx.cursor_read::<tables::PlainAccountState>()?;
