@@ -8,6 +8,7 @@ use reth_provider::Chain;
 use std::collections::{btree_map, hash_map, BTreeMap, BTreeSet, HashMap, HashSet};
 
 /// Internal indices of the blocks and chains.
+/// blocks以及chains的内部索引
 ///
 /// This is main connection between blocks, chains and canonical chain.
 ///

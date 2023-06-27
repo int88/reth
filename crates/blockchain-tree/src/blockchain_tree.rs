@@ -80,6 +80,7 @@ pub struct BlockchainTree<DB: Database, C: Consensus, EF: ExecutorFactory> {
     /// Static blockchain ID generator
     block_chain_id_generator: u64,
     /// Indices to block and their connection to the canonical chain.
+    /// block的索引以及它们到canonical chain的连接
     block_indices: BlockIndices,
     /// External components (the database, consensus engine etc.)
     externals: TreeExternals<DB, C, EF>,
@@ -272,9 +273,11 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Try inserting a validated [Self::validate_block] block inside the tree.
+    /// 试着插入一个合法的[Self::validate_block] block到tree中
     ///
     /// If blocks does not have parent [`BlockStatus::Disconnected`] would be returned, in which
     /// case it is buffered for future inclusion.
+    /// 如果blocks没有parent [`BlockStatus::Disconnected`]会被返回，这种情况下会缓存用于未来加入
     #[instrument(skip_all, fields(block = ?block.num_hash()), target = "blockchain_tree", ret)]
     fn try_insert_validated_block(
         &mut self,
@@ -285,8 +288,10 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let parent = block.parent_num_hash();
 
         // check if block parent can be found in Tree
+        // 检查是否能从Tree中找到parent
         if let Some(chain_id) = self.block_indices.get_blocks_chain_id(&parent.hash) {
             // found parent in side tree, try to insert there
+            // 在side tree中找到parent，试着插入
             return self.try_insert_block_into_side_chain(block, chain_id)
         }
 
@@ -618,6 +623,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
     /// Validate if block is correct and satisfies all the consensus rules that concern the header
     /// and block body itself.
+    /// 校验block是否正确并且满足所有的consensus rules，关于header以及blcok自己
     fn validate_block(&self, block: &SealedBlockWithSenders) -> Result<(), ConsensusError> {
         if let Err(e) =
             self.externals.consensus.validate_header_with_total_difficulty(block, U256::MAX)
@@ -667,15 +673,20 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     /// Returns the [BlockStatus] on success:
     ///
     /// - The block is already part of a sidechain in the tree, or
+    /// - block已经是tree的sidechain的一部分
     /// - The block is already part of the canonical chain, or
+    /// - block已经是canonical chain的一部分
     /// - The parent is part of a sidechain in the tree, and we can fork at this block, or
+    /// - parent已经是sidechain的一部分，并且我们可以在这个block进行fork
     /// - The parent is part of the canonical chain, and we can fork at this block
+    /// - parent已经是canonical chain的一部分，我们可以fork这个block
     ///
     /// Otherwise, and error is returned, indicating that neither the block nor its parent is part
     /// of the chain or any sidechains.
     ///
     /// This means that if the block becomes canonical, we need to fetch the missing blocks over
     /// P2P.
+    /// 这意味着如果block变为canonical，我们需要通过P2P获取missing blocks
     ///
     /// # Note
     ///

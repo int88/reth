@@ -18,6 +18,7 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     ///
     /// This will recover all senders of the transactions in the block first, and then try to insert
     /// the block.
+    /// 它会首先从block的transactions复原所有的senders，并且之后试着插入block
     fn insert_block_without_senders(
         &self,
         block: SealedBlock,
@@ -127,11 +128,16 @@ impl CanonicalOutcome {
 pub enum BlockStatus {
     /// If block validation is valid and block extends canonical chain.
     /// In BlockchainTree sense it forks on canonical tip.
+    /// 如果block是合法的并且block扩展了canonical chain，在BlcokchainTree的意义上
+    /// 它在canonical tip进行forks
     Valid,
     /// If the block is valid, but it does not extend canonical chain.
+    /// 如果block是合法的，但是它没有扩展canonical chain
     /// (It is side chain) or hasn't been fully validated but ancestors of a payload are known.
+    ///（这是sidechain）或者没有被完整校验，但是payload的ancestor是已知的
     Accepted,
     /// If blocks is not connected to canonical chain.
+    /// 如果blocks没有连接到canonical chain
     Disconnected {
         /// The lowest parent block that is not connected to the canonical chain.
         missing_parent: BlockNumHash,
