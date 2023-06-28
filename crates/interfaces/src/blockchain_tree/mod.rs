@@ -33,6 +33,7 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     ///
     /// This will recover all senders of the transactions in the block first, and then try to buffer
     /// the block.
+    /// 首先从block中恢复所有的senders，并且试着缓存block
     fn buffer_block_without_senders(&self, block: SealedBlock) -> Result<(), InsertBlockError> {
         match block.try_seal_with_senders() {
             Ok(block) => self.buffer_block(block),
@@ -41,6 +42,7 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     }
 
     /// Buffer block with senders
+    /// 缓存block
     fn buffer_block(&self, block: SealedBlockWithSenders) -> Result<(), InsertBlockError>;
 
     /// Insert block with senders
@@ -66,15 +68,18 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
 
     /// Make a block and its parent chain part of the canonical chain by committing it to the
     /// database.
+    /// 让一个block以及它的parent chain变为canonical chain，通过提交到database
     ///
     /// # Note
     ///
     /// This unwinds the database if necessary, i.e. if parts of the canonical chain have been
     /// re-orged.
+    /// 这会unwinds database如果必要的话，例如部分canonical chain已经被re-orged
     ///
     /// # Returns
     ///
     /// Returns `Ok` if the blocks were canonicalized, or if the blocks were already canonical.
+    /// 返回`Ok`如果blocks被canonicalized，或者blocks已经canonical
     fn make_canonical(&self, block_hash: &BlockHash) -> Result<CanonicalOutcome, Error>;
 
     /// Unwind tables and put it inside state
@@ -82,16 +87,21 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
 }
 
 /// All possible outcomes of a canonicalization attempt of [BlockchainTreeEngine::make_canonical].
+/// canonicalization尝试的所有可能结果
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CanonicalOutcome {
     /// The block is already canonical.
+    /// block已经变为canonical
     AlreadyCanonical {
         /// The corresponding [SealedHeader] that is already canonical.
+        /// 对应的[SealedHeader]已经变为canonical
         header: SealedHeader,
     },
     /// Committed the block to the database.
+    /// 提交block到database
     Committed {
         /// The new corresponding canonical head
+        /// 新的对应的canonical head
         head: SealedHeader,
     },
 }

@@ -23,10 +23,13 @@ pub type ForkChoiceUpdateResult = Result<ForkchoiceUpdated, ForkchoiceUpdateErro
 #[serde(rename_all = "camelCase")]
 pub struct ForkchoiceState {
     /// Hash of the head block.
+    /// head block的hash
     pub head_block_hash: H256,
     /// Hash of the safe block.
+    /// safe block的hash
     pub safe_block_hash: H256,
     /// Hash of finalized block.
+    /// finalized block的hash
     pub finalized_block_hash: H256,
 }
 

@@ -96,6 +96,7 @@ where
     }
 
     /// Cancels the full block request with the given hash.
+    /// 取消给定hash的full block request
     pub(crate) fn cancel_full_block_request(&mut self, hash: H256) {
         self.inflight_full_block_requests.retain(|req| *req.hash() != hash);
         self.update_block_download_metrics();
@@ -127,9 +128,11 @@ where
     }
 
     /// Starts requesting a full block from the network.
+    /// 开始从network请求一个full block
     ///
     /// Returns `true` if the request was started, `false` if there's already a request for the
     /// given hash.
+    /// 返回`true`如果request开始了，`false`如果对于给定的hash有一个请求了
     pub(crate) fn download_full_block(&mut self, hash: H256) -> bool {
         if self.is_inflight_request(hash) {
             return false

@@ -21,6 +21,9 @@ pub struct BlockIndices {
     /// Canonical chain. Contains N number (depends on `finalization_depth`) of blocks.
     /// These blocks are found in fork_to_child but not inside `blocks_to_chain` or
     /// `number_to_block` as those are chain specific indices.
+    /// Canonical chain，包含N个blocks（取决于`finalization_depth`），这些blcoks在fork_to_child
+    /// 中被找到，但是不在`blocks_to_chain`或者`number_to_block`，因为这些都是chain specific
+    /// indices
     canonical_chain: CanonicalChain,
     /// Index needed when discarding the chain, so we can remove connected chains from tree.
     ///
@@ -145,6 +148,7 @@ impl BlockIndices {
     }
 
     /// Get the chain ID the block belongs to
+    /// 获取这block属于的chain ID
     pub(crate) fn get_blocks_chain_id(&self, block: &BlockHash) -> Option<BlockChainId> {
         self.blocks_to_chain.get(block).cloned()
     }

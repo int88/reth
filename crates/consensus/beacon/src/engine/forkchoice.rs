@@ -5,13 +5,16 @@ use reth_rpc_types::engine::{ForkchoiceState, PayloadStatusEnum};
 #[derive(Debug, Clone, Default)]
 pub(crate) struct ForkchoiceStateTracker {
     /// The latest forkchoice state that we received.
+    /// 我们接收到的最新的forkchoice state
     ///
     /// Caution: this can be invalid.
     latest: Option<ReceivedForkchoiceState>,
 
     /// Tracks the latest forkchoice state that we received to which we need to sync.
+    /// 追踪最新的forkchoice state，我们接收到需要进行同步的
     last_syncing: Option<ForkchoiceState>,
     /// The latest valid forkchoice state that we received and processed as valid.
+    /// 我们接收到并且处理为valid的最新的fcu state
     last_valid: Option<ForkchoiceState>,
 }
 
@@ -61,6 +64,7 @@ impl ForkchoiceStateTracker {
     }
 
     /// Returns the last received ForkchoiceState to which we need to sync.
+    /// 返回最新接收到的ForkchoiceState，我们需要sync到
     pub(crate) fn sync_target_state(&self) -> Option<ForkchoiceState> {
         self.last_syncing
     }
@@ -129,6 +133,7 @@ pub(crate) enum ForkchoiceStateHash {
 
 impl ForkchoiceStateHash {
     /// Tries to find a matching hash in the given [ForkchoiceState].
+    /// 试着在给定的[ForkchoiceState]找到匹配的hash
     pub(crate) fn find(state: &ForkchoiceState, hash: H256) -> Option<Self> {
         if state.head_block_hash == hash {
             Some(ForkchoiceStateHash::Head(hash))

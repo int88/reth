@@ -8,12 +8,14 @@ use std::{
 pub type BufferedBlocks = BTreeMap<BlockNumber, HashMap<BlockHash, SealedBlockWithSenders>>;
 
 /// Contains the Tree of pending blocks that are not executed but buffered
+/// 包含pending blocks的Tree，那些没有执行但是被缓存的
 /// It allows us to store unconnected blocks for potential inclusion.
 ///
 /// It has three main functionality:
 /// * [BlockBuffer::insert_block] for inserting blocks inside the buffer.
 /// * [BlockBuffer::remove_with_children] for connecting blocks if the parent gets received and
 ///   inserted.
+/// * [BlockBuffer::remove_with_children]用于连接blocks，如果收到parent并且插入
 /// * [BlockBuffer::clean_old_blocks] to clear old blocks that are below finalized line.
 ///
 /// Note: Buffer is limited by number of blocks that it can contain and eviction of the block

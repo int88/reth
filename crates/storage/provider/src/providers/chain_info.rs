@@ -36,6 +36,7 @@ impl ChainInfoTracker {
     }
 
     /// Update the timestamp when we received a forkchoice update.
+    /// 更新我们接收到fcu的时间戳
     pub(crate) fn on_forkchoice_update_received(&self) {
         self.inner.last_forkchoice_update.write().replace(Instant::now());
     }
@@ -99,11 +100,13 @@ impl ChainInfoTracker {
     }
 
     /// Sets the canonical head of the chain.
+    /// 设置chain的canonical head
     pub(crate) fn set_canonical_head(&self, header: SealedHeader) {
         let number = header.number;
         *self.inner.canonical_head.write() = header;
 
         // also update the atomic number.
+        // 同时更新atomic number
         self.inner.canonical_head_number.store(number, Ordering::Relaxed);
     }
 

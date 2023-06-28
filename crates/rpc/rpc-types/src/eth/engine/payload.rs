@@ -288,6 +288,7 @@ impl PayloadStatus {
     }
 
     /// Returns true if the payload status is valid.
+    /// 返回true，如果payload status是合法的
     pub fn is_valid(&self) -> bool {
         self.status.is_valid()
     }
@@ -332,6 +333,7 @@ impl From<PayloadError> for PayloadStatusEnum {
 pub enum PayloadStatusEnum {
     /// VALID is returned by the engine API in the following calls:
     ///   - newPayloadV1:       if the payload was already known or was just validated and executed
+    ///   - newPayloadV1: 如果payload是已知的或者刚刚被validated和executed
     ///   - forkchoiceUpdateV1: if the chain accepted the reorg (might ignore if it's stale)
     Valid,
 
@@ -350,6 +352,7 @@ pub enum PayloadStatusEnum {
 
     /// ACCEPTED is returned by the engine API in the following calls:
     ///   - newPayloadV1: if the payload was accepted, but not processed (side chain)
+    ///   - newPayloadV1: 如果payload被成功接收但是没有被处理（即sidechain）
     Accepted,
 }
 

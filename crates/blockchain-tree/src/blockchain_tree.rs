@@ -66,16 +66,22 @@ use tracing::{debug, error, info, instrument, trace, warn};
 /// main functions:
 /// * [BlockchainTree::insert_block]: Connect block to chain, execute it and if valid insert block
 ///   inside tree.
+/// * [BlockchainTree::insert_block]: 将block与chain相连，执行它并且如果合法的话，插入block到tree中
 /// * [BlockchainTree::finalize_block]: Remove chains that join to now finalized block, as chain
 ///   becomes invalid.
+/// * [BlockchainTree::finalize_block]：移除加入到finalized block的chains，因为chain变为invalid
 /// * [BlockchainTree::make_canonical]: Check if we have the hash of block that we want to finalize
 ///   and commit it to db. If we don't have the block, pipeline syncing should start to fetch the
 ///   blocks from p2p. Do reorg in tables if canonical chain if needed.
+/// * [BlockchainTree::make_canonical]：检查是否我们有block of hash，我们希望fianlize并且commit到db
+///   如果我们没有block，pipeline syncing应该启动从p2p获取blocks，做tables的reorg，如果canonical
+///   chain需要的话
 #[derive(Debug)]
 pub struct BlockchainTree<DB: Database, C: Consensus, EF: ExecutorFactory> {
     /// The tracked chains and their current data.
     chains: HashMap<BlockChainId, AppendableChain>,
     /// Unconnected block buffer.
+    /// 没有连接的block buffer
     buffered_blocks: BlockBuffer,
     /// Static blockchain ID generator
     block_chain_id_generator: u64,
@@ -609,10 +615,12 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Insert block for future execution.
+    /// 插入block用于未来之星
     ///
     /// Returns an error if the block is invalid.
     pub fn buffer_block(&mut self, block: SealedBlockWithSenders) -> Result<(), InsertBlockError> {
         // validate block consensus rules
+        // 校验block的consensus rules
         if let Err(err) = self.validate_block(&block) {
             return Err(InsertBlockError::consensus_error(err, block.block))
         }
@@ -866,22 +874,27 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Make a block and its parent(s) part of the canonical chain and commit them to the database
+    /// 让一个block以及它的parent变为canonical chain的一部分并且提交它们到database
     ///
     /// # Note
     ///
     /// This unwinds the database if necessary, i.e. if parts of the canonical chain have been
     /// re-orged.
+    /// 这会unwinds database，如果必要的话，例如，如果canonical chain的部分已经被re-orged
     ///
     /// # Returns
     ///
     /// Returns `Ok` if the blocks were canonicalized, or if the blocks were already canonical.
+    /// 返回`Ok`如果blocks已经canonicalized，或者如果blocks已经canonical
     #[track_caller]
     #[instrument(skip(self), target = "blockchain_tree")]
     pub fn make_canonical(&mut self, block_hash: &BlockHash) -> Result<CanonicalOutcome, Error> {
+        // 克隆block indices和buffered blocks
         let old_block_indices = self.block_indices.clone();
         let old_buffered_blocks = self.buffered_blocks.parent_to_child.clone();
 
         // If block is already canonical don't return error.
+        // 如果block已经是canonical，不要返回error
         if let Some(header) = self.find_canonical_header(block_hash)? {
             info!(target: "blockchain_tree", ?block_hash, "Block is already canonical, ignoring.");
             let td = self.externals.database().provider()?.header_td(block_hash)?.ok_or(
@@ -899,6 +912,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         let Some(chain_id) = self.block_indices.get_blocks_chain_id(block_hash) else {
+            // block hash没有在block indices中找到
             warn!(target: "blockchain_tree", ?block_hash,  "Block hash not found in block indices");
             // TODO: better error
             return Err(BlockExecutionError::BlockHashNotFoundInChain { block_hash: *block_hash }.into())
@@ -906,6 +920,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let chain = self.chains.remove(&chain_id).expect("To be present");
 
         // we are splitting chain at the block hash that we want to make canonical
+        // 我们分离在block hash的我们想要变为canonical的chain
         let canonical = self.split_chain(chain_id, chain, SplitAt::Hash(*block_hash));
 
         let mut block_fork = canonical.fork_block();
@@ -913,6 +928,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let mut chains_to_promote = vec![canonical];
 
         // loop while fork blocks are found in Tree.
+        // 循环当fork blocks在Tree中找到
         while let Some(chain_id) = self.block_indices.get_blocks_chain_id(&block_fork.hash) {
             let chain = self.chains.remove(&chain_id).expect("To fork to be present");
             block_fork = chain.fork_block();
@@ -923,6 +939,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
         let old_tip = self.block_indices.canonical_tip();
         // Merge all chain into one chain.
+        // 将所有的chain合并到一个
         let mut new_canon_chain = chains_to_promote.pop().expect("There is at least one block");
         for chain in chains_to_promote.into_iter().rev() {
             new_canon_chain.append_chain(chain).expect("We have just build the chain.");
@@ -932,19 +949,23 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         self.block_indices.canonicalize_blocks(new_canon_chain.blocks());
 
         // event about new canonical chain.
+        // 关于新的canonical chain的事件
         let chain_notification;
         info!(
             target: "blockchain_tree",
             "Committing new canonical chain: {}", DisplayBlocksChain(new_canon_chain.blocks())
         );
         // if joins to the tip;
+        // 如果joins到tip
         if new_canon_chain.fork_block_hash() == old_tip.hash {
             chain_notification =
                 CanonStateNotification::Commit { new: Arc::new(new_canon_chain.clone()) };
             // append to database
+            // 扩展数据库
             self.commit_canonical(new_canon_chain)?;
         } else {
             // it forks to canonical block that is not the tip.
+            // 它forks到canonical block，这不是tip
 
             let canon_fork: BlockNumHash = new_canon_chain.fork_block();
             // sanity check
@@ -958,6 +979,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
                 val @ Err(_) => {
                     error!(
                         target: "blockchain_tree",
+                        // 回退canonical chain
                         "Reverting canonical chain failed with error: {:?}\n\
                             Old BlockIndices are:{:?}\n\
                             New BlockIndices are: {:?}\n\
@@ -970,6 +992,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             };
 
             // commit new canonical chain.
+            // 提交新的canonical chain
             self.commit_canonical(new_canon_chain.clone())?;
 
             if let Some(old_canon_chain) = old_canon_chain {

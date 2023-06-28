@@ -198,8 +198,12 @@ impl BeaconConsensusEngineHandle {
 /// form a _connected_ chain. The engine will attempt to download the missing blocks from the
 /// network by walking backwards (`parent_hash`), and then try to make the block canonical as soon
 /// as the chain becomes connected.
+/// `head_hash`的block已经接收/下载了，但是至少缺失一个block来构建一个_connected_
+/// chain，这个engine会试着 下载missing blocks从network，通过walking
+/// backwards（parent_hash）之后试着 make the block canonical，只要chain变为connected
 ///
 /// However, it still can be the case that the chain and the FCU is `INVALID`.
+/// 然而，它依然可以是这种情况，chain以及FCU是`INVALID`
 ///
 /// #### `head_hash` block is missing
 ///
@@ -207,6 +211,8 @@ impl BeaconConsensusEngineHandle {
 /// engine doesn't know where the new head will point to: new chain could be a re-org or a simple
 /// commit. The engine will download the missing head first and then proceed as in the previous
 /// case.
+/// 这和之前的情况类似，但是`head_hash`的block丢失，这时候engine不知道新的head指向哪里，
+/// 新的chain会被reorg或者 一个简单的commit，engine会下载缺失的head之后和上一个例子的处理一样
 ///
 /// # Panics
 ///
@@ -216,11 +222,13 @@ pub struct BeaconConsensusEngine<DB, BT, Client>
 where
     DB: Database,
     Client: HeadersClient + BodiesClient,
+    // 包含BlockchainTreeEngine，BlockProvider，CanonChainTracker和StageCheckpointReader
     BT: BlockchainTreeEngine + BlockProvider + CanonChainTracker + StageCheckpointReader,
 {
     /// Controls syncing triggered by engine updates.
     sync: EngineSyncController<DB, Client>,
     /// The type we can use to query both the database and the blockchain tree.
+    /// 我们用于请求数据库和blockchain tree的类型
     blockchain: BT,
     /// Used for emitting updates about whether the engine is syncing or not.
     sync_state_updater: Box<dyn NetworkSyncUpdater>,
@@ -229,6 +237,7 @@ where
     /// A clone of the handle
     handle: BeaconConsensusEngineHandle,
     /// Tracks the received forkchoice state updates received by the CL.
+    /// 追踪从CL接收到的forkchoice update
     forkchoice_state_tracker: ForkchoiceStateTracker,
     /// The payload store.
     payload_builder: PayloadBuilderHandle,
@@ -242,14 +251,21 @@ where
     /// After downloading a block corresponding to a recent forkchoice update, the engine will
     /// check whether or not we can connect the block to the current canonical chain. If we can't,
     /// we need to download and execute the missing parents of that block.
+    /// 在下载了一个最近的FCU的block之后，engine会检查是否我们可以连接block到当前的canonical
+    /// chain，如果 不能，我们需要下载并且执行block的missing parents
     ///
     /// When the block can't be connected, its block number will be compared to the canonical head,
     /// resulting in a heuristic for the number of missing blocks, or the size of the gap between
     /// the new block and the canonical head.
+    /// 当block不能被连接，block number会和canonical
+    /// head比较，导致对于缺失的blcoks的启发式计算，或者gap的大小 在新的block和canonical
+    /// head之间
     ///
     /// If the gap is larger than this threshold, the engine will download and execute the missing
     /// blocks using the pipeline. Otherwise, the engine, sync controller, and blockchain tree will
     /// be used to download and execute the missing blocks.
+    /// 如果gap大于threshold，engine会下载并且执行missing blocks，通过pipeline，否则engine, sync
+    /// controller 以及blockchain会用于下载并且执行missing blocks
     pipeline_run_threshold: u64,
 }
 
@@ -478,14 +494,17 @@ where
 
     /// Checks if the given `head` points to an invalid header, which requires a specific response
     /// to a forkchoice update.
+    /// 检查是否给定的`head`指向一个非法的head，这需要一个特定的response，对于forkchoice update
     fn check_invalid_ancestor(&mut self, head: H256) -> Option<PayloadStatus> {
         let parent_hash = {
             // check if the head was previously marked as invalid
+            // 检查head是否之前被标记为invalid
             let header = self.invalid_headers.get(&head)?;
             header.parent_hash
         };
 
         // populate the latest valid hash field
+        // 填充最新的valid hash
         let status = self.prepare_invalid_response(parent_hash);
 
         Some(status)
@@ -495,6 +514,7 @@ where
     ///
     /// Returns `true` if the engine now reached its maximum block number, See
     /// [EngineSyncController::has_reached_max_block].
+    /// 返回`true`，如果engine现在到达了maximum block number
     fn on_forkchoice_updated(
         &mut self,
         state: ForkchoiceState,
@@ -515,6 +535,7 @@ where
         let status = on_updated.forkchoice_status();
 
         // update the forkchoice state tracker
+        // 更新forkchoice state tracker
         self.forkchoice_state_tracker.set_latest(state, status);
 
         let is_valid_response = on_updated.is_valid_update();
@@ -525,8 +546,10 @@ where
 
         // Terminate the sync early if it's reached the maximum user
         // configured block.
+        // 尽早终止sync，如果它到达了最大的用户配置的block
         if is_valid_response {
             // node's fully synced, clear pending requests
+            // node已经完全同步，清理pending requests
             self.sync.clear_full_block_requests();
 
             let tip_number = self.blockchain.canonical_tip().number;
@@ -540,6 +563,7 @@ where
 
     /// Called to resolve chain forks and ensure that the Execution layer is working with the latest
     /// valid chain.
+    /// 被调用来解决chain forks并且确保Execution layer工作在最新的valid chain
     ///
     /// These responses should adhere to the [Engine API Spec for
     /// `engine_forkchoiceUpdated`](https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#specification-1).
@@ -555,6 +579,7 @@ where
             return Ok(OnForkChoiceUpdated::invalid_state())
         }
 
+        // 找到lowest buffered ancestor
         let lowest_buffered_ancestor_fcu = self.lowest_buffered_ancestor_or(state.head_block_hash);
 
         if let Some(status) = self.check_invalid_ancestor(lowest_buffered_ancestor_fcu) {
@@ -564,6 +589,8 @@ where
         if self.sync.is_pipeline_active() {
             // We can only process new forkchoice updates if the pipeline is idle, since it requires
             // exclusive access to the database
+            // 我们只有在pipeline处于idle的时候才能处理新的forkchoice
+            // updates，因为这需要对db的独占访问
             trace!(target: "consensus::engine", "Pipeline is syncing, skipping forkchoice update");
             return Ok(OnForkChoiceUpdated::syncing())
         }
@@ -574,13 +601,16 @@ where
                     debug!(target: "consensus::engine", hash=?state.head_block_hash, number=outcome.header().number, "canonicalized new head");
 
                     // new VALID update that moved the canonical chain forward
+                    // 新的VALID update，将canonical chain向前移动
                     let _ = self.update_canon_chain(&state);
                 } else {
+                    // 已经是canonical了
                     debug!(target: "consensus::engine", fcu_head_num=?outcome.header().number, current_head_num=?self.blockchain.canonical_tip().number, "Ignoring beacon update to old head");
                 }
 
                 if let Some(attrs) = attrs {
                     // the CL requested to build a new payload on top of this new VALID head
+                    // CL请求构建一个新的payload，在这个新的VALID head之上
                     let payload_response = self.process_payload_attributes(
                         attrs,
                         outcome.into_header().unseal(),
@@ -610,9 +640,12 @@ where
     }
 
     /// Sets the state of the canon chain tracker based on the given forkchoice update.
+    /// 设置canon chain traker的状态，通过给定的forkchoice update
     /// Additionally, updates the head used for p2p handshakes.
+    /// 另外，更新head，用于p2p handshakes
     ///
     /// This should be called before issuing a VALID forkchoice update.
+    /// 这应该在发出一个VALID forkchoice update之后被调用
     fn update_canon_chain(&self, update: &ForkchoiceState) -> Result<(), reth_interfaces::Error> {
         if !update.finalized_block_hash.is_zero() {
             let finalized = self
@@ -635,6 +668,7 @@ where
         }
 
         // the consensus engine should ensure the head is not zero so we always update the head
+        // consensus engine应该确保head不是zero，因此我们总是更新head
         let head = self
             .blockchain
             .find_block_by_hash(update.head_block_hash, BlockSource::Any)?
@@ -658,10 +692,13 @@ where
     }
 
     /// Handler for a failed a forkchoice update due to a canonicalization error.
+    /// 对于一个失败的fcu，因为canonicalization error的处理
     ///
     /// This will determine if the state's head is invalid, and if so, return immediately.
+    /// 这会决定是否state的head是非法的，如果是的话，立刻返回
     ///
     /// If the newest head is not invalid, then this will trigger a new pipeline run to sync the gap
+    /// 如果最新的head是合法的，那么这会触发一个新的pipeline运行来同步gap
     ///
     /// See [Self::forkchoice_updated] and [BlockchainTreeEngine::make_canonical].
     fn on_failed_canonical_forkchoice_update(
@@ -674,6 +711,7 @@ where
 
         // check if the new head was previously invalidated, if so then we deem this FCU
         // as invalid
+        // 检查是否新的head之前是非法的，如果是的话，我们将这个FCU视为非法
         if let Some(invalid_ancestor) = self.check_invalid_ancestor(state.head_block_hash) {
             debug!(target: "consensus::engine", head=?state.head_block_hash, "Head was previously marked as invalid");
             return invalid_ancestor
@@ -699,9 +737,12 @@ where
 
         // we assume the FCU is valid and at least the head is missing, so we need to start syncing
         // to it
+        // 我们假设FCU是合法的并且至少head是缺失的，这样我们需要开始同步到它
         let target = if self.forkchoice_state_tracker.is_empty() {
             // find the appropriate target to sync to, if we don't have the safe block hash then we
             // start syncing to the safe block via pipeline first
+            // 找到合适的target进行同步，如果我们没有safe block hash，这样我们开始同步到safe
+            // block，首先通过pipeline
             let target = if !state.safe_block_hash.is_zero() &&
                 self.blockchain.block_number(state.safe_block_hash).ok().flatten().is_none()
             {
@@ -716,6 +757,7 @@ where
             lowest_unknown_hash
         } else {
             // we need to first check the buffer for the head and its ancestors
+            // 我们需要检查buffer，对于head以及它的ancestor
             let lowest_unknown_hash = self.lowest_buffered_ancestor_or(state.head_block_hash);
             trace!(target: "consensus::engine", request=?lowest_unknown_hash, "Triggering full block download for missing ancestors of the new head");
             lowest_unknown_hash
@@ -723,12 +765,15 @@ where
 
         // if the threshold is zero, we should not download the block first, and just use the
         // pipeline. Otherwise we use the tree to insert the block first
+        // 如果threshold是zero，我们不应该首先下载block，并且只使用pipeline，
+        // 否则我们首先使用tree来插入block
         if self.pipeline_run_threshold == 0 {
             // use the pipeline to sync to the target
             self.sync.set_pipeline_sync_target(target);
         } else {
             // trigger a full block download for missing hash, or the parent of its lowest buffered
             // ancestor
+            // 触发一个full block download，对于missing hash，或者lowest buffered ancestor的parent
             self.sync.download_full_block(target);
         }
 
@@ -738,9 +783,11 @@ where
     /// Return the parent hash of the lowest buffered ancestor for the requested block, if there
     /// are any buffered ancestors. If there are no buffered ancestors, and the block itself does
     /// not exist in the buffer, this returns the hash that is passed in.
+    /// 如果没有任何缓存的ancestor并且block自己也不存在，返回传入的hash
     ///
     /// Returns the parent hash of the block itself if the block is buffered and has no other
     /// buffered ancestors.
+    /// 返回block自己的parent hash如果block被缓存并且没有其他的buffered ancestor
     fn lowest_buffered_ancestor_or(&self, hash: H256) -> H256 {
         self.blockchain
             .lowest_buffered_ancestor(hash)
@@ -758,21 +805,19 @@ where
         head: Header,
         state: ForkchoiceState,
     ) -> OnForkChoiceUpdated {
-        // 7. Client software MUST ensure that payloadAttributes.timestamp is
-        //    greater than timestamp of a block referenced by
-        //    forkchoiceState.headBlockHash. If this condition isn't held client
-        //    software MUST respond with -38003: `Invalid payload attributes` and
-        //    MUST NOT begin a payload build process. In such an event, the
-        //    forkchoiceState update MUST NOT be rolled back.
+        // 7. Client software MUST ensure that payloadAttributes.timestamp is greater than timestamp
+        //    of a block referenced by forkchoiceState.headBlockHash. If this condition isn't held
+        //    client software MUST respond with -38003: `Invalid payload attributes` and MUST NOT
+        //    begin a payload build process. In such an event, the forkchoiceState update MUST NOT
+        //    be rolled back.
         if attrs.timestamp <= head.timestamp.into() {
             return OnForkChoiceUpdated::invalid_payload_attributes()
         }
 
         // 8. Client software MUST begin a payload build process building on top of
-        //    forkchoiceState.headBlockHash and identified via buildProcessId value
-        //    if payloadAttributes is not null and the forkchoice state has been
-        //    updated successfully. The build process is specified in the Payload
-        //    building section.
+        //    forkchoiceState.headBlockHash and identified via buildProcessId value if
+        //    payloadAttributes is not null and the forkchoice state has been updated successfully.
+        //    The build process is specified in the Payload building section.
         let attributes = PayloadBuilderAttributes::new(state.head_block_hash, attrs);
 
         // send the payload to the builder and return the receiver for the pending payload id,
@@ -802,6 +847,11 @@ where
     /// state in the block header, then passes validation data back to Consensus layer, that
     /// adds the block to the head of its own blockchain and attests to it. The block is then
     /// broadcast over the consensus p2p network in the form of a "Beacon block".
+    /// 当Consensus layer接收到一个新的block，通过consensus gossip protocol，block内的transactions
+    /// 会被发送到execution lyaer，以[`ExecutionPayload`]的形式，Execution
+    /// layer执行transactions并且校验 block header中的state，之后传输validation data到Consensus
+    /// layer 它将block添加到它自己的blockchain并且证明它，block之后通过consensus p2p
+    /// network进行广播，以 "Beacon block"的形式
     ///
     /// These responses should adhere to the [Engine API Spec for
     /// `engine_newPayload`](https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#specification).
@@ -827,6 +877,8 @@ where
         let res = if self.sync.is_pipeline_idle() {
             // we can only insert new payloads if the pipeline is _not_ running, because it holds
             // exclusive access to the database
+            // 我们只能在pipeline不运行的时候插入新的payloads，因为它包含对于database的exclusive
+            // access
             self.try_insert_new_payload(block)
         } else {
             self.try_buffer_payload(block)
@@ -837,12 +889,14 @@ where
                 if status.is_valid() {
                     // block was successfully inserted, so we can cancel the full block request, if
                     // any exists
+                    // block被成功插入，因此我们可以取消full block request，如果存在的话
                     self.sync.cancel_full_block_request(block_hash);
                 }
                 Ok(status)
             }
             Err(error) => {
                 debug!(target: "consensus::engine", ?error, "Error while processing payload");
+                // 处理payload失败
                 self.map_insert_error(error)
             }
         };
@@ -884,13 +938,18 @@ where
 
     /// When the pipeline is actively syncing the tree is unable to commit any additional blocks
     /// since the pipeline holds exclusive access to the database.
+    /// 当pipeline正在主动同步的时候，tree不能提交任何额外的blocks，
+    /// 因为pipeline对数据库的访问是独占的
     ///
     /// In this scenario we buffer the payload in the tree if the payload is valid, once the
     /// pipeline finished syncing the tree is then able to also use the buffered payloads to commit
     /// to a (newer) canonical chain.
+    /// 在这种情况下，我们在treee中缓存payload，如果payload是合法的话，一旦pipeline结束同步，
+    /// tree之后就能 使用buffered payloads来提交一个更新的canonical chain
     ///
     /// This will return `SYNCING` if the block was buffered successfully, and an error if an error
     /// occurred while buffering the block.
+    /// 它会返回`SYNCING`，如果block被成功缓存，以及一个error如果在缓存block的时候遇到错误
     #[instrument(level = "trace", skip_all, target = "consensus::engine", ret)]
     fn try_buffer_payload(
         &mut self,
@@ -1003,15 +1062,19 @@ where
     }
 
     /// Invoked if we successfully downloaded a new block from the network.
+    /// 调用如果我们成功下载了一个新的block，从network
     ///
     /// This will attempt to insert the block into the tree.
+    /// 这会试着插入block到tree中
     ///
     /// There are several scenarios:
     ///
     /// ## [BlockStatus::Valid]
     ///
     /// The block is connected to the current canonical head and is valid.
+    /// blcok被连接到当前的canonical head并且是合法的
     /// If the engine is still SYNCING, then we can try again to make the chain canonical.
+    /// 如果engine依然处于SYNCING，那么我们可以再次尝试canonical
     ///
     /// ## [BlockStatus::Accepted]
     ///
@@ -1019,23 +1082,32 @@ where
     /// the block is an ancestor of the current forkchoice head, then we can try again to make the
     /// chain canonical, which would trigger a reorg in this case since the new head is therefore
     /// not connected to the current head.
+    /// 所有的ancestors都是已知的，但是block没有连接到当前的canonical head，如果blcok是当前fcu
+    /// head的 一个ancestor，那么我们会试着再次make the chain
+    /// canonical，这会触发一个reorg，因为新的head 不会连接到当前的head
     ///
     /// ## [BlockStatus::Disconnected]
     ///
     /// The block is not connected to the canonical head, and we need to download the missing parent
     /// first.
+    /// block没有连接到canonical head并且我们首先需要下载parent
     ///
     /// ## Insert Error
     ///
     /// If the insertion into the tree failed, then the block was well-formed (valid hash), but its
     /// chain is invalid, which means the FCU that triggered the download is invalid. Here we can
     /// stop because there's nothing to do here and the engine needs to wait for another FCU.
+    /// 如果插入到tree中失败，而且block是well-formed（合法的hash），但是它的chain是非法的，
+    /// 这意味着FCU 触发这个download是错误的，因此我们可以停止，因为什么都不能做，
+    /// engine需要等待另一个FCU
     fn on_downloaded_block(&mut self, block: SealedBlock) {
         let num_hash = block.num_hash();
         trace!(target: "consensus::engine", hash=?block.hash, number=%block.number, "Downloaded full block");
         // check if the block's parent is already marked as invalid
+        // 检查blcok的parent是否已经标记为invalid
         if self.check_invalid_ancestor_with_head(block.parent_hash, block.hash).is_some() {
             // can skip this invalid block
+            // 可以跳过这个非法的block
             return
         }
 
@@ -1044,10 +1116,12 @@ where
                 match status {
                     InsertPayloadOk::Inserted(BlockStatus::Valid) => {
                         // block is connected to the current canonical head and is valid.
+                        // block连接到当前的canonical head并且是合法的
                         self.try_make_sync_target_canonical(num_hash);
                     }
                     InsertPayloadOk::Inserted(BlockStatus::Accepted) => {
                         // block is connected to the canonical chain, but not the current head
+                        // block被连接到canonical chain，但是不是当前的head
                         self.try_make_sync_target_canonical(num_hash);
                     }
                     InsertPayloadOk::Inserted(BlockStatus::Disconnected { missing_parent }) => {
@@ -1092,6 +1166,7 @@ where
                 debug!(target: "consensus::engine", ?err, "Failed to insert downloaded block");
                 if !matches!(err.kind(), InsertBlockErrorKind::Internal(_)) {
                     // non-internal error kinds occur if the payload is invalid
+                    // 非内部错误，如果payload是非法的
                     self.invalid_headers.insert(err.into_block().header);
                 }
             }
@@ -1099,18 +1174,25 @@ where
     }
 
     /// Attempt to form a new canonical chain based on the current sync target.
+    /// 试着构建一个新的canonical chain，基于当前的sync target
     ///
     /// This is invoked when we successfully downloaded a new block from the network which resulted
     /// in either [BlockStatus::Accepted] or [BlockStatus::Valid].
+    /// 这在我们成功从network下载一个新的block的时候被调用，
+    /// 导致[BlockStatus::Accepted]或者[BlockStatus::Valid]
     ///
     /// Note: This will not succeed if the sync target has changed since the block download request
     /// was issued and the new target is still disconnected and additional missing blocks are
     /// downloaded
+    /// 注意：这不会成功，如果sync target已经改变了，因为block download
+    /// request被发出并且新的target依然 disconnected并且另外的missing blocks被下载
     fn try_make_sync_target_canonical(&mut self, inserted: BlockNumHash) {
         if let Some(target) = self.forkchoice_state_tracker.sync_target_state() {
             // optimistically try to make the head of the current FCU target canonical, the sync
             // target might have changed since the block download request was issued
             // (new FCU received)
+            // 乐观地尝试将当前FCU的head作为canonical，sync target可能已经发生改变，在block download
+            // request 被发送之后
             match self.blockchain.make_canonical(&target.head_block_hash) {
                 Ok(outcome) => {
                     let new_head = outcome.into_header();
@@ -1119,15 +1201,21 @@ where
                     // we're no longer syncing
                     self.sync_state_updater.update_sync_state(SyncState::Idle);
                     // clear any active block requests
+                    // 清理任何活跃的block requests
                     self.sync.clear_full_block_requests();
 
                     // we can update the FCU blocks
+                    // 我们可以更新FCU blocks
                     let _ = self.update_canon_chain(&target);
                 }
                 Err(err) => {
                     // if we failed to make the FCU's head canonical, because we don't have that
                     // block yet, then we can try to make the inserted block canonical if we know
                     // it's part of the canonical chain: if it's the safe or the finalized block
+                    // 如果我们没能将FCU的head变为canonical，因为我们还没有那个blcok，
+                    // 那么我们可以试着 将插入的block变为canonical，
+                    // 如果我们知道它是canonical chain的一部分，如果这是
+                    // safe或者finalized blcok
                     if matches!(
                         err,
                         reth_interfaces::Error::Execution(
@@ -1136,8 +1224,12 @@ where
                     ) {
                         // if the inserted block is the currently targeted `finalized` or `safe`
                         // block, we will attempt to make them canonical,
-                        // because they are also part of the canonical chain and
+                        // 如果插入的block当前被标记为`finalized`或者`safe`
+                        // block，我们会试着将它变为canonical because they
+                        // are also part of the canonical chain and
                         // their missing block range might already be downloaded (buffered).
+                        // 它们也是canonical chain的一部分并且它们的missing block
+                        // range可能已经被下载
                         if let Some(target_hash) = ForkchoiceStateHash::find(&target, inserted.hash)
                             .filter(|h| !h.is_head())
                         {
