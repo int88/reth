@@ -100,6 +100,7 @@ impl BeaconConsensusEngineHandle {
     }
 
     /// Sends a forkchoice update message to the beacon consensus engine and waits for a response.
+    /// 发送一个forkchoice update message到beacon consensus engine并且等待一个response
     ///
     /// See also <https://github.com/ethereum/execution-apis/blob/3d627c95a4d3510a8187dd02e0250ecb4331d27e/src/engine/shanghai.md#engine_forkchoiceupdatedv2>
     pub async fn fork_choice_updated(
@@ -1565,6 +1566,7 @@ mod tests {
 
         /// Sends the `ForkchoiceUpdated` message to the consensus engine and retries if the engine
         /// is syncing.
+        /// 发送`ForkchoiceUpdated` message到consensus engine并且重试如果engine正在同步
         async fn send_forkchoice_retry_on_syncing(
             &self,
             state: ForkchoiceState,
@@ -1588,6 +1590,7 @@ mod tests {
 
     impl TestConsensusEngineBuilder {
         /// Create a new `TestConsensusEngineBuilder` with the given `ChainSpec`.
+        /// 用给定的`ChainSpec`创建一个新的`TestConsensusEngineBuilder`
         fn new(chain_spec: Arc<ChainSpec>) -> Self {
             Self {
                 chain_spec,
@@ -1692,6 +1695,7 @@ mod tests {
         let (tx, rx) = oneshot::channel();
         tokio::spawn(async move {
             let result = engine.await;
+            // 发送consensus engine result
             tx.send(result).expect("failed to forward consensus engine result");
         });
         rx
@@ -1729,6 +1733,7 @@ mod tests {
     }
 
     // Test that the consensus engine is idle until first forkchoice updated is received.
+    // 测试consensus engine处于idle，直到收到第一个fcu
     #[tokio::test]
     async fn is_idle_until_forkchoice_is_set() {
         let chain_spec = Arc::new(
@@ -1769,8 +1774,10 @@ mod tests {
     }
 
     // Test that the consensus engine runs the pipeline again if the tree cannot be restored.
+    // 测试consensus engine会再次运行pipeline，如果tree不能被restored
     // The consensus engine will propagate the second result (error) only if it runs the pipeline
     // for the second time.
+    // consensus engine会传播第二个结果，如果它第二次运行pipeline
     #[tokio::test]
     async fn runs_pipeline_again_if_tree_not_restored() {
         let chain_spec = Arc::new(
@@ -2134,12 +2141,16 @@ mod tests {
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send new payload
+            // 发送新的payload
             let res = env.send_new_payload(random_block(0, None, None, Some(0)).into()).await;
             // Invalid, because this is a genesis block
+            // 非法的，因为这是一个genesis block
             assert_matches!(res, Ok(result) => assert_matches!(result.status, PayloadStatusEnum::Invalid { .. }));
 
             // Send new payload
+            // 发送新的payload
             let res = env.send_new_payload(random_block(1, None, None, Some(0)).into()).await;
+            // 正在同步
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Syncing);
             assert_matches!(res, Ok(result) => assert_eq!(result, expected_result));
 
@@ -2166,6 +2177,7 @@ mod tests {
             let genesis = random_block(0, None, None, Some(0));
             let block1 = random_block(1, Some(genesis.hash), None, Some(0));
             let block2 = random_block(2, Some(block1.hash), None, Some(0));
+            // 在db中插入blocks
             insert_blocks(
                 env.db.as_ref(),
                 chain_spec.clone(),
@@ -2175,6 +2187,7 @@ mod tests {
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send forkchoice
+            // 发送forkchoice
             let res = env
                 .send_forkchoice_updated(ForkchoiceState {
                     head_block_hash: block1.hash,
@@ -2187,6 +2200,7 @@ mod tests {
             assert_matches!(res, Ok(ForkchoiceUpdated { payload_status, .. }) => assert_eq!(payload_status, expected_result));
 
             // Send new payload
+            // 发送新的payload
             let result =
                 env.send_new_payload_retry_on_syncing(block2.clone().into()).await.unwrap();
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Valid)

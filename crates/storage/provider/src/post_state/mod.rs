@@ -25,10 +25,14 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 // todo: rewrite all the docs for this
 /// The state of accounts after execution of one or more transactions, including receipts and new
 /// bytecode.
+/// 执行了一个或者多个transactions之后的state of accounts，包含receipts和新的bytecode
 ///
 /// The latest state can be found in `accounts`, `storage`, and `bytecode`. The receipts for the
 /// transactions that lead to these changes can be found in `receipts`, and each change leading to
 /// this state can be found in `changes`.
+/// 最新的state可以在`accounts`，`storage`和`bytecode`中找到，
+/// transactions中的receipts可以导致`receipts`
+/// 中的这些变更，并且每个导致这个state的变更都可以在`changes`中找到
 ///
 /// # Wiped Storage
 ///

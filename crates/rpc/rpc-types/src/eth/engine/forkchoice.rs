@@ -46,6 +46,7 @@ pub enum ForkchoiceUpdateError {
     #[error("Invalid payload attributes")]
     UpdatedInvalidPayloadAttributes,
     /// The given [ForkchoiceState] is invalid or inconsistent.
+    /// 给定的[ForkchoiceState]不合法或者不一致
     #[error("Invalid forkchoice state")]
     InvalidState,
     /// Thrown when a forkchoice final block does not exist in the database.

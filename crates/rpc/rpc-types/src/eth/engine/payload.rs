@@ -339,6 +339,7 @@ pub enum PayloadStatusEnum {
 
     /// INVALID is returned by the engine API in the following calls:
     ///   - newPayloadV1:       if the payload failed to execute on top of the local chain
+    ///   - newPayloadV1: 如果payload在local chain上执行失败
     ///   - forkchoiceUpdateV1: if the new head is unknown, pre-merge, or reorg to it fails
     Invalid {
         #[serde(rename = "validationError")]
