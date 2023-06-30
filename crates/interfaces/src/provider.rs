@@ -1,6 +1,7 @@
 use reth_primitives::{Address, BlockHash, BlockHashOrNumber, BlockNumber, TxNumber, H256};
 
 /// Bundled errors variants thrown by various providers.
+/// 由各种providers抛出的错误
 #[allow(missing_docs)]
 #[derive(Debug, thiserror::Error, PartialEq, Eq, Clone)]
 pub enum ProviderError {
@@ -33,6 +34,7 @@ pub enum ProviderError {
     #[error("Total difficulty not found for block #{number}")]
     TotalDifficultyNotFound { number: BlockNumber },
     /// Thrown when required header related data was not found but was required.
+    /// 当请求的header相关的数据没有找到，但是又必要的时候抛出
     #[error("No header found for {0:?}")]
     HeaderNotFound(BlockHashOrNumber),
     /// Thrown we were unable to find a specific block

@@ -37,8 +37,9 @@ use tracing::*;
 /// stages. The order of these two variants is important. The unwind variant should be added to the
 /// pipeline before the execution variant.
 /// 当运行在execution模式下时，它将在hashing stages之后执行，以生成state root。
-/// 当运行在unwind模式下时，它将在hashing stages之前执行，以便根据hashing stages的unwound hashed state来unwind中间哈希。
-/// 这两个变体的顺序很重要。unwind变体应该在execution变体之前添加到pipeline中
+/// 当运行在unwind模式下时，它将在hashing stages之前执行，以便根据hashing stages的unwound hashed
+/// state来unwind中间哈希。 这两个变体的顺序很重要。
+/// unwind变体应该在execution变体之前添加到pipeline中
 ///
 /// An example pipeline to only hash state would be:
 ///
@@ -49,15 +50,19 @@ use tracing::*;
 #[derive(Debug, Clone)]
 pub enum MerkleStage {
     /// The execution portion of the merkle stage.
+    /// merkle stage的execution部分
     Execution {
         /// The threshold (in number of blocks) for switching from incremental trie building
         /// of changes to whole rebuild.
+        /// 阈值用于从incremental trie building到整个的rebuild
         clean_threshold: u64,
     },
     /// The unwind portion of the merkle stage.
+    /// merkle stage的unwind部分
     Unwind,
 
     /// Able to execute and unwind. Used for tests
+    /// 能够执行和unwind，主要用于测试
     #[cfg(any(test, feature = "test-utils"))]
     #[allow(missing_docs)]
     Both { clean_threshold: u64 },
@@ -80,6 +85,7 @@ impl MerkleStage {
     }
 
     /// Check that the computed state root matches the root in the expected header.
+    /// 检查计算的state root匹配期望的header中的root
     fn validate_state_root(
         &self,
         got: H256,
@@ -101,6 +107,7 @@ impl MerkleStage {
     }
 
     /// Gets the hashing progress
+    /// 获取hashing progress
     pub fn get_execution_checkpoint<DB: Database>(
         &self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -117,6 +124,7 @@ impl MerkleStage {
     }
 
     /// Saves the hashing progress
+    /// 保存hashing progress
     pub fn save_execution_checkpoint<DB: Database>(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -132,6 +140,7 @@ impl MerkleStage {
             );
             checkpoint.to_compact(&mut buf);
         }
+        // 保存merkle checkpoint
         Ok(provider.save_stage_checkpoint_progress(StageId::MerkleExecute, buf)?)
     }
 }
@@ -155,6 +164,7 @@ impl<DB: Database> Stage<DB> for MerkleStage {
         input: ExecInput,
     ) -> Result<ExecOutput, StageError> {
         let threshold = match self {
+            // stage处于的阶段？
             MerkleStage::Unwind => {
                 info!(target: "sync::stages::merkle::unwind", "Stage is always skipped");
                 return Ok(ExecOutput::done(StageCheckpoint::new(input.target())))
@@ -179,6 +189,7 @@ impl<DB: Database> Stage<DB> for MerkleStage {
             (block_root, input.checkpoint().entities_stage_checkpoint().unwrap_or_default())
         } else if to_block - from_block > threshold || from_block == 1 {
             // if there are more blocks than threshold it is faster to rebuild the trie
+            // 如果有超过threshold的blocks，重构trie是更快的
             let mut entities_checkpoint = if let Some(checkpoint) =
                 checkpoint.as_ref().filter(|c| c.target_block == to_block)
             {
@@ -201,6 +212,7 @@ impl<DB: Database> Stage<DB> for MerkleStage {
                     "Rebuilding trie"
                 );
                 // Reset the checkpoint and clear trie tables
+                // 重置checkpoint并且清理trie tables
                 checkpoint = None;
                 self.save_execution_checkpoint(provider, None)?;
                 provider.tx_ref().clear::<tables::AccountsTrie>()?;
@@ -273,8 +285,10 @@ impl<DB: Database> Stage<DB> for MerkleStage {
         };
 
         // Reset the checkpoint
+        // 重置checkpoint
         self.save_execution_checkpoint(provider, None)?;
 
+        // 校验state root
         self.validate_state_root(trie_root, block.seal_slow(), to_block)?;
 
         Ok(ExecOutput {
@@ -305,6 +319,7 @@ impl<DB: Database> Stage<DB> for MerkleStage {
             });
 
         if input.unwind_to == 0 {
+            // 如果unwind到0，则直接清空table
             tx.clear::<tables::AccountsTrie>()?;
             tx.clear::<tables::StoragesTrie>()?;
 
@@ -317,17 +332,20 @@ impl<DB: Database> Stage<DB> for MerkleStage {
         }
 
         // Unwind trie only if there are transitions
+        // 只在有transitions的时候unwind trie
         if !range.is_empty() {
             let (block_root, updates) = StateRoot::incremental_root_with_updates(tx, range)
                 .map_err(|e| StageError::Fatal(Box::new(e)))?;
 
             // Validate the calulated state root
+            // 校验计算的state root
             let target = provider
                 .header_by_number(input.unwind_to)?
                 .ok_or_else(|| ProviderError::HeaderNotFound(input.unwind_to.into()))?;
             self.validate_state_root(block_root, target.seal_slow(), input.unwind_to)?;
 
             // Validation passed, apply unwind changes to the database.
+            // 校验通过，应用unwind changes到database
             updates.flush(provider.tx_ref())?;
 
             // TODO(alexey): update entities checkpoint
@@ -364,13 +382,16 @@ mod tests {
     stage_test_suite_ext!(MerkleTestRunner, merkle);
 
     /// Execute from genesis so as to merkelize whole state
+    /// 从genesis开始执行，为了merkelize整个state
     #[tokio::test]
     async fn execute_clean_merkle() {
         let (previous_stage, stage_progress) = (500, 0);
 
         // Set up the runner
+        // 设置runner
         let mut runner = MerkleTestRunner::default();
         // set low threshold so we hash the whole storage
+        // 设置low threshold，因此我们对整个storage进行hash
         let input = ExecInput {
             target: Some(previous_stage),
             checkpoint: Some(StageCheckpoint::new(stage_progress)),
@@ -381,6 +402,7 @@ mod tests {
         let rx = runner.execute(input);
 
         // Assert the successful result
+        // 对成功的结果进行断言
         let result = rx.await.unwrap();
         assert_matches!(
             result,
@@ -401,10 +423,12 @@ mod tests {
         );
 
         // Validate the stage execution
+        // 校验stage execution
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "execution validation");
     }
 
     /// Update small trie
+    /// 更新small trie
     #[tokio::test]
     async fn execute_small_merkle() {
         let (previous_stage, stage_progress) = (2, 1);
@@ -441,6 +465,7 @@ mod tests {
         );
 
         // Validate the stage execution
+        // 校验stage execution
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "execution validation");
     }
 
@@ -477,18 +502,22 @@ mod tests {
             let end = input.target();
 
             let num_of_accounts = 31;
+            // 随机生成contract account range
             let accounts = random_contract_account_range(&mut (0..num_of_accounts))
                 .into_iter()
                 .collect::<BTreeMap<_, _>>();
 
+            // 插入accounts和storages
             self.tx.insert_accounts_and_storages(
                 accounts.iter().map(|(addr, acc)| (*addr, (*acc, std::iter::empty()))),
             )?;
 
             let SealedBlock { header, body, ommers, withdrawals } =
+                // 随机的block
                 random_block(stage_progress, None, Some(0), None);
             let mut header = header.unseal();
 
+            // 构建state root
             header.state_root = state_root(
                 accounts
                     .clone()
@@ -499,7 +528,9 @@ mod tests {
 
             let head_hash = sealed_head.hash();
             let mut blocks = vec![sealed_head];
+            // 扩展blocks
             blocks.extend(random_block_range(start..=end, head_hash, 0..3));
+            // 插入blocks
             self.tx.insert_blocks(blocks.iter(), None)?;
 
             let (transitions, final_state) = random_transition_range(
@@ -509,10 +540,12 @@ mod tests {
                 0..256,
             );
             // add block changeset from block 1.
+            // 添加block 1以来的changeset
             self.tx.insert_transitions(transitions, Some(start))?;
             self.tx.insert_accounts_and_storages(final_state)?;
 
             // Calculate state root
+            // 计算state root
             let root = self.tx.query(|tx| {
                 let mut accounts = BTreeMap::default();
                 let mut accounts_cursor = tx.cursor_read::<tables::HashedAccount>()?;
@@ -552,6 +585,7 @@ mod tests {
             _output: Option<ExecOutput>,
         ) -> Result<(), TestRunnerError> {
             // The execution is validated within the stage
+            // execution在stage范围内执行
             Ok(())
         }
     }
@@ -559,6 +593,7 @@ mod tests {
     impl UnwindStageTestRunner for MerkleTestRunner {
         fn validate_unwind(&self, _input: UnwindInput) -> Result<(), TestRunnerError> {
             // The unwind is validated within the stage
+            // unwind在stage范围内被校验
             Ok(())
         }
 

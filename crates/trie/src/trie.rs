@@ -100,6 +100,7 @@ where
 
     /// Given a block number range, identifies all the accounts and storage keys that
     /// have changed.
+    /// 给定一个block number range，标识所有已经改变的accounts以及storage keys
     ///
     /// # Returns
     ///
@@ -130,6 +131,8 @@ where
 
     /// Computes the state root of the trie with the changed account and storage prefixes and
     /// existing trie nodes collecting updates in the process.
+    /// 计算trie的state root，用changed account以及storage prefixes以及存在的trie
+    /// nodes，收集的updates
     ///
     /// Ignores the threshold.
     ///

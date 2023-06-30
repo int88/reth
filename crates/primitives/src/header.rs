@@ -47,6 +47,8 @@ pub struct Header {
     pub beneficiary: H160,
     /// The Keccak 256-bit hash of the root node of the state trie, after all transactions are
     /// executed and finalisations applied; formally Hr.
+    /// state trie的root node的Keccak 256-bit
+    /// hash，在所有transactions被执行并且finalisation被应用之后
     pub state_root: H256,
     /// The Keccak 256-bit hash of the root node of the trie structure populated with each
     /// transaction in the transactions list portion of the block; formally Ht.

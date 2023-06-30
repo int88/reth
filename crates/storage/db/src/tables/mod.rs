@@ -296,18 +296,23 @@ table!(
 dupsort!(
     /// Stores the current storage values indexed with `keccak256(Address)` and
     /// hash of storage key `keccak256(key)`.
+    /// 存储当前的storage values，用`keccak256(Address)`以及`keccak256(key)`的storage key的hash当索引
     /// This table is in preparation for merkelization and calculation of state root.
+    /// 这个table用于准备merkelization以及state root的计算
     /// Benefit for merklization is that hashed addresses/keys are sorted.
+    /// merklization的好处是hashed address/keys是有序的
     ( HashedStorage ) H256 | [H256] StorageEntry
 );
 
 table!(
     /// Stores the current state's Merkle Patricia Tree.
+    /// 存储当前state的Merkle Patricia Tree
     ( AccountsTrie ) StoredNibbles | BranchNodeCompact
 );
 
 dupsort!(
     /// From HashedAddress => NibblesSubKey => Intermediate value
+    /// 从HashedAddress到NibblesSubKey到中间值
     ( StoragesTrie ) H256 | [StoredNibblesSubKey] StorageTrieEntry
 );
 

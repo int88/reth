@@ -267,6 +267,7 @@ impl TestTransaction {
     }
 
     /// Insert collection of ([Address], [Account]) into corresponding tables.
+    /// 插入一系列的([Address], [Account])到对应的tables
     pub fn insert_accounts_and_storages<I, S>(&self, accounts: I) -> Result<(), DbError>
     where
         I: IntoIterator<Item = (Address, (Account, S))>,
@@ -277,10 +278,12 @@ impl TestTransaction {
                 let hashed_address = keccak256(address);
 
                 // Insert into account tables.
+                // 插入account tables
                 tx.put::<tables::PlainAccountState>(address, account)?;
                 tx.put::<tables::HashedAccount>(hashed_address, account)?;
 
                 // Insert into storage tables.
+                // 插入storage tables
                 storage.into_iter().filter(|e| e.value != U256::ZERO).try_for_each(|entry| {
                     let hashed_entry = StorageEntry { key: keccak256(entry.key), ..entry };
 
@@ -310,6 +313,7 @@ impl TestTransaction {
 
     /// Insert collection of Vec<([Address], [Account], Vec<[StorageEntry]>)> into
     /// corresponding tables.
+    /// 插入一系列的Vec(([Address], [Account], Vec<[StorageEntry]>))到对应的tables
     pub fn insert_transitions<I>(
         &self,
         transitions: I,
@@ -324,6 +328,7 @@ impl TestTransaction {
                 changes.into_iter().try_for_each(|(address, old_account, old_storage)| {
                     let tid = offset + transition_id as u64;
                     // Insert into account changeset.
+                    // 插入到account changeset
                     tx.put::<tables::AccountChangeSet>(
                         tid,
                         AccountBeforeTx { address, info: Some(old_account) },
@@ -332,6 +337,7 @@ impl TestTransaction {
                     let tid_address = (tid, address).into();
 
                     // Insert into storage changeset.
+                    // 插入到storage changeset
                     old_storage.into_iter().try_for_each(|entry| {
                         tx.put::<tables::StorageChangeSet>(tid_address, entry)
                     })

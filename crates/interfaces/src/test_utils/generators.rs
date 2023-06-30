@@ -90,7 +90,8 @@ pub fn sign_tx_with_key_pair(key_pair: KeyPair, tx: Transaction) -> TransactionS
 /// Generate a random block filled with signed transactions (generated using
 /// [random_signed_tx]). If no transaction count is provided, the number of transactions
 /// will be random, otherwise the provided count will be used.
-/// 生成一个随机的block，用signed transactions填充（使用[random_signed_tx]生成），如果没有transaction
+/// 生成一个随机的block，用signed
+/// transactions填充（使用[random_signed_tx]生成），如果没有transaction
 /// count提供，生成的transactions是随机的，否则提供的count会被使用
 ///
 /// All fields use the default values (and are assumed to be invalid) except for:
@@ -172,13 +173,17 @@ pub fn random_block_range(
 }
 
 type Transition = Vec<(Address, Account, Vec<StorageEntry>)>;
+// Account和StorageEntry的Vec的组合
 type AccountState = (Account, Vec<StorageEntry>);
 
 /// Generate a range of transitions for given blocks and accounts.
 /// Assumes all accounts start with an empty storage.
+/// 生成一系列的transitions，对于给定的blocks和accounts，假设所有的accounts都从empty storage开始
 ///
 /// Returns a Vec of account and storage changes for each transition,
 /// along with the final state of all accounts and storages.
+/// 返回一个Vec的transition，对于account以及storage changes，以及所有accounts以及storages的final
+/// state
 pub fn random_transition_range<'a, IBlk, IAcc>(
     blocks: IBlk,
     accounts: IAcc,
@@ -201,10 +206,12 @@ where
 
     blocks.into_iter().for_each(|block| {
         let mut transition = Vec::new();
+        // 随机的account change
         let (from, to, mut transfer, new_entries) =
             random_account_change(&valid_addresses, n_changes.clone(), key_range.clone());
 
         // extract from sending account
+        // 抽取出sending account
         let (prev_from, _) = state.get_mut(&from).unwrap();
         transition.push((from, *prev_from, Vec::new()));
 
@@ -212,6 +219,7 @@ where
         prev_from.balance = prev_from.balance.wrapping_sub(transfer);
 
         // deposit in receiving account and update storage
+        // 接收account以及更新storage的deposit
         let (prev_to, storage): &mut (Account, BTreeMap<H256, U256>) = state.get_mut(&to).unwrap();
 
         let old_entries = new_entries
@@ -237,6 +245,7 @@ where
         transitions.push(transition);
     });
 
+    // 构建final state
     let final_state = state
         .into_iter()
         .map(|(addr, (acc, storage))| {
@@ -300,11 +309,13 @@ pub fn random_eoa_account_range(acc_range: std::ops::Range<u64>) -> Vec<(Address
 }
 
 /// Generate random Contract Accounts
+/// 随机生成Contract Accounts
 pub fn random_contract_account_range(
     acc_range: &mut std::ops::Range<u64>,
 ) -> Vec<(Address, Account)> {
     let mut accounts = Vec::with_capacity(acc_range.end.saturating_sub(acc_range.start) as usize);
     for _ in acc_range {
+        // 生成随机的eoa account和地址
         let (address, eoa_account) = random_eoa_account();
         let account = Account { bytecode_hash: Some(H256::random()), ..eoa_account };
         accounts.push((address, account))
