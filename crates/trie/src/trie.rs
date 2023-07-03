@@ -19,19 +19,25 @@ use reth_rlp::Encodable;
 use std::{collections::HashMap, ops::RangeInclusive};
 
 /// StateRoot is used to compute the root node of a state trie.
+/// StateRoot用于计算一个state trie的root node
 pub struct StateRoot<'a, 'b, TX, H> {
     /// A reference to the database transaction.
+    /// 对于数据库transaction的引用
     pub tx: &'a TX,
     /// The factory for hashed cursors.
     pub hashed_cursor_factory: &'b H,
     /// A set of account prefixes that have changed.
+    /// 一系列的account prefix，已经发生了改变
     pub changed_account_prefixes: PrefixSet,
     /// A map containing storage changes with the hashed address as key and a set of storage key
     /// prefixes as the value.
+    /// 一个map，包含storage changes，用于hashed address作为key以及一系列的storage key前缀作为value
     pub changed_storage_prefixes: HashMap<H256, PrefixSet>,
     /// Previous intermediate state.
+    /// 之前的intermediate state
     previous_state: Option<IntermediateStateRootState>,
     /// The number of updates after which the intermediate progress should be returned.
+    /// updates的数目，之后intermediate progress需要返回
     threshold: u64,
 }
 
@@ -87,6 +93,7 @@ where
     TX: DbTx<'tx> + HashedCursorFactory<'a>,
 {
     /// Create a new [StateRoot] instance.
+    /// 创建一个新的[StateRoot]实例
     pub fn new(tx: &'a TX) -> Self {
         Self {
             tx,
@@ -197,6 +204,7 @@ where
 
     /// Walks the intermediate nodes of existing state trie (if any) and hashed entries. Feeds the
     /// nodes into the hash builder. Collects the updates in the process.
+    /// 遍历已经存在的state trie和hashed entries的中间节点，用hash builder填喂
     ///
     /// # Returns
     ///
@@ -645,6 +653,7 @@ mod tests {
 
     #[test]
     // This ensures we dont add empty accounts to the trie
+    // 这确保我们不会添加empty accounts到trie
     fn test_empty_account() {
         let state: State = BTreeMap::from([
             (
@@ -787,17 +796,21 @@ mod tests {
     }
 
     fn test_state_root_with_state(state: State) {
+        // 构建裸的db
         let db = create_test_rw_db();
         let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
         let mut tx = factory.provider_rw().unwrap();
 
         for (address, (account, storage)) in &state {
+            // 插入account
             insert_account(tx.tx_mut(), *address, *account, storage)
         }
         tx.commit().unwrap();
+        // 期望得到的root
         let expected = state_root(state.into_iter());
 
         let mut tx = factory.provider_rw().unwrap();
+        // 和计算得到的root
         let got = StateRoot::new(tx.tx_mut()).root().unwrap();
         assert_eq!(expected, got);
     }

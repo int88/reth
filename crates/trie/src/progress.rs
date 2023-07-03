@@ -16,15 +16,20 @@ pub enum StateRootProgress {
 }
 
 /// The intermediate state of the state root computation.
+/// state root计算过程的中间状态
 #[derive(Debug)]
 pub struct IntermediateStateRootState {
     /// Previously constructed hash builder.
+    /// 之前构建的hash builder
     pub hash_builder: HashBuilder,
     /// Previously recorded walker stack.
+    /// 之前记录的walker stack
     pub walker_stack: Vec<CursorSubNode>,
     /// The last hashed account key processed.
+    /// 最新处理的hashed account key
     pub last_account_key: H256,
     /// The last walker key processed.
+    /// 最新处理的last walker
     pub last_walker_key: Nibbles,
 }
 

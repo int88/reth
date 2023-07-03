@@ -69,10 +69,13 @@ pub fn random_tx() -> Transaction {
 }
 
 /// Generates a random legacy [Transaction] that is signed.
+/// 生成一个随机的legacy [Transaction]，它是被签名的
 ///
 /// On top of the considerations of [random_tx], these apply as well:
+/// 在[random_tx]之上，以下也被应用
 ///
 /// - There is no guarantee that the nonce is not used twice for the same account
+/// - 不保证nonce对于同一个account不会用两次
 pub fn random_signed_tx() -> TransactionSigned {
     let secp = Secp256k1::new();
     let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
@@ -113,6 +116,7 @@ pub fn random_block(
     let mut rng = thread_rng();
 
     // Generate transactions
+    // 生成transactions
     let tx_count = tx_count.unwrap_or_else(|| rng.gen::<u8>());
     let transactions: Vec<TransactionSigned> = (0..tx_count).map(|_| random_signed_tx()).collect();
     let total_gas = transactions.iter().fold(0, |sum, tx| sum + tx.transaction.gas_limit());
@@ -123,6 +127,7 @@ pub fn random_block(
         (0..ommers_count).map(|_| random_header(number, parent).unseal()).collect::<Vec<_>>();
 
     // Calculate roots
+    // 计算transaction root
     let transactions_root = proofs::calculate_transaction_root(&transactions);
     let ommers_hash = proofs::calculate_ommers_root(&ommers);
 
@@ -172,6 +177,7 @@ pub fn random_block_range(
     blocks
 }
 
+// 一系列的Address, Account以及Vec<StorageEntry>
 type Transition = Vec<(Address, Account, Vec<StorageEntry>)>;
 // Account和StorageEntry的Vec的组合
 type AccountState = (Account, Vec<StorageEntry>);
@@ -197,6 +203,7 @@ where
     let mut rng = rand::thread_rng();
     let mut state: BTreeMap<_, _> = accounts
         .into_iter()
+        // 收集到storage entry
         .map(|(addr, (acc, st))| (addr, (acc, st.into_iter().map(|e| (e.key, e.value)).collect())))
         .collect();
 
@@ -249,6 +256,7 @@ where
     let final_state = state
         .into_iter()
         .map(|(addr, (acc, storage))| {
+            // 构建final state
             (addr, (acc, storage.into_iter().map(|v| v.into()).collect()))
         })
         .collect();
@@ -256,8 +264,10 @@ where
 }
 
 /// Generate a random account change.
+/// 生成一个随机的account change
 ///
 /// Returns two addresses, a balance_change, and a Vec of new storage entries.
+/// 返回两个地址，一个balance_change，以及一个Vec的新的storage entries
 pub fn random_account_change(
     valid_addresses: &Vec<Address>,
     n_changes: std::ops::Range<u64>,
@@ -269,8 +279,10 @@ pub fn random_account_change(
     let addr_from = addresses.next().unwrap_or_else(Address::random);
     let addr_to = addresses.next().unwrap_or_else(Address::random);
 
+    // 生成balance change
     let balance_change = U256::from(rng.gen::<u64>());
 
+    // 生成storage change
     let storage_changes = (0..n_changes.sample_single(&mut rng))
         .map(|_| random_storage_entry(key_range.clone()))
         .collect();

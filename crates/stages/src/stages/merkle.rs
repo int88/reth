@@ -215,6 +215,7 @@ impl<DB: Database> Stage<DB> for MerkleStage {
                 // 重置checkpoint并且清理trie tables
                 checkpoint = None;
                 self.save_execution_checkpoint(provider, None)?;
+                // 清理Accounts Trie和Storages Trie
                 provider.tx_ref().clear::<tables::AccountsTrie>()?;
                 provider.tx_ref().clear::<tables::StoragesTrie>()?;
 
@@ -563,6 +564,7 @@ mod tests {
                         .filter(|v| v.value != U256::ZERO)
                         .map(|v| (v.key, v.value))
                         .collect::<Vec<_>>();
+                    // 插入account的address和（account storage）
                     accounts.insert(key, (account, storage));
                 }
 
@@ -572,7 +574,9 @@ mod tests {
             let last_block_number = end;
             self.tx.commit(|tx| {
                 let mut last_header = tx.get::<tables::Headers>(last_block_number)?.unwrap();
+                // 设置last header的state root
                 last_header.state_root = root;
+                // 重新放入header table
                 tx.put::<tables::Headers>(last_block_number, last_header)
             })?;
 
@@ -618,6 +622,7 @@ mod tests {
                             break
                         }
 
+                        // 插入tree中
                         tree.entry(keccak256(tid_address.address()))
                             .or_default()
                             .insert(keccak256(entry.key), entry.value);

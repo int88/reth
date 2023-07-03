@@ -13,6 +13,7 @@ where
     S: IntoIterator<Item = (H256, U256)>,
 {
     let encoded_accounts = accounts.map(|(address, (account, storage))| {
+        // 获取storage root
         let storage_root = storage_root(storage.into_iter());
         let mut out = Vec::new();
         EthAccount::from(account).with_storage_root(storage_root).encode(&mut out);
@@ -30,6 +31,7 @@ pub fn storage_root<I: Iterator<Item = (H256, U256)>>(storage: I) -> H256 {
 
 /// Compute the state root of a given set of accounts with prehashed keys using
 /// [triehash::trie_root].
+/// 计算一个给定的accounts的state root，用prehashed keys，使用[triehash::trie_root]
 pub fn state_root_prehashed<I, S>(accounts: I) -> H256
 where
     I: Iterator<Item = (H256, (Account, S))>,

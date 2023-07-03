@@ -250,6 +250,7 @@ impl TestTransaction {
             blocks.into_iter().try_for_each(|block| {
                 Self::insert_header(tx, &block.header)?;
                 // Insert into body tables.
+                // 插入body tables
                 tx.put::<tables::BlockBodyIndices>(
                     block.number,
                     StoredBlockBodyIndices {
@@ -258,6 +259,7 @@ impl TestTransaction {
                     },
                 )?;
                 block.body.iter().try_for_each(|body_tx| {
+                    // 插入transaction tables
                     tx.put::<tables::Transactions>(next_tx_num, body_tx.clone().into())?;
                     next_tx_num += 1;
                     Ok(())
@@ -322,6 +324,7 @@ impl TestTransaction {
     where
         I: IntoIterator<Item = Vec<(Address, Account, Vec<StorageEntry>)>>,
     {
+        // 从start block开始
         let offset = transition_offset.unwrap_or_default();
         self.commit(|tx| {
             transitions.into_iter().enumerate().try_for_each(|(transition_id, changes)| {
@@ -330,15 +333,18 @@ impl TestTransaction {
                     // Insert into account changeset.
                     // 插入到account changeset
                     tx.put::<tables::AccountChangeSet>(
+                        // tid其实就是对应block number
                         tid,
                         AccountBeforeTx { address, info: Some(old_account) },
                     )?;
 
+                    // tid和address的组合
                     let tid_address = (tid, address).into();
 
                     // Insert into storage changeset.
                     // 插入到storage changeset
                     old_storage.into_iter().try_for_each(|entry| {
+                        // 遍历各个old storage
                         tx.put::<tables::StorageChangeSet>(tid_address, entry)
                     })
                 })
