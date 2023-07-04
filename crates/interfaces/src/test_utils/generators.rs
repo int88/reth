@@ -222,7 +222,9 @@ where
         let (prev_from, _) = state.get_mut(&from).unwrap();
         transition.push((from, *prev_from, Vec::new()));
 
+        // 获取合理的transfer
         transfer = max(min(transfer, prev_from.balance), U256::from(1));
+        // 降低原from账户的balance
         prev_from.balance = prev_from.balance.wrapping_sub(transfer);
 
         // deposit in receiving account and update storage
@@ -233,20 +235,26 @@ where
             .into_iter()
             .filter_map(|entry| {
                 let old = if entry.value != U256::ZERO {
+                    // value不为zero，插入storage
                     storage.insert(entry.key, entry.value)
                 } else {
+                    // 否则移除storage
                     let old = storage.remove(&entry.key);
                     if matches!(old, Some(U256::ZERO)) {
+                        // 如果old value也为0，也直接返回None
                         return None
                     }
                     old
                 };
+                // 返回Storage Entry
                 Some(StorageEntry { value: old.unwrap_or(U256::from(0)), ..entry })
             })
             .collect();
 
+        // prev_to存放transition之前的account状态
         transition.push((to, *prev_to, old_entries));
 
+        // 添加原to账户的balance
         prev_to.balance = prev_to.balance.wrapping_add(transfer);
 
         transitions.push(transition);
@@ -284,6 +292,7 @@ pub fn random_account_change(
 
     // 生成storage change
     let storage_changes = (0..n_changes.sample_single(&mut rng))
+        // 生成随机的storage entry
         .map(|_| random_storage_entry(key_range.clone()))
         .collect();
 
@@ -291,6 +300,7 @@ pub fn random_account_change(
 }
 
 /// Generate a random storage change.
+/// 生成一个随机的storage change
 pub fn random_storage_entry(key_range: std::ops::Range<u64>) -> StorageEntry {
     let mut rng = rand::thread_rng();
 

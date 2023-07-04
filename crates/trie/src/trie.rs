@@ -357,6 +357,7 @@ where
 }
 
 /// StorageRoot is used to compute the root node of an account storage trie.
+/// StorageRoot用于计算一个account storage trie的root node
 pub struct StorageRoot<'a, 'b, TX, H> {
     /// A reference to the database transaction.
     pub tx: &'a TX,
@@ -438,6 +439,7 @@ where
     }
 
     /// Walks the hashed storage table entries for a given address and calculates the storage root.
+    /// 遍历hashed storage table entries，对于一个给定的地址并且计算storage root
     ///
     /// # Returns
     ///
@@ -546,7 +548,9 @@ mod tests {
         storage: &BTreeMap<H256, U256>,
     ) {
         let hashed_address = keccak256(address);
+        // 插入hashed account
         tx.put::<tables::HashedAccount>(hashed_address, account).unwrap();
+        // 插入storage
         insert_storage(tx, hashed_address, storage);
     }
 
@@ -558,6 +562,7 @@ mod tests {
         for (k, v) in storage {
             tx.put::<tables::HashedStorage>(
                 hashed_address,
+                // 插入storage entries
                 StorageEntry { key: keccak256(k), value: *v },
             )
             .unwrap();
@@ -690,6 +695,7 @@ mod tests {
 
     #[test]
     // This ensures we return an empty root when there are no storage entries
+    // 确保我们返回一个空的root，当没有storage entries的时候
     fn test_empty_storage_root() {
         let db = create_test_rw_db();
         let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
@@ -698,6 +704,7 @@ mod tests {
         let address = Address::random();
         let code = "el buen fla";
         let account = Account {
+            // 构建account
             nonce: 155,
             balance: U256::from(414241124u32),
             bytecode_hash: Some(keccak256(code)),
@@ -712,6 +719,7 @@ mod tests {
 
     #[test]
     // This ensures that the walker goes over all the storage slots
+    // 这确保walker遍历所有的storage slots
     fn test_storage_root() {
         let db = create_test_rw_db();
         let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
@@ -719,6 +727,7 @@ mod tests {
 
         let address = Address::random();
         let storage = BTreeMap::from([
+            // storage结构
             (H256::zero(), U256::from(3)),
             (H256::from_low_u64_be(2), U256::from(1)),
         ]);
@@ -862,6 +871,7 @@ mod tests {
     #[test]
     fn account_and_storage_trie() {
         let ether = U256::from(1e18);
+        // 构建storage
         let storage = BTreeMap::from(
             [
                 ("1200000000000000000000000000000000000000000000000000000000000000", 0x42),
@@ -876,14 +886,17 @@ mod tests {
         let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
         let mut tx = factory.provider_rw().unwrap();
 
+        // 构建hashed account的table
         let mut hashed_account_cursor =
             tx.tx_ref().cursor_write::<tables::HashedAccount>().unwrap();
+        // 构建hashed storage的table
         let mut hashed_storage_cursor =
             tx.tx_ref().cursor_dup_write::<tables::HashedStorage>().unwrap();
 
         let mut hash_builder = HashBuilder::default();
 
         // Insert first account
+        // 插入第一个地址
         let key1 =
             H256::from_str("b000000000000000000000000000000000000000000000000000000000000000")
                 .unwrap();
@@ -953,6 +966,7 @@ mod tests {
         hash_builder.add_leaf(Nibbles::unpack(key6), &encode_account(account6, None));
 
         // Populate account & storage trie DB tables
+        // 填充account和storage的trie DB tables
         let expected_root =
             H256::from_str("72861041bc90cd2f93777956f058a545412b56de79af5eb6b8075fe2eabbe015")
                 .unwrap();
@@ -965,16 +979,20 @@ mod tests {
             (key6, encode_account(account6, None)),
         ]);
         // Check computed trie root to ensure correctness
+        // 检查计算的trie root来确保正确性
         assert_eq!(computed_expected_root, expected_root);
 
         // Check hash builder root
+        // 检查hash builder root
         assert_eq!(hash_builder.root(), computed_expected_root);
 
         // Check state root calculation from scratch
+        // 从头开始检查state root的计算
         let (root, trie_updates) = StateRoot::new(tx.tx_ref()).root_with_updates().unwrap();
         assert_eq!(root, computed_expected_root);
 
         // Check account trie
+        // 检查account trie
         let mut account_updates = trie_updates
             .iter()
             .filter_map(|(k, v)| match (k, v) {
@@ -1002,6 +1020,7 @@ mod tests {
         assert_eq!(node2a.hashes.len(), 1);
 
         // Check storage trie
+        // 检查storage trie
         let storage_updates = trie_updates
             .iter()
             .filter_map(|entry| match entry {

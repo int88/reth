@@ -27,6 +27,7 @@ use std::{
 
 /// The [TestTransaction] is used as an internal
 /// database for testing stage implementation.
+/// [TestTransaction]用于内部的internal database用于测试stage implementation
 ///
 /// ```rust,ignore
 /// let tx = TestTransaction::default();
@@ -165,6 +166,7 @@ impl TestTransaction {
 
     /// Check that there is no table entry above a given
     /// number by [Table::Key]
+    /// 检查没有table entry，超过给定的number，通过[Table::Key]
     pub fn ensure_no_entry_above<T, F>(&self, num: u64, mut selector: F) -> Result<(), DbError>
     where
         T: Table,

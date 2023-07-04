@@ -7,7 +7,8 @@ use std::fmt::Debug;
 /// Stage is indexing history the account changesets generated in
 /// [`ExecutionStage`][crate::stages::ExecutionStage]. For more information
 /// on index sharding take a look at [`reth_db::tables::AccountHistory`]
-/// Stage是在ExecutionStage中生成的account changesets的索引历史。有关索引分片的更多信息，请参见reth_db::tables::AccountHistory
+/// Stage是在ExecutionStage中生成的account
+/// changesets的索引历史。有关索引分片的更多信息，请参见reth_db::tables::AccountHistory
 #[derive(Debug)]
 pub struct IndexAccountHistoryStage {
     /// Number of blocks after which the control
@@ -366,6 +367,7 @@ mod tests {
             BTreeMap::from([
                 (shard(1), full_list.clone()),
                 (shard(2), full_list.clone()),
+                // 新增了内容
                 (shard(u64::MAX), vec![2, 3, 4, 5])
             ])
         );

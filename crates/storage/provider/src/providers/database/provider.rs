@@ -964,7 +964,8 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
 
     /// Load last shard and check if it is full and remove if it is not. If list is empty, last
     /// shard was full or there is no shards at all.
-    /// 加载最新的shard并且检查是否已满，如果没有满则删除。如果列表为空，则最后一个shard已满或者根本没有shard。
+    /// 加载最新的shard并且检查是否已满，如果没有满则删除。如果列表为空，
+    /// 则最后一个shard已满或者根本没有shard。
     pub fn take_last_storage_shard(
         &self,
         address: Address,
@@ -1170,8 +1171,10 @@ impl<'this, TX: DbTx<'this>> AccountExtReader for DatabaseProvider<'this, TX> {
         &self,
         range: RangeInclusive<BlockNumber>,
     ) -> Result<BTreeMap<Address, Vec<u64>>> {
+        // 遍历changed account set
         let mut changeset_cursor = self.tx.cursor_read::<tables::AccountChangeSet>()?;
 
+        // 遍历block number
         let account_transitions = changeset_cursor.walk_range(range)?.try_fold(
             BTreeMap::new(),
             |mut accounts: BTreeMap<Address, Vec<u64>>, entry| -> Result<_> {
@@ -1278,7 +1281,8 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
         for (address, mut indices) in account_transitions {
             // Load last shard and check if it is full and remove if it is not. If list is empty,
             // last shard was full or there is no shards at all.
-            // 加载最后一个shard并且检查它是否满了，如果没有满则删除。如果列表为空，则最后一个shard已满或者根本没有shard。
+            // 加载最后一个shard并且检查它是否满了，如果没有满则删除。如果列表为空，
+            // 则最后一个shard已满或者根本没有shard。
             let mut last_shard = {
                 // 获取last shard
                 let mut cursor = self.tx.cursor_read::<tables::AccountHistory>()?;
@@ -1303,6 +1307,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> AccountWriter for DatabaseProvider
                 .iter()
                 .chunks(sharded_key::NUM_OF_INDICES_IN_SHARD)
                 .into_iter()
+                // 收集一系列chunks
                 .map(|chunks| chunks.map(|i| *i as usize).collect::<Vec<usize>>())
                 .collect::<Vec<_>>();
             let last_chunk = chunks.pop();

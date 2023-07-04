@@ -24,6 +24,7 @@ where
 }
 
 /// Compute the storage root for a given account using [triehash::sec_trie_root].
+/// 计算对于给定的account的storage root，使用[triehash::sec_trie_root].
 pub fn storage_root<I: Iterator<Item = (H256, U256)>>(storage: I) -> H256 {
     let encoded_storage = storage.map(|(k, v)| (k, encode_fixed_size(&v).to_vec()));
     triehash::sec_trie_root::<KeccakHasher, _, _, _>(encoded_storage)

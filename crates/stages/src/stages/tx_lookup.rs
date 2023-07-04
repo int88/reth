@@ -22,8 +22,9 @@ use tracing::*;
 /// This stage walks over the bodies table, and sets the transaction hash of each transaction in a
 /// block to the corresponding `BlockNumber` at each block. This is written to the
 /// [`tables::TxHashNumber`] This is used for looking up changesets via the transaction hash.
-/// 这个stage遍历bodies table，然后设置每个block中的每个transaction的transaction hash到对应的BlockNumber。
-/// 这会被写入到tables::TxHashNumber。这个用于通过transaction hash来查找changesets
+/// 这个stage遍历bodies table，然后设置每个block中的每个transaction的transaction
+/// hash到对应的BlockNumber。 这会被写入到tables::TxHashNumber。这个用于通过transaction
+/// hash来查找changesets
 #[derive(Debug, Clone)]
 pub struct TransactionLookupStage {
     /// The number of lookup entries to commit at once
@@ -333,12 +334,12 @@ mod tests {
 
         /// # Panics
         ///
-        /// 1. If there are any entries in the [tables::TxHashNumber] table above
-        ///    a given block number.
+        /// 1. If there are any entries in the [tables::TxHashNumber] table above a given block
+        ///    number.
         /// 1. 如果在[tables::TxHashNumber]表中有任何entries在给定的block number之上
         ///
-        /// 2. If the is no requested block entry in the bodies table,
-        ///    but [tables::TxHashNumber] is not empty.
+        /// 2. If the is no requested block entry in the bodies table, but [tables::TxHashNumber] is
+        ///    not empty.
         /// 2. 如果在bodies table中没有请求的block entry，但是[tables::TxHashNumber]不是空的
         fn ensure_no_hash_by_block(&self, number: BlockNumber) -> Result<(), TestRunnerError> {
             let body_result = self.tx.inner_rw().block_body_indices(number);
@@ -401,6 +402,7 @@ mod tests {
                         provider.tx_ref().cursor_read::<tables::BlockBodyIndices>()?;
                     body_cursor.seek_exact(start_block)?;
 
+                    // 遍历body indices
                     while let Some((_, body)) = body_cursor.next()? {
                         for tx_id in body.tx_num_range() {
                             // 遍历transaction id

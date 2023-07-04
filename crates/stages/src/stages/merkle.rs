@@ -398,6 +398,7 @@ mod tests {
             checkpoint: Some(StageCheckpoint::new(stage_progress)),
         };
 
+        // 为execution提供输入
         runner.seed_execution(input).expect("failed to seed execution");
 
         let rx = runner.execute(input);
@@ -418,6 +419,7 @@ mod tests {
                 done: true
             }) if block_number == previous_stage && processed == total &&
                 total == (
+                    // 获取HashAccount和HashStorage中的条目数
                     runner.tx.table::<tables::HashedAccount>().unwrap().len() +
                     runner.tx.table::<tables::HashedStorage>().unwrap().len()
                 ) as u64
@@ -435,6 +437,7 @@ mod tests {
         let (previous_stage, stage_progress) = (2, 1);
 
         // Set up the runner
+        // 设置runner
         let mut runner = MerkleTestRunner::default();
         let input = ExecInput {
             target: Some(previous_stage),
@@ -446,6 +449,7 @@ mod tests {
         let rx = runner.execute(input);
 
         // Assert the successful result
+        // 校验成功的结果
         let result = rx.await.unwrap();
         assert_matches!(
             result,
@@ -606,6 +610,7 @@ mod tests {
 
             self.tx
                 .commit(|tx| {
+                    // storage changsets的cursor
                     let mut storage_changesets_cursor =
                         tx.cursor_dup_read::<tables::StorageChangeSet>().unwrap();
                     let mut storage_cursor =
@@ -637,12 +642,14 @@ mod tests {
                             }
 
                             if value != U256::ZERO {
+                                // 构建storage entry
                                 let storage_entry = StorageEntry { key: hashed_slot, value };
                                 storage_cursor.upsert(hashed_address, storage_entry).unwrap();
                             }
                         }
                     }
 
+                    // 构建account changeset cursor
                     let mut changeset_cursor =
                         tx.cursor_dup_write::<tables::AccountChangeSet>().unwrap();
                     let mut rev_changeset_walker = changeset_cursor.walk_back(None).unwrap();
@@ -655,12 +662,14 @@ mod tests {
                         }
 
                         if let Some(acc) = account_before_tx.info {
+                            // 添加hashed account
                             tx.put::<tables::HashedAccount>(
                                 keccak256(account_before_tx.address),
                                 acc,
                             )
                             .unwrap();
                         } else {
+                            // 删除hashed account
                             tx.delete::<tables::HashedAccount>(
                                 keccak256(account_before_tx.address),
                                 None,

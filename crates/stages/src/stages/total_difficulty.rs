@@ -279,10 +279,13 @@ mod tests {
                         .header_td_by_number(initial_stage_progress)?
                         .expect("no initial td");
 
+                    // 遍历headers
                     while let Some((next_key, next_header)) = header_cursor.next()? {
                         assert_eq!(current_header.number + 1, next_header.number);
+                        // 统计difficulty
                         td += next_header.difficulty;
                         assert_eq!(
+                            // 通过number获取header td
                             provider.header_td_by_number(next_key)?.map(Into::into),
                             Some(td)
                         );

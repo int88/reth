@@ -11,6 +11,7 @@ use reth_primitives::{
 use std::marker::PhantomData;
 
 /// `TrieWalker` is a structure that enables traversal of a Merkle trie.
+/// `TrieWalker`是一个结构，能够遍历一个Merkle trie
 /// It allows moving through the trie in a depth-first manner, skipping certain branches if the .
 pub struct TrieWalker<'a, K, C> {
     /// A mutable reference to a trie cursor instance used for navigating the trie.

@@ -134,6 +134,7 @@ pub mod test_utils {
     pub const ERROR_TEMPDIR: &str = "Not able to create a temporary directory.";
 
     /// Create rw database for testing
+    /// 创建rw db用于测试
     pub fn create_test_rw_db() -> Arc<Env<WriteMap>> {
         create_test_db(EnvKind::RW)
     }
