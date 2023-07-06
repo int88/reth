@@ -50,6 +50,7 @@ impl<T: PoolTransaction> TransactionValidationOutcome<T> {
 }
 
 /// Provides support for validating transaction at any given state of the chain
+/// 提供对在chain的任意给定的state进行校验的支持
 #[async_trait::async_trait]
 pub trait TransactionValidator: Send + Sync {
     /// The transaction type to validate.
@@ -57,12 +58,15 @@ pub trait TransactionValidator: Send + Sync {
 
     /// Validates the transaction and returns a [`TransactionValidationOutcome`] describing the
     /// validity of the given transaction.
+    /// 校验transaction并且返回一个[`TransactionValidationOutcome`]描述给定的transaction的正确性
     ///
     /// This will be used by the transaction-pool to check whether the transaction should be
     /// inserted into the pool or discarded right away.
+    /// 这会由transaction-pool使用来检查是否transaction应该被插入到pool或者立即丢弃
     ///
     /// Implementers of this trait must ensure that the transaction is well-formed, i.e. that it
     /// complies at least all static constraints, which includes checking for:
+    /// 这个trait的Implementers必须确保transaction是well-formed，例如，它至少符合以下静态约束
     ///
     ///    * chain id
     ///    * gas limit
@@ -77,6 +81,10 @@ pub trait TransactionValidator: Send + Sync {
     /// this transaction is still subject to future (dynamic) changes enforced by the pool, for
     /// example nonce or balance changes. Hence, any validation checks must be applied in this
     /// function.
+    /// transaction
+    /// pool不做额外的假设，关于transaction的正确性，在这个调用的时候，在将它插入到pool之前
+    /// 然后transaction的正确性依然服从pool执行的future changes，例如nonce或者balance的改变
+    /// 因此，任何validation check必须应用到这个函数
     ///
     /// See [EthTransactionValidator] for a reference implementation.
     async fn validate_transaction(
@@ -86,7 +94,9 @@ pub trait TransactionValidator: Send + Sync {
     ) -> TransactionValidationOutcome<Self::Transaction>;
 
     /// Ensure that the code size is not greater than `max_init_code_size`.
+    /// 确保code size不会超过`max_init_code_size`
     /// `max_init_code_size` should be configurable so this will take it as an argument.
+    /// `max_init_code_size`应该是可配置的，因此将它作为一个参数
     fn ensure_max_init_code_size(
         &self,
         transaction: &Self::Transaction,
@@ -105,11 +115,13 @@ pub trait TransactionValidator: Send + Sync {
 }
 
 /// A [TransactionValidator] implementation that validates ethereum transaction.
+/// 一个[TransactionValidator]的实现，校验ethereum transaction
 #[derive(Debug, Clone)]
 pub struct EthTransactionValidator<Client, T> {
     /// Spec of the chain
     chain_spec: Arc<ChainSpec>,
     /// This type fetches account info from the db
+    /// 从db中获取account info
     client: Client,
     /// Fork indicator whether we are in the Shanghai stage.
     shanghai: bool,

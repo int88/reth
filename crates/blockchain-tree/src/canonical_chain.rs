@@ -2,12 +2,15 @@ use reth_primitives::{BlockHash, BlockNumHash, BlockNumber};
 use std::collections::BTreeMap;
 
 /// This keeps track of all blocks of the canonical chain.
+/// 追踪canonical chain中的所有blocks
 ///
 /// This is a wrapper type around an ordered set of block numbers and hashes that belong to the
 /// canonical chain.
+/// 这是对于一系列属于canonical chain的block numbers以及hashes的wrapper类型
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CanonicalChain {
     /// All blocks of the canonical chain in order.
+    /// canonical chain的所有blocks，有序
     chain: BTreeMap<BlockNumber, BlockHash>,
 }
 
@@ -17,18 +20,21 @@ impl CanonicalChain {
     }
 
     /// Replaces the current chain with the given one.
+    /// 用给定的替换当前的chain
     #[inline]
     pub(crate) fn replace(&mut self, chain: BTreeMap<BlockNumber, BlockHash>) {
         self.chain = chain;
     }
 
     /// Returns the block hash of the canonical block with the given number.
+    /// 返回给定number的canonical block的block hash
     #[inline]
     pub(crate) fn canonical_hash(&self, number: &BlockNumber) -> Option<BlockHash> {
         self.chain.get(number).cloned()
     }
 
     /// Returns the block number of the canonical block with the given hash.
+    /// 返回给定的hash的canonical block的block number
     #[inline]
     pub(crate) fn canonical_number(&self, block_hash: BlockHash) -> Option<BlockNumber> {
         self.chain.iter().find_map(
@@ -57,6 +63,7 @@ impl CanonicalChain {
     }
 
     /// Extends all items from the given iterator to the chain.
+    /// 扩展所有的items，从chain的给定iterator
     #[inline]
     pub(crate) fn extend(&mut self, blocks: impl Iterator<Item = (BlockNumber, BlockHash)>) {
         self.chain.extend(blocks)

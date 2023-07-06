@@ -371,6 +371,7 @@ impl<T> BestTransactions for std::iter::Empty<T> {
 }
 
 /// Trait for transaction types used inside the pool
+/// transaction types的Trait，在pool中使用
 pub trait PoolTransaction:
     fmt::Debug + Send + Sync + FromRecoveredTransaction + IntoRecoveredTransaction
 {
