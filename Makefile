@@ -164,11 +164,10 @@ define build_docker_image
 	cp $(BUILD_PATH)/aarch64-unknown-linux-gnu/$(PROFILE)/reth $(BIN_DIR)/arm64/reth
 
 	docker buildx build --file ./Dockerfile.cross . \
-		--platform linux/amd64,linux/arm64 \
+		--platform linux/amd64 \
 		--tag $(DOCKER_IMAGE_NAME):$(1) \
-		--tag $(DOCKER_IMAGE_NAME):$(2) \
 		--provenance=false \
-		--push
+		--load
 endef
 
 ##@ Other
