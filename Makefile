@@ -143,7 +143,7 @@ ef-tests: $(EF_TESTS_DIR) ## Runs Ethereum Foundation tests.
 # `docker buildx create --use --driver docker-container --name cross-builder`
 .PHONY: docker-build-latest
 docker-build-latest: ## Build and push a cross-arch Docker image tagged with the latest git tag and `latest`.
-	$(call build_docker_image,$(GIT_TAG),latest)
+	$(call build_docker_image,main,latest)
 
 # Note: This requires a buildx builder with emulation support. For example:
 #
