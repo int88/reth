@@ -906,6 +906,12 @@ where
             return Ok(status)
         }
 
+        let lowest_buffered_ancestor_fcu = self.lowest_buffered_ancestor_or(block.hash);
+
+        if let Some(status) = self.check_invalid_ancestor(lowest_buffered_ancestor_fcu) {
+            return Ok(status)
+        }
+
         let res = if self.sync.is_pipeline_idle() {
             // we can only insert new payloads if the pipeline is _not_ running, because it holds
             // exclusive access to the database
