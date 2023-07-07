@@ -116,6 +116,7 @@ impl From<SealedBlock> for ExecutionPayload {
 
 /// Try to construct a block from given payload. Perform addition validation of `extra_data` and
 /// `base_fee_per_gas` fields.
+/// 试着构建一个block从给定的payload，执行额外的关于`extra_data`以及`base_fee_per_gas`的校验
 ///
 /// NOTE: The log bloom is assumed to be validated during serialization.
 /// NOTE: Empty ommers, nonce and difficulty values are validated upon computing block hash and
@@ -254,12 +255,14 @@ pub struct PayloadAttributes {
 }
 
 /// This structure contains the result of processing a payload or fork choice update.
+/// 这个结构包含处理一个payload或者forkchoice update的结果
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayloadStatus {
     #[serde(flatten)]
     pub status: PayloadStatusEnum,
     /// Hash of the most recent valid block in the branch defined by payload and its ancestors
+    /// 最近的合法的block，在branch中，通过payload和它的ancestor定义
     pub latest_valid_hash: Option<H256>,
 }
 
@@ -406,11 +409,13 @@ impl std::fmt::Display for PayloadStatusEnum {
 }
 
 /// Various errors that can occur when validating a payload or forkchoice update.
+/// 各种会发生的错误，当校验一个payload或者forkchoice update
 ///
 /// This is intended for the [PayloadStatusEnum::Invalid] variant.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum PayloadValidationError {
     /// Thrown when a forkchoice update's head links to a previously rejected payload.
+    /// 抛出，当一个forkchoice update的head指向一个之前被rejected payload
     #[error("links to previously rejected block")]
     LinksToRejectedPayload,
     /// Thrown when a new payload contains a wrong block number.

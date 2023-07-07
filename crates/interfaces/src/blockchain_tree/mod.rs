@@ -209,6 +209,7 @@ pub trait BlockchainTreeViewer: Send + Sync {
 
     /// Given the hash of a block, this checks the buffered blocks for the lowest ancestor in the
     /// buffer.
+    /// 给定一个block的hash，它检查缓存的blocks对于lowest ancestor，在buffer中
     ///
     /// If there is a buffered block with the given hash, this returns the block itself.
     fn lowest_buffered_ancestor(&self, hash: BlockHash) -> Option<SealedBlockWithSenders>;

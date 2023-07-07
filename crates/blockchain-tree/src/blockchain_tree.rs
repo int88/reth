@@ -302,6 +302,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // if not found, check if the parent can be found inside canonical chain.
+        // 如果没有找到，检查是否parent可以在canonical chain中找到
         if self
             .is_block_hash_canonical(&parent.hash)
             .map_err(|err| InsertBlockError::new(block.block.clone(), err.into()))?
@@ -311,10 +312,12 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
         // this is another check to ensure that if the block points to a canonical block its block
         // is valid
+        // 这是另一个检查来确保如果block指向canonical block，它的block是合法的
         if let Some(canonical_parent_number) =
             self.block_indices.canonical_number(block.parent_hash)
         {
             // we found the parent block in canonical chain
+            // 我们找到parent block在canonical chain中
             if canonical_parent_number != parent.number {
                 return Err(InsertBlockError::consensus_error(
                     ConsensusError::ParentBlockNumberMismatch {
@@ -327,6 +330,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // if there is a parent inside the buffer, validate against it.
+        // 如果parent在buffer中，校验它
         if let Some(buffered_parent) = self.buffered_blocks.block(parent) {
             self.externals
                 .consensus
@@ -335,11 +339,14 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // insert block inside unconnected block buffer. Delaying its execution.
+        // 插入block到unconnected block buffer，延缓它的执行
         self.buffered_blocks.insert_block(block.clone());
 
         // find the lowest ancestor of the block in the buffer to return as the missing parent
         // this shouldn't return None because that only happens if the block was evicted, which
         // shouldn't happen right after insertion
+        // 找到buffer中lowest ancestor来返回，作为missing parent，这不应该返回Nonce，因为这只会在
+        // block被驱逐时发生，这不应该在插入之后立即发生
         let lowest_ancestor =
             self.buffered_blocks.lowest_ancestor(&block.hash).ok_or_else(|| {
                 InsertBlockError::tree_error(
@@ -705,6 +712,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         block: SealedBlockWithSenders,
     ) -> Result<InsertPayloadOk, InsertBlockError> {
         // check if we already have this block
+        // 检查是否我们已经有这个block
         match self.is_block_known(block.num_hash()) {
             Ok(Some(status)) => return Ok(InsertPayloadOk::AlreadySeen(status)),
             Err(err) => return Err(InsertBlockError::new(block.block, err)),

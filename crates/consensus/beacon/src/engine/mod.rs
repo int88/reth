@@ -246,6 +246,7 @@ where
     listeners: EventListeners<BeaconConsensusEngineEvent>,
     /// Tracks the header of invalid payloads that were rejected by the engine because they're
     /// invalid.
+    /// 追踪有着invalid paylods的header，它们被engine拒绝因为它们是非法的
     invalid_headers: InvalidHeaderCache,
     /// Consensus engine metrics.
     metrics: EngineMetrics,
@@ -456,6 +457,8 @@ where
     /// Prepares the invalid payload response for the given hash, checking the
     /// database for the parent hash and populating the payload status with the latest valid hash
     /// according to the engine api spec.
+    /// 准备invalid payload response，对于给定的hash，检查db，对于parent hash并且填充payload status
+    /// 对于最新的valid hash，根据engine api spec
     fn prepare_invalid_response(&self, mut parent_hash: H256) -> PayloadStatus {
         // Edge case: the `latestValid` field is the zero hash if the parent block is the terminal
         // PoW block, which we need to identify by looking at the parent's block difficulty
@@ -473,6 +476,8 @@ where
 
     /// Checks if the given `check` hash points to an invalid header, inserting the given `head`
     /// block into the invalid header cache if the `check` hash has a known invalid ancestor.
+    /// 检查是否给定的`check`指向一个非法的header，插入到给定的`head` block到invalid header
+    /// cache，如果 `check` hash有一个已知的invalid ancestor
     ///
     /// Returns a payload status response according to the engine API spec if the block is known to
     /// be invalid.
@@ -482,12 +487,15 @@ where
         head: H256,
     ) -> Option<PayloadStatus> {
         // check if the check hash was previously marked as invalid
+        // 检查是否check hash之前被标记为invalid
         let header = { self.invalid_headers.get(&check)?.clone() };
 
         // populate the latest valid hash field
+        // 填充最新的valid hash field
         let status = self.prepare_invalid_response(header.parent_hash);
 
         // insert the head block into the invalid header cache
+        // 插入head block到invalid header cache
         self.invalid_headers.insert_with_invalid_ancestor(head, header);
 
         Some(status)
@@ -501,6 +509,7 @@ where
             // check if the head was previously marked as invalid
             // 检查head是否之前被标记为invalid
             let header = self.invalid_headers.get(&head)?;
+            // 返回header的parent hash
             header.parent_hash
         };
 
@@ -543,6 +552,7 @@ where
         let _ = tx.send(Ok(on_updated));
 
         // notify listeners about new processed FCU
+        // 通知listeners关于新的被处理的FCU
         self.listeners.notify(BeaconConsensusEngineEvent::ForkchoiceUpdated(state, status));
 
         // Terminate the sync early if it's reached the maximum user
@@ -859,6 +869,7 @@ where
     ///
     /// This returns a [`PayloadStatus`] that represents the outcome of a processed new payload and
     /// returns an error if an internal error occurred.
+    /// 这返回一个[`PayloadStatus`]表示一个处理过的新的payload的输出并且返回一个error如果内部发生了一个error
     #[instrument(level = "trace", skip(self, payload), fields(block_hash= ?payload.block_hash, block_number = %payload.block_number.as_u64(), is_pipeline_idle = %self.sync.is_pipeline_idle()), target = "consensus::engine")]
     fn on_new_payload(
         &mut self,
@@ -871,6 +882,7 @@ where
         let block_hash = block.hash();
 
         // now check the block itself
+        // 现在检查block自己
         if let Some(status) = self.check_invalid_ancestor_with_head(block.parent_hash, block.hash) {
             return Ok(status)
         }
@@ -908,9 +920,13 @@ where
 
     /// Ensures that the given payload does not violate any consensus rules that concern the block's
     /// layout, like:
+    /// 确保给定的payload没有违反任何的consensus rules，关于block的layout，例如：
     ///    - missing or invalid base fee
+    ///    - 缺失或者非法的base fee
     ///    - invalid extra data
+    ///    - 非法的extra data
     ///    - invalid transactions
+    ///    - 非法的transactions
     fn ensure_well_formed_payload(
         &self,
         payload: ExecutionPayload,
@@ -961,6 +977,7 @@ where
     }
 
     /// Attempts to insert a new payload into the tree.
+    /// 试着插入一个新的payload到tree中
     ///
     /// Caution: This expects that the pipeline is idle.
     #[instrument(level = "trace", skip_all, target = "consensus::engine", ret)]
@@ -1451,6 +1468,7 @@ where
 }
 
 /// Keeps track of invalid headers.
+/// 追踪非法的headers
 struct InvalidHeaderCache {
     /// This maps a header hash to a reference to its invalid ancestor.
     headers: LruMap<H256, Arc<Header>>,
