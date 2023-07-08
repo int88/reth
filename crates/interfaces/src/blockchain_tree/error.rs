@@ -11,6 +11,7 @@ use reth_primitives::{BlockHash, BlockNumber, SealedBlock};
 #[allow(missing_docs)]
 pub enum BlockchainTreeError {
     /// Thrown if the block number is lower than the last finalized block number.
+    /// 抛出，如果block number小于最新的finalized block number
     #[error("Block number is lower than the last finalized block number #{last_finalized}")]
     PendingBlockIsFinalized {
         /// The block number of the last finalized block.

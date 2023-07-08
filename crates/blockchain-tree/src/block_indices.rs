@@ -11,9 +11,11 @@ use std::collections::{btree_map, hash_map, BTreeMap, BTreeSet, HashMap, HashSet
 /// blocks以及chains的内部索引
 ///
 /// This is main connection between blocks, chains and canonical chain.
+/// 这是blocks，chains以及canonical chain之间的主要联系
 ///
 /// It contains a list of canonical block hashes, forks to child blocks, and a mapping of block hash
 /// to chain ID.
+/// 它包含一系列的canonical block hashes, forks to child blocks以及block hash到chain id的映射
 #[derive(Debug, Clone)]
 pub struct BlockIndices {
     /// Last finalized block.

@@ -64,6 +64,7 @@ use reth_interfaces::blockchain_tree::InsertPayloadOk;
 use reth_primitives::constants::EPOCH_SLOTS;
 
 /// The maximum number of invalid headers that can be tracked by the engine.
+/// 这个engine能够追踪的最大的invalid headers的数目
 const MAX_INVALID_HEADERS: u32 = 512u32;
 
 /// The largest gap for which the tree will be used for sync. See docs for `pipeline_run_threshold`
@@ -415,6 +416,7 @@ where
     }
 
     /// If validation fails, the response MUST contain the latest valid hash:
+    /// 如果validation失败，reponse必须包含最新的valid hash
     ///
     ///   - The block hash of the ancestor of the invalid payload satisfying the following two
     ///    conditions:
@@ -422,8 +424,11 @@ where
     ///     - Any other ancestor of the invalid payload with a higher blockNumber is INVALID
     ///   - 0x0000000000000000000000000000000000000000000000000000000000000000 if the above
     ///    conditions are satisfied by a PoW block.
+    ///   - 0x0000000000000000000000000000000000000000000000000000000000000000如果上述条件被一个PoW
+    ///     block满足
     ///   - null if client software cannot determine the ancestor of the invalid payload satisfying
     ///    the above conditions.
+    ///   - null如果client不能确定invalid payload ancestor能满足上述条件
     fn latest_valid_hash_for_invalid_payload(
         &self,
         parent_hash: H256,
@@ -438,6 +443,7 @@ where
         // not necessarily canonical
         if self.blockchain.header_by_hash(parent_hash).is_some() {
             // parent is in side-chain: validated but not canonical yet
+            // parent在side-chain: 已经被校验但是没有canonical
             Some(parent_hash)
         } else {
             let parent_hash = self.blockchain.find_canonical_ancestor(parent_hash)?;
@@ -450,6 +456,7 @@ where
             }
 
             // parent is canonical POS block
+            // parent是canoncial POS block
             Some(parent_hash)
         }
     }
@@ -1024,9 +1031,12 @@ where
 
     /// Maps the error, that occurred while inserting a payload into the tree to its corresponding
     /// result type.
+    /// 映射一个error，这会在插入一个payload到tree的时候发生
     ///
     /// If the error was due to an invalid payload, the payload is added to the invalid headers
     /// cache and `Ok` with [PayloadStatusEnum::Invalid] is returned.
+    /// 如果error是因为一个invalid payload，这个payload会被添加到invalid headers cache并且返回`Ok`
+    /// [PayloadStatusEnum::Invalid]
     ///
     /// This returns an error if the error was internal and assumed not be related to the payload.
     fn map_insert_error(
@@ -1044,9 +1054,11 @@ where
             InsertBlockErrorKind::Execution(_) |
             InsertBlockErrorKind::Tree(_) => {
                 // all of these occurred if the payload is invalid
+                // 这都在payload非法的时候发生
                 let parent_hash = block.parent_hash;
 
                 // keep track of the invalid header
+                // 追踪所有非法的header
                 self.invalid_headers.insert(block.header);
 
                 let latest_valid_hash =
@@ -1144,17 +1156,21 @@ where
                     }
                     InsertPayloadOk::Inserted(BlockStatus::Disconnected { missing_parent }) => {
                         // compare the missing parent with the canonical tip
+                        // 比较canonical tip和missing parent
                         let canonical_tip_num = self.blockchain.canonical_tip().number;
 
                         // if the number of missing blocks is greater than the max, run the
                         // pipeline
+                        // 如果missing blocks的数目大于max，运行pipeline
                         if missing_parent.number >= canonical_tip_num &&
+                            // 超过pipeline run threshold
                             missing_parent.number - canonical_tip_num >
                                 self.pipeline_run_threshold
                         {
                             if let Some(state) = self.forkchoice_state_tracker.sync_target_state() {
                                 // if we have already canonicalized the finalized block, we should
                                 // skip the pipeline run
+                                // 如果我们已经canonicalized finalized block，我们应该跳过pipeline
                                 if Ok(None) ==
                                     self.blockchain.header_by_hash_or_number(
                                         state.finalized_block_hash.into(),
@@ -1165,11 +1181,14 @@ where
                             }
                         } else {
                             // continue downloading the missing parent
+                            // 继续下载missing parent
                             //
                             // this happens if either:
                             //  * the missing parent block num < canonical tip num
+                            //  * missing parent block num小于canonical tip num
                             //    * this case represents a missing block on a fork that is shorter
                             //      than the canonical chain
+                            //    * 这种情况代表一个missing block在fork上小于canonical chain
                             //  * the missing parent block num >= canonical tip num, but the number
                             //    of missing blocks is less than the pipeline threshold
                             //    * this case represents a potentially long range of blocks to
@@ -1293,11 +1312,13 @@ where
                             trace!(target: "consensus::engine", hash=?bad_block.hash, "Bad block detected in unwind");
 
                             // update the `invalid_headers` cache with the new invalid headers
+                            // 用新的invalid headers填充`invalid_headers`
                             self.invalid_headers.insert(bad_block);
                             return None
                         }
 
                         // update the canon chain if continuous is enabled
+                        // 更新canon chain，如果使能了continuous
                         if self.sync.run_pipeline_continuously() {
                             let max_block = ctrl.progress().unwrap_or_default();
                             let max_header = match self.blockchain.sealed_header(max_block) {
@@ -1333,20 +1354,28 @@ where
 
                         // Next, we check if we need to schedule another pipeline run or transition
                         // to live sync via tree.
+                        // 接着我们检查是否我们需要调度另一个pipeline运行或者转到live sync，通过tree
                         // This can arise if we buffer the forkchoice head, and if the head is an
                         // ancestor of an invalid block.
+                        // 这可能发生，如果我们缓存forkchoice head，并且如果head是一个invalid
+                        // block的ancestor
                         //
                         //  * The forkchoice head could be buffered if it were first sent as a
                         //    `newPayload` request.
+                        //  * forkchoice head可以缓存，如果它被第一次发送作为一个`newPayload`请求
                         //
                         // In this case, we won't have the head hash in the database, so we would
                         // set the pipeline sync target to a known-invalid head.
+                        // 这种情况下，我们没有head hash在db中，因此我们可以设置pipeline
+                        // target到一个 known-invalid head
                         //
                         // This is why we check the invalid header cache here.
+                        // 这就是我马上我们检查invalid header cache
                         let lowest_buffered_ancestor =
                             self.lowest_buffered_ancestor_or(sync_target_state.head_block_hash);
 
                         // this inserts the head if the lowest buffered ancestor is invalid
+                        // 插入head，如果lowest buffered ancestor是非法的
                         if self
                             .check_invalid_ancestor_with_head(
                                 lowest_buffered_ancestor,
@@ -1355,16 +1384,20 @@ where
                             .is_none()
                         {
                             // Update the state and hashes of the blockchain tree if possible.
+                            // 更新blockhain tree的state以及hashes如果可能的话
                             match self.update_tree_on_finished_pipeline(
                                 sync_target_state.finalized_block_hash,
                             ) {
                                 Ok(synced) => {
                                     if synced {
                                         // we're consider this synced and transition to live sync
+                                        // 我们考虑这是synced并且转移到live sync
                                         self.sync_state_updater.update_sync_state(SyncState::Idle);
                                     } else {
                                         // We don't have the finalized block in the database, so
                                         // we need to run another pipeline.
+                                        // 我们在database中没有finalized
+                                        // block，因此我们需要运行另一个pipeline
                                         self.sync.set_pipeline_sync_target(
                                             sync_target_state.finalized_block_hash,
                                         );
@@ -1471,6 +1504,7 @@ where
 /// 追踪非法的headers
 struct InvalidHeaderCache {
     /// This maps a header hash to a reference to its invalid ancestor.
+    /// 映射一个header hash到它的一个非法的ancestor的引用
     headers: LruMap<H256, Arc<Header>>,
 }
 
@@ -1480,11 +1514,13 @@ impl InvalidHeaderCache {
     }
 
     /// Returns the invalid ancestor's header if it exists in the cache.
+    /// 返回invalid ancestor的header，如果它存在于cache中
     fn get(&mut self, hash: &H256) -> Option<&mut Arc<Header>> {
         self.headers.get(hash)
     }
 
     /// Inserts an invalid block into the cache, with a given invalid ancestor.
+    /// 插入一个invalid block到cache，给定一个invalid ancestor
     fn insert_with_invalid_ancestor(&mut self, header_hash: H256, invalid_ancestor: Arc<Header>) {
         warn!(target: "consensus::engine", "Bad block with header hash: {:?}, invalid ancestor: {:?}",
         header_hash, invalid_ancestor);
@@ -1492,11 +1528,13 @@ impl InvalidHeaderCache {
     }
 
     /// Inserts an invalid ancestor into the map.
+    /// 插入一个invalid ancestor到map中
     fn insert(&mut self, invalid_ancestor: SealedHeader) {
         let hash = invalid_ancestor.hash;
         let header = invalid_ancestor.unseal();
         warn!(target: "consensus::engine", "Bad block with header hash: {:?}, invalid ancestor: {:?}",
         hash, header);
+        // 将自己插入
         self.headers.insert(hash, Arc::new(header));
     }
 }

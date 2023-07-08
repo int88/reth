@@ -17,10 +17,13 @@ pub trait Consensus: Debug + Send + Sync {
     fn validate_header(&self, header: &SealedHeader) -> Result<(), ConsensusError>;
 
     /// Validate that the header information regarding parent are correct.
+    /// 校验header信息，将parent作为正确的
     /// This checks the block number, timestamp, basefee and gas limit increment.
+    /// 检查block number，时间戳，basefee以及gas limit的增加
     ///
     /// This is called before properties that are not in the header itself (like total difficulty)
     /// have been computed.
+    /// 这在properties没有在header自己被计算之前调用
     ///
     /// **This should not be called for the genesis block**.
     ///

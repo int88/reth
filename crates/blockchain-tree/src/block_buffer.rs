@@ -17,23 +17,28 @@ pub type BufferedBlocks = BTreeMap<BlockNumber, HashMap<BlockHash, SealedBlockWi
 ///   inserted.
 /// * [BlockBuffer::remove_with_children]用于连接blocks，如果收到parent并且插入
 /// * [BlockBuffer::clean_old_blocks] to clear old blocks that are below finalized line.
+/// * [BlockBuffer::clean_old_blocks]清理old blocks，如果低于finalized line
 ///
 /// Note: Buffer is limited by number of blocks that it can contain and eviction of the block
 /// is done by last recently used block.
+/// 注意：Buffer被它包含的blocks数目限制并且被驱逐，通过last recently used block
 #[derive(Debug)]
 pub struct BlockBuffer {
     /// Blocks ordered by block number inside the BTreeMap.
+    /// Blocks按照block number存储在BTreeMap中
     ///
     /// Note: BTreeMap is used so that we can remove the finalized old blocks
     /// from the buffer
     pub(crate) blocks: BufferedBlocks,
     /// Needed for removal of the blocks. and to connect the potential unconnected block
     /// to the connected one.
+    /// 在移除blocks的时候使用，并且用于连接潜在的unconnected block到connected one
     pub(crate) parent_to_child: HashMap<BlockHash, HashSet<BlockNumHash>>,
     /// Helper map for fetching the block num from the block hash.
     pub(crate) hash_to_num: HashMap<BlockHash, BlockNumber>,
     /// LRU used for tracing oldest inserted blocks that are going to be
     /// first in line for evicting if `max_blocks` limit is hit.
+    /// LRU用于追踪最老的插入的blocks，如果超过了`max_blocks`用于移除
     ///
     /// Used as counter of amount of blocks inside buffer.
     pub(crate) lru: LruCache<BlockNumHash, ()>,
@@ -126,6 +131,7 @@ impl BlockBuffer {
     }
 
     /// Return a reference to the lowest ancestor of the given block in the buffer.
+    /// 返回给定block在buffer中的lowest ancestor
     pub fn lowest_ancestor(&self, hash: &BlockHash) -> Option<&SealedBlockWithSenders> {
         let mut current_block = self.block_by_hash(hash)?;
         while let Some(block) = self
