@@ -39,6 +39,7 @@ impl IntegerList {
 
     // Creates an IntegerList from a pre-sorted list of integers. `usize` is safe to use since
     /// [`sucds::EliasFano`] restricts its compilation to 64bits.
+    /// 创建一个IntegerList，从一个提前排好序的integers list
     ///
     /// # Panics
     ///

@@ -46,6 +46,7 @@ impl<DB: Database> Stage<DB> for IndexStorageHistoryStage {
 
         let (range, is_final_range) = input.next_block_range_with_threshold(self.commit_threshold);
 
+        // 获取storage发生变更的一系列indices
         let indices = provider.changed_storages_and_blocks_with_range(range.clone())?;
         provider.insert_storage_history_index(indices)?;
 
@@ -53,6 +54,7 @@ impl<DB: Database> Stage<DB> for IndexStorageHistoryStage {
     }
 
     /// Unwind the stage.
+    /// 对stage进行unwind
     async fn unwind(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,

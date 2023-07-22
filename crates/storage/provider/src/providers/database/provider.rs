@@ -635,12 +635,16 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
     }
 
     /// Insert history index to the database.
+    /// 插入history index到db中
     ///
     /// For each updated partial key, this function removes the last shard from
     /// the database (if any), appends the new indices to it, chunks the resulting integer list and
     /// inserts the new shards back into the database.
+    /// 对于每个更新的partial key，这个函数从db中移除最后一个shard（如果都有的话），扩展新的indices
+    /// 对resulting integer list进行chunks并且插入新的shards到db中
     ///
     /// This function is used by history indexing stages.
+    /// 这个函数被history indexing stages使用
     fn append_history_index<P, T>(
         &self,
         index_updates: BTreeMap<P, Vec<u64>>,
@@ -650,9 +654,11 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
         P: Copy,
         T: Table<Value = BlockNumberList>,
     {
+        // 遍历index updates
         for (partial_key, indices) in index_updates {
             let last_shard = self.take_shard::<T>(sharded_key_factory(partial_key, u64::MAX))?;
             // chunk indices and insert them in shards of N size.
+            // chunk indeices并且插入它们到大小为N的shards
             let indices = last_shard.iter().chain(indices.iter());
             let chunks = indices
                 .chunks(sharded_key::NUM_OF_INDICES_IN_SHARD)
@@ -669,7 +675,9 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
                     u64::MAX
                 };
                 self.tx.put::<T>(
+                    // 获取sharded key factory
                     sharded_key_factory(partial_key, highest_block_number),
+                    // 插入list
                     BlockNumberList::new_pre_sorted(list),
                 )?;
             }
@@ -1302,6 +1310,7 @@ impl<'this, TX: DbTx<'this>> StorageReader for DatabaseProvider<'this, TX> {
         &self,
         range: RangeInclusive<BlockNumber>,
     ) -> Result<BTreeMap<(Address, H256), Vec<u64>>> {
+        // 获取storage changset
         let mut changeset_cursor = self.tx.cursor_read::<tables::StorageChangeSet>()?;
 
         let storage_changeset_lists =
@@ -1309,9 +1318,12 @@ impl<'this, TX: DbTx<'this>> StorageReader for DatabaseProvider<'this, TX> {
                 BTreeMap::new(),
                 |mut storages: BTreeMap<(Address, H256), Vec<u64>>, entry| -> Result<_> {
                     let (index, storage) = entry?;
+                    // 插入btree map
                     storages
+                        // index的地址和storage的key联合构成key
                         .entry((index.address(), storage.key))
                         .or_default()
+                        // 发生变更的index
                         .push(index.block_number());
                     Ok(storages)
                 },
@@ -1525,6 +1537,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> HistoryWriter for DatabaseProvider
         &self,
         storage_transitions: BTreeMap<(Address, H256), Vec<u64>>,
     ) -> Result<()> {
+        // 扩展storage history index
         self.append_history_index::<_, tables::StorageHistory>(
             storage_transitions,
             |(address, storage_key), highest_block_number| {
@@ -1551,12 +1564,15 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> HistoryWriter for DatabaseProvider
         let last_indices = storage_changesets
             .into_iter()
             // reverse so we can get lowest block number where we need to unwind account.
+            // 反向，这样我们可以获取lowest block number，在其中我们需要unwind account
             .rev()
             // fold all storages and get last block number
+            // 对所有storage进行fold并且获取last block number
             .fold(
                 BTreeMap::new(),
                 |mut accounts: BTreeMap<(Address, H256), u64>, (index, storage)| {
                     // we just need address and lowest block number.
+                    // 我们需要地址以及lowest block number
                     accounts.insert((index.address(), storage.key), index.block_number());
                     accounts
                 },
@@ -1564,6 +1580,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> HistoryWriter for DatabaseProvider
 
         let mut cursor = self.tx.cursor_write::<tables::StorageHistory>()?;
         for ((address, storage_key), rem_index) in last_indices {
+            // 对history shards进行unwind
             let partial_shard = unwind_history_shards::<_, tables::StorageHistory, _>(
                 &mut cursor,
                 StorageShardedKey::last(address, storage_key),
@@ -1575,7 +1592,9 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> HistoryWriter for DatabaseProvider
             )?;
 
             // Check the last returned partial shard.
+            // 检查最后返回的partial shard
             // If it's not empty, the shard needs to be reinserted.
+            // 如果它不是空，shard需要被重新插入
             if !partial_shard.is_empty() {
                 cursor.insert(
                     StorageShardedKey::last(address, storage_key),

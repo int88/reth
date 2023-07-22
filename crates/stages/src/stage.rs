@@ -55,7 +55,9 @@ impl ExecInput {
     }
 
     /// Return the next block range to execute.
+    /// 返回下一个要执行的block range
     /// Return pair of the block range and if this is final block range.
+    /// 返回block range pair以及它们是否是final block range
     pub fn next_block_range_with_threshold(
         &self,
         threshold: u64,
@@ -138,6 +140,7 @@ impl UnwindInput {
     }
 
     /// Return the next block range to unwind and the block we're unwinding to.
+    /// 返回我们要unwind的下一个block range以及我们正在unwinding的block
     pub fn unwind_block_range_with_threshold(
         &self,
         threshold: u64,
