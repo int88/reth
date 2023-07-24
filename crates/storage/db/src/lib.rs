@@ -93,6 +93,7 @@ use mdbx::{Env, EnvKind, NoWriteMap, WriteMap};
 
 #[cfg(feature = "mdbx")]
 /// Alias type for the database environment in use. Read/Write mode.
+/// 对于database环境的alias type，读写模式
 pub type DatabaseEnv = Env<WriteMap>;
 
 #[cfg(feature = "mdbx")]

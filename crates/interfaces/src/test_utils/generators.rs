@@ -196,9 +196,12 @@ type AccountState = (Account, Vec<StorageEntry>);
 
 /// Generate a range of transitions for given blocks and accounts.
 /// Assumes all accounts start with an empty storage.
+/// 生成一系列的transitions，对于给定的blocks以及accounts，假设所有的accounts从empty storage开始
 ///
 /// Returns a Vec of account and storage changes for each transition,
+/// 返回一系列的account以及storage changes，对于每个transition
 /// along with the final state of all accounts and storages.
+/// 以及所有的accounts和storages的final state
 pub fn random_transition_range<'a, R: Rng, IBlk, IAcc>(
     rng: &mut R,
     blocks: IBlk,
@@ -221,10 +224,12 @@ where
 
     blocks.into_iter().for_each(|block| {
         let mut transition = Vec::new();
+        // 随机的storage account
         let (from, to, mut transfer, new_entries) =
             random_account_change(rng, &valid_addresses, n_changes.clone(), key_range.clone());
 
         // extract from sending account
+        // 从sending account抽取
         let (prev_from, _) = state.get_mut(&from).unwrap();
         transition.push((from, *prev_from, Vec::new()));
 
@@ -232,18 +237,22 @@ where
         prev_from.balance = prev_from.balance.wrapping_sub(transfer);
 
         // deposit in receiving account and update storage
+        // 存入接收账户并且更新storage
         let (prev_to, storage): &mut (Account, BTreeMap<H256, U256>) = state.get_mut(&to).unwrap();
 
         let old_entries = new_entries
             .into_iter()
             .filter_map(|entry| {
                 let old = if entry.value != U256::ZERO {
+                    // 插入storage
                     storage.insert(entry.key, entry.value)
                 } else {
+                    // 将old storage移除
                     let old = storage.remove(&entry.key);
                     if matches!(old, Some(U256::ZERO)) {
                         return None
                     }
+                    // 返回old storage
                     old
                 };
                 Some(StorageEntry { value: old.unwrap_or(U256::from(0)), ..entry })
@@ -257,6 +266,7 @@ where
         transitions.push(transition);
     });
 
+    // 构建final storage
     let final_state = state
         .into_iter()
         .map(|(addr, (acc, storage))| {
@@ -267,8 +277,10 @@ where
 }
 
 /// Generate a random account change.
+/// 生成一个随机的account change
 ///
 /// Returns two addresses, a balance_change, and a Vec of new storage entries.
+/// 返回两个地址，一个balance change以及一个Vec of new storage entries
 pub fn random_account_change<R: Rng>(
     rng: &mut R,
     valid_addresses: &Vec<Address>,
@@ -290,6 +302,7 @@ pub fn random_account_change<R: Rng>(
 }
 
 /// Generate a random storage change.
+/// 生成一个随机的storage change
 pub fn random_storage_entry<R: Rng>(rng: &mut R, key_range: std::ops::Range<u64>) -> StorageEntry {
     let key = H256::from_low_u64_be(key_range.sample_single(rng));
     let value = U256::from(rng.gen::<u64>());

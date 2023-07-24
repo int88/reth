@@ -24,6 +24,7 @@ use std::{
 
 /// The [TestTransaction] is used as an internal
 /// database for testing stage implementation.
+/// [TestTransaction]用于作为一个internal database，对于测试的stage的实现
 ///
 /// ```rust,ignore
 /// let tx = TestTransaction::default();
@@ -312,6 +313,7 @@ impl TestTransaction {
 
     /// Insert collection of Vec<([Address], [Account], Vec<[StorageEntry]>)> into
     /// corresponding tables.
+    /// 插入一系列的Vec<([Address], [Account], Vec<[StorageEntry]>)>到对应的tables
     pub fn insert_transitions<I>(
         &self,
         transitions: I,
@@ -326,6 +328,7 @@ impl TestTransaction {
                 changes.into_iter().try_for_each(|(address, old_account, old_storage)| {
                     let tid = offset + transition_id as u64;
                     // Insert into account changeset.
+                    // 插入account changeset
                     tx.put::<tables::AccountChangeSet>(
                         tid,
                         AccountBeforeTx { address, info: Some(old_account) },
@@ -334,6 +337,7 @@ impl TestTransaction {
                     let tid_address = (tid, address).into();
 
                     // Insert into storage changeset.
+                    // 插入storage changeset
                     old_storage.into_iter().try_for_each(|entry| {
                         tx.put::<tables::StorageChangeSet>(tid_address, entry)
                     })

@@ -128,6 +128,7 @@ mod tests {
         // setup
         tx.commit(|tx| {
             // we just need first and last
+            // 我们只需要第一个和最后一个
             tx.put::<tables::BlockBodyIndices>(
                 0,
                 StoredBlockBodyIndices { tx_count: 3, ..Default::default() },
@@ -141,6 +142,7 @@ mod tests {
             .unwrap();
 
             // setup changeset that are going to be applied to history index
+            // 设置changset，准备被应用到history index
             tx.put::<tables::StorageChangeSet>(trns(4), storage(STORAGE_KEY)).unwrap();
             tx.put::<tables::StorageChangeSet>(trns(5), storage(STORAGE_KEY)).unwrap();
             Ok(())
@@ -191,6 +193,7 @@ mod tests {
         unwind(&tx, 5, 0).await;
 
         // verify initial state
+        // 校验初始状态
         let table = tx.table::<tables::StorageHistory>().unwrap();
         assert!(table.is_empty());
     }
@@ -216,6 +219,7 @@ mod tests {
         assert_eq!(table, BTreeMap::from([(shard(u64::MAX), vec![1, 2, 3, 4, 5]),]));
 
         // unwind
+        // 进行unwind
         unwind(&tx, 5, 0).await;
 
         // verify initial state

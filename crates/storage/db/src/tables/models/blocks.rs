@@ -8,9 +8,11 @@ use std::ops::Range;
 pub type NumTransactions = u64;
 
 /// The storage of the block body indices
+/// block body indices的存储
 ///
 /// It has the pointer to the transaction Number of the first
 /// transaction in the block and the total number of transactions
+/// 它有指针指向block中的第一个transaction的transaction Number以及transactions的总数
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 #[main_codec]
 pub struct StoredBlockBodyIndices {

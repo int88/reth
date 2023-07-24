@@ -338,6 +338,7 @@ table!(
 
 table!(
     /// Stores pointers to block number changeset with changes for each storage key.
+    /// 存储指向block number changeset的pointers，对于每个storage key的变更
     ///
     /// Last shard key of the storage will contain `u64::MAX` `BlockNumber`,
     /// this would allows us small optimization on db access when change is in plain state.

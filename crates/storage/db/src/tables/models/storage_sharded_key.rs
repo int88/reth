@@ -15,6 +15,7 @@ pub const NUM_OF_INDICES_IN_SHARD: usize = 2_000;
 
 /// Sometimes data can be too big to be saved for a single key. This helps out by dividing the data
 /// into different shards. Example:
+/// 有的时候对于单个的key，有的数据可能太大了，将数据划分为不同的shards是有帮助的
 ///
 /// `Address | Storagekey | 200` -> data is from transition 0 to 200.
 ///
@@ -22,8 +23,10 @@ pub const NUM_OF_INDICES_IN_SHARD: usize = 2_000;
 #[derive(Debug, Default, Clone, Eq, Ord, PartialOrd, PartialEq, AsRef, Serialize, Deserialize)]
 pub struct StorageShardedKey {
     /// Storage account address.
+    /// Storage的account地址
     pub address: H160,
     /// Storage slot with highest transition id.
+    /// 有着最高的transaction id的storage slot
     #[as_ref]
     pub sharded_key: ShardedKey<H256>,
 }
