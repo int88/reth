@@ -126,10 +126,13 @@ impl ExecInput {
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct UnwindInput {
     /// The current highest checkpoint of the stage.
+    /// 这个stage当前最高的checkpoint
     pub checkpoint: StageCheckpoint,
     /// The block to unwind to.
+    /// 要unwind到的block
     pub unwind_to: BlockNumber,
     /// The bad block that caused the unwind, if any.
+    /// 导致unwind的bad block，如果有的话
     pub bad_block: Option<BlockNumber>,
 }
 

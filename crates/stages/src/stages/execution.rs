@@ -25,6 +25,7 @@ use tracing::*;
 
 /// The execution stage executes all transactions and
 /// update history indexes.
+/// execution stage执行所有的transactions并且更新history indexes
 ///
 /// Input tables:
 /// - [tables::CanonicalHeaders] get next block to execute.
@@ -34,6 +35,7 @@ use tracing::*;
 /// - [tables::Transactions] to execute
 ///
 /// For state access [LatestStateProviderRef] provides us latest state and history state
+/// 对于state访问，[LatestStateProviderRef]给我们提供了最新的state以及history state
 /// For latest most recent state [LatestStateProviderRef] would need (Used for execution Stage):
 /// - [tables::PlainAccountState]
 /// - [tables::Bytecodes]
@@ -56,10 +58,13 @@ use tracing::*;
 pub struct ExecutionStage<EF: ExecutorFactory> {
     metrics_tx: Option<MetricEventsSender>,
     /// The stage's internal executor
+    /// stage内部的executor
     executor_factory: EF,
     /// The commit thresholds of the execution stage.
+    /// execution stage的commit thresholds
     thresholds: ExecutionStageThresholds,
     /// Pruning configuration.
+    /// Pruning的配置
     prune_targets: PruneTargets,
 }
 
@@ -74,6 +79,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
     }
 
     /// Create an execution stage with the provided  executor factory.
+    /// 创建一个execution stage，用提供的executor factory
     ///
     /// The commit threshold will be set to 10_000.
     pub fn new_with_factory(executor_factory: EF) -> Self {
@@ -81,12 +87,14 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
     }
 
     /// Set the metric events sender.
+    /// 设置metric events sender
     pub fn with_metrics_tx(mut self, metrics_tx: MetricEventsSender) -> Self {
         self.metrics_tx = Some(metrics_tx);
         self
     }
 
     /// Execute the stage.
+    /// 执行stage
     pub fn execute_inner<DB: Database>(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -100,15 +108,18 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         let max_block = input.target();
 
         // Build executor
+        // 构建executor
         let mut executor =
             self.executor_factory.with_sp(LatestStateProviderRef::new(provider.tx_ref()));
 
         // Progress tracking
+        // 对progress进行tracking
         let mut stage_progress = start_block;
         let mut stage_checkpoint =
             execution_checkpoint(provider, start_block, max_block, input.checkpoint())?;
 
         // Execute block range
+        // 执行block range
         let mut state = PostState::default();
         state.add_prune_targets(self.prune_targets);
 
@@ -121,9 +132,11 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
                 .ok_or_else(|| ProviderError::BlockNotFound(block_number.into()))?;
 
             // Configure the executor to use the current state.
+            // 配置executor使用当前的state
             trace!(target: "sync::stages::execution", number = block_number, txs = block.body.len(), "Executing block");
 
             // Execute the block
+            // 执行block
             let (block, senders) = block.into_components();
             let block_state = executor
                 .execute_and_verify_receipt(&block, td, Some(senders))
@@ -133,17 +146,20 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
                 })?;
 
             // Gas metrics
+            // Gas metrics
             if let Some(metrics_tx) = &mut self.metrics_tx {
                 let _ =
                     metrics_tx.send(MetricEvent::ExecutionStageGas { gas: block.header.gas_used });
             }
 
             // Merge state changes
+            // 合并state changes
             state.extend(block_state);
             stage_progress = block_number;
             stage_checkpoint.progress.processed += block.gas_used;
 
             // Check if we should commit now
+            // 检查我们现在是否需要commit
             if self.thresholds.is_end_of_batch(block_number - start_block, state.size_hint() as u64)
             {
                 break
@@ -151,6 +167,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         }
 
         // Write remaining changes
+        // 写入剩余的changes
         trace!(target: "sync::stages::execution", accounts = state.accounts().len(), "Writing updated state to database");
         let start = Instant::now();
         state.write_to_db(provider.tx_ref(), max_block)?;
@@ -217,6 +234,7 @@ fn execution_checkpoint<DB: Database>(
         }
         // Otherwise, we recalculate the whole stage checkpoint including the amount of gas
         // already processed, if there's any.
+        // 否则，我们重新计算整个stage checkpoint，包括已经被处理的gas，如果有的话
         _ => {
             let processed = calculate_gas_used_from_headers(provider, 0..=start_block - 1)?;
 
@@ -265,6 +283,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
     }
 
     /// Execute the stage
+    /// 执行stage
     async fn execute(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -272,8 +291,10 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
     ) -> Result<ExecOutput, StageError> {
         // For Ethereum transactions that reaches the max call depth (1024) revm can use more stack
         // space than what is allocated by default.
+        // 对于Ethereum transactions超过了max call depth，revm可以使用比默认分配更多的stack space
         //
         // To make sure we do not panic in this case, spawn a thread with a big stack allocated.
+        // 为了确保不panic，生成一个thread，有着大的stack
         //
         // A fix in revm is pending to give more insight into the stack size, which we can use later
         // to optimize revm or move data to the heap.
@@ -284,6 +305,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
                 .stack_size(BIG_STACK_SIZE)
                 .spawn_scoped(scope, || {
                     // execute and store output to results
+                    // 执行并且存储output到results
                     self.execute_inner(provider, input)
                 })
                 .expect("Expects that thread name is not null");
@@ -299,10 +321,12 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
     ) -> Result<UnwindOutput, StageError> {
         let tx = provider.tx_ref();
         // Acquire changeset cursors
+        // 获取changset cursors
         let mut account_changeset = tx.cursor_dup_write::<tables::AccountChangeSet>()?;
         let mut storage_changeset = tx.cursor_dup_write::<tables::StorageChangeSet>()?;
 
         let (range, unwind_to, _) =
+            // 对block range进行unwind
             input.unwind_block_range_with_threshold(self.thresholds.max_blocks.unwrap_or(u64::MAX));
 
         if range.is_empty() {
@@ -312,11 +336,13 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // get all batches for account change
+        // 对于account change获取所有的batches
         // Check if walk and walk_dup would do the same thing
         let account_changeset_batch =
             account_changeset.walk_range(range.clone())?.collect::<Result<Vec<_>, _>>()?;
 
         // revert all changes to PlainState
+        // 回退PlainState中所有的changes
         for (_, changeset) in account_changeset_batch.into_iter().rev() {
             if let Some(account_info) = changeset.info {
                 tx.put::<tables::PlainAccountState>(changeset.address, account_info)?;
@@ -326,11 +352,13 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // get all batches for storage change
+        // 获取storage change的所有的batches
         let storage_changeset_batch = storage_changeset
             .walk_range(BlockNumberAddress::range(range.clone()))?
             .collect::<Result<Vec<_>, _>>()?;
 
         // revert all changes to PlainStorage
+        // 回退PlainStorage中所有的changes
         let mut plain_storage_cursor = tx.cursor_dup_write::<tables::PlainStorageState>()?;
 
         for (key, storage) in storage_changeset_batch.into_iter().rev() {
@@ -366,6 +394,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         let mut stage_checkpoint = input.checkpoint.execution_stage_checkpoint();
 
         // Unwind all receipts for transactions in the block range
+        // Unwind block range中的transactions的所有的receipts
         let mut cursor = tx.cursor_write::<tables::Receipts>()?;
         let mut reverse_walker = cursor.walk_back(None)?;
 
@@ -391,9 +420,12 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
 }
 
 /// The thresholds at which the execution stage writes state changes to the database.
+/// execution stage写state changes到db的thresholds
 ///
 /// If either of the thresholds (`max_blocks` and `max_changes`) are hit, then the execution stage
 /// commits all pending changes to the database.
+/// 如果thresholds(`max_blocks`以及`max_changes`)到达，那么execution stage提交所有的pending
+/// changes到db
 #[derive(Debug)]
 pub struct ExecutionStageThresholds {
     /// The maximum number of blocks to process before the execution stage commits.
@@ -514,6 +546,7 @@ mod tests {
         let genesis = SealedBlock::decode(&mut genesis_rlp).unwrap();
         let mut block_rlp = hex!("f90262f901f9a075c371ba45999d87f4542326910a11af515897aebce5265d3f6acd1f1161f82fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa098f2dcd87c8ae4083e7017a05456c14eea4b1db2032126e27b3b1563d57d7cc0a08151d548273f6683169524b66ca9fe338b9ce42bc3540046c828fd939ae23bcba03f4e5c2ec5b2170b711d97ee755c160457bb58d8daa338e835ec02ae6860bbabb901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000018502540be40082a8798203e800a00000000000000000000000000000000000000000000000000000000000000000880000000000000000f863f861800a8405f5e10094100000000000000000000000000000000000000080801ba07e09e26678ed4fac08a249ebe8ed680bf9051a5e14ad223e4b2b9d26e0208f37a05f6e3f188e3e6eab7d7d3b6568f5eac7d687b08d307d3154ccd8c87b4630509bc0").as_slice();
         let block = SealedBlock::decode(&mut block_rlp).unwrap();
+        // 插入block
         provider.insert_block(genesis, None).unwrap();
         provider.insert_block(block.clone(), None).unwrap();
         provider.commit().unwrap();
@@ -578,17 +611,20 @@ mod tests {
         let input = ExecInput {
             target: Some(1),
             /// The progress of this stage the last time it was executed.
+            /// 上次被执行时这个stage的进度
             checkpoint: None,
         };
         let mut genesis_rlp = hex!("f901faf901f5a00000000000000000000000000000000000000000000000000000000000000000a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa045571b40ae66ca7480791bbb2887286e4e4c4b1b298b191c889d6959023a32eda056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000808502540be400808000a00000000000000000000000000000000000000000000000000000000000000000880000000000000000c0c0").as_slice();
         let genesis = SealedBlock::decode(&mut genesis_rlp).unwrap();
         let mut block_rlp = hex!("f90262f901f9a075c371ba45999d87f4542326910a11af515897aebce5265d3f6acd1f1161f82fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa098f2dcd87c8ae4083e7017a05456c14eea4b1db2032126e27b3b1563d57d7cc0a08151d548273f6683169524b66ca9fe338b9ce42bc3540046c828fd939ae23bcba03f4e5c2ec5b2170b711d97ee755c160457bb58d8daa338e835ec02ae6860bbabb901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000018502540be40082a8798203e800a00000000000000000000000000000000000000000000000000000000000000000880000000000000000f863f861800a8405f5e10094100000000000000000000000000000000000000080801ba07e09e26678ed4fac08a249ebe8ed680bf9051a5e14ad223e4b2b9d26e0208f37a05f6e3f188e3e6eab7d7d3b6568f5eac7d687b08d307d3154ccd8c87b4630509bc0").as_slice();
         let block = SealedBlock::decode(&mut block_rlp).unwrap();
+        // 插入blocks
         provider.insert_block(genesis, None).unwrap();
         provider.insert_block(block.clone(), None).unwrap();
         provider.commit().unwrap();
 
         // insert pre state
+        // 插入pre state
         let provider = factory.provider_rw().unwrap();
 
         let db_tx = provider.tx_ref();
@@ -597,6 +633,7 @@ mod tests {
         let code = hex!("5a465a905090036002900360015500");
         let balance = U256::from(0x3635c9adc5dea00000u128);
         let code_hash = keccak256(code);
+        // 插入plain account state
         db_tx
             .put::<tables::PlainAccountState>(
                 acc1,
@@ -609,11 +646,14 @@ mod tests {
                 Account { nonce: 0, balance, bytecode_hash: None },
             )
             .unwrap();
+        // 写入byte code
         db_tx.put::<tables::Bytecodes>(code_hash, Bytecode::new_raw(code.to_vec().into())).unwrap();
         provider.commit().unwrap();
 
         let provider = factory.provider_rw().unwrap();
+        // 构建stage
         let mut execution_stage = stage();
+        // 执行stage
         let output = execution_stage.execute(&provider, input).await.unwrap();
         provider.commit().unwrap();
         assert_matches!(output, ExecOutput {
@@ -636,6 +676,7 @@ mod tests {
         let provider = factory.provider().unwrap();
 
         // check post state
+        // 检查post state
         let account1 = H160(hex!("1000000000000000000000000000000000000000"));
         let account1_info =
             Account { balance: U256::ZERO, nonce: 0x00, bytecode_hash: Some(code_hash) };
@@ -653,6 +694,7 @@ mod tests {
         };
 
         // assert accounts
+        // 校验accounts
         assert_eq!(
             provider.basic_account(account1),
             Ok(Some(account1_info)),
@@ -669,6 +711,7 @@ mod tests {
             "Post changed of a account"
         );
         // assert storage
+        // 对storage进行assert
         // Get on dupsort would return only first value. This is good enough for this test.
         assert_eq!(
             provider.tx_ref().get::<tables::PlainStorageState>(account1),
@@ -724,6 +767,7 @@ mod tests {
 
         let provider = factory.provider_rw().unwrap();
         let mut stage = stage();
+        // 进行unwind
         let result = stage
             .unwind(
                 &provider,

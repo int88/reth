@@ -176,6 +176,7 @@ pub mod test_utils {
     pub const ERROR_TEMPDIR: &str = "Not able to create a temporary directory.";
 
     /// Create read/write database for testing
+    /// 创建读写的db用于测试
     pub fn create_test_rw_db() -> Arc<DatabaseEnv> {
         Arc::new(
             init_db(tempfile::TempDir::new().expect(ERROR_TEMPDIR).into_path(), None)

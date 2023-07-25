@@ -127,12 +127,15 @@ pub struct StorageHashingCheckpoint {
 }
 
 /// Saves the progress of Execution stage.
+/// 保存Execution stage的进展
 #[main_codec]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ExecutionCheckpoint {
     /// Block range which this checkpoint is valid for.
+    /// 这个checkpoint是合法的block range
     pub block_range: CheckpointBlockRange,
     /// Progress measured in gas.
+    /// 以gas统计的进度
     pub progress: EntitiesCheckpoint,
 }
 
@@ -157,12 +160,15 @@ pub struct IndexHistoryCheckpoint {
 }
 
 /// Saves the progress of abstract stage iterating over or downloading entities.
+/// 保存抽象stage，在迭代或者下载entities的进展
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct EntitiesCheckpoint {
     /// Number of entities already processed.
+    /// 已经处理的entities
     pub processed: u64,
     /// Total entities to be processed.
+    /// 所有等待被处理的entities
     pub total: u64,
 }
 
@@ -196,12 +202,15 @@ impl From<&RangeInclusive<BlockNumber>> for CheckpointBlockRange {
 }
 
 /// Saves the progress of a stage.
+/// 保存一个stage的进展
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct StageCheckpoint {
     /// The maximum block processed by the stage.
+    /// 这个stage处理的最大的block
     pub block_number: BlockNumber,
     /// Stage-specific checkpoint. None if stage uses only block-based checkpoints.
+    /// Stage特定的checkpoint，None如果stage使用block-based checkpoints
     pub stage_checkpoint: Option<StageUnitCheckpoint>,
 }
 

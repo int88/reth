@@ -5,13 +5,17 @@ use reth_interfaces::executor::BlockExecutionError;
 use reth_primitives::{Address, Block, ChainSpec, U256};
 
 /// Executor factory that would create the EVM with particular state provider.
+/// 能够用特定的state provider创建EVM的Executor factory
 ///
 /// It can be used to mock executor.
+/// 它可以用于mock executor
 pub trait ExecutorFactory: Send + Sync + 'static {
     /// The executor produced by the factory
+    /// factory生成的execturo
     type Executor<T: StateProvider>: BlockExecutor<T>;
 
     /// Executor with [`StateProvider`]
+    /// 有着[`StateProvider`]的Executor
     fn with_sp<SP: StateProvider>(&self, sp: SP) -> Self::Executor<SP>;
 
     /// Return internal chainspec
