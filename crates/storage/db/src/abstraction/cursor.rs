@@ -45,6 +45,7 @@ pub trait DbCursorRO<'tx, T: Table> {
         Self: Sized;
 
     /// Get an iterator that walks over a range of keys in the table.
+    /// 获取一个iterator，遍历table中的一系列keys
     fn walk_range<'cursor>(
         &'cursor mut self,
         range: impl RangeBounds<T::Key>,

@@ -25,10 +25,14 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 // todo: rewrite all the docs for this
 /// The state of accounts after execution of one or more transactions, including receipts and new
 /// bytecode.
+/// 在执行一个或者多个transactions之后的state of accounts，包括receipts和新的bytecode
 ///
 /// The latest state can be found in `accounts`, `storage`, and `bytecode`. The receipts for the
 /// transactions that lead to these changes can be found in `receipts`, and each change leading to
 /// this state can be found in `changes`.
+/// 最新的state可以在`accounts`，`storages`和`bytecode`找到，
+/// 导致这些变更的transactions的receipts可以在
+/// `receipts`中找到，每个变更导致这个state可以在`changes`中找到
 ///
 /// # Wiped Storage
 ///
@@ -37,6 +41,8 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 ///
 /// If `wiped` is true, then the account was selfdestructed at some point, and the values contained
 /// in `storage` should be the only values written to the database.
+/// 如果`wiped`为true，那么account在某个节点会被selfdestructed，
+/// 并且在`storage`中的value应该是在数据库中 被写入的唯一值
 ///
 /// # Transitions
 ///
@@ -49,36 +55,48 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 ///
 /// For multi-block [PostState]s it is not possible to figure out what transition ID maps on to a
 /// transaction or a block.
+/// 对于多个block的[PostState]，不可能搞清楚哪个transaction ID映射到一个transaction或者一个block
 ///
 /// # Shaving Allocations
 ///
 /// Since most [PostState]s in reth are for multiple blocks it is better to pre-allocate capacity
 /// for receipts and changes, which [PostState::new] does, and thus it (or
 /// [PostState::with_tx_capacity]) should be preferred to using the [Default] implementation.
+/// 因为大多数[PostState]在reth是为了多个blocks，最好能pre-allocate capacitiy对于receipts和changes
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
 pub struct PostState {
     /// The state of all modified accounts after execution.
+    /// 在执行之后所有修改过的accounts
     ///
     /// If the value contained is `None`, then the account should be deleted.
+    /// 如果value包含的值为`None`，则account应该被删除
     accounts: BTreeMap<Address, Option<Account>>,
     /// The state of all modified storage after execution
+    /// 在执行之后的所有modified storage
     ///
     /// If the contained [Storage] is marked as wiped, then all storage values should be cleared
     /// from the database.
+    /// 如果包含的[Storage]被标记为wiped，那么所有的storage values应该从数据库中清除
     storage: BTreeMap<Address, Storage>,
     /// The state of accounts before they were changed in the given block.
+    /// 在给定的block改变之前的state of accounts
     ///
     /// If the value is `None`, then the account is new, otherwise it is a change.
+    /// 如果value是`None`，那么account是新的，否则这是一个change
     account_changes: AccountChanges,
     /// The state of account storage before it was changed in the given block.
+    /// account storage的state的变化，在它在给定的block改变之前
     ///
     /// This map only contains old values for storage slots.
     storage_changes: StorageChanges,
     /// New code created during the execution
+    /// 在执行期间新创建的code
     bytecode: BTreeMap<H256, Bytecode>,
     /// The receipt(s) of the executed transaction(s).
+    /// 执行的transactions的receipt
     receipts: BTreeMap<BlockNumber, Vec<Receipt>>,
     /// Pruning configuration.
+    /// Pruning配置
     prune_targets: PruneTargets,
 }
 
@@ -89,6 +107,7 @@ impl PostState {
     }
 
     /// Create an empty [PostState] with pre-allocated space for a certain amount of transactions.
+    /// 创建一个空的[PostState]有着提前分配的空间，对于一定数目的transactions
     pub fn with_tx_capacity(block: BlockNumber, txs: usize) -> Self {
         Self { receipts: BTreeMap::from([(block, Vec::with_capacity(txs))]), ..Default::default() }
     }
@@ -277,13 +296,16 @@ impl PostState {
 
     // todo: note overwrite behavior, i.e. changes in `other` take precedent
     /// Extend this [PostState] with the changes in another [PostState].
+    /// 扩展这个[PostState]用另一个[PostState]里的changes
     pub fn extend(&mut self, mut other: PostState) {
         // Insert storage change sets
+        // 插入storage change sets
         for (block_number, storage_changes) in std::mem::take(&mut other.storage_changes).inner {
             for (address, their_storage_transition) in storage_changes {
                 let our_storage = self.storage.entry(address).or_default();
                 let (wipe, storage) = if their_storage_transition.wipe.is_wiped() {
                     // Check existing storage change.
+                    // 检查已经存在的storage change
                     match self.storage_changes.get(&block_number).and_then(|ch| ch.get(&address)) {
                         Some(change) if change.wipe.is_wiped() => (), // already counted
                         _ => {
@@ -291,6 +313,7 @@ impl PostState {
                         }
                     };
                     // Check if this is the first wipe.
+                    // 检查这是否是第一次wipe
                     let wipe = if our_storage.times_wiped == 1 {
                         StorageWipe::Primary
                     } else {
@@ -314,19 +337,23 @@ impl PostState {
         }
 
         // Insert account change sets
+        // 插入account change sets
         for (block_number, account_changes) in std::mem::take(&mut other.account_changes).inner {
             self.account_changes.insert_for_block(block_number, account_changes);
         }
 
         // Update plain state
+        // 更新plain state
         self.accounts.extend(other.accounts);
         for (address, their_storage) in other.storage {
             let our_storage = self.storage.entry(address).or_default();
             our_storage.storage.extend(their_storage.storage);
         }
 
+        // 扩展receipts
         self.receipts.extend(other.receipts);
 
+        // 扩展bytecode
         self.bytecode.extend(other.bytecode);
     }
 
@@ -508,8 +535,10 @@ impl PostState {
     }
 
     /// Add a transaction receipt to the post-state.
+    /// 添加一个transaction receipt到post-state
     ///
     /// Transactions should always include their receipts in the post-state.
+    /// transactions总是应该在post-state包含他们的receipts
     pub fn add_receipt(&mut self, block: BlockNumber, receipt: Receipt) {
         self.receipts.entry(block).or_default().push(receipt);
     }
@@ -587,6 +616,7 @@ impl PostState {
     }
 
     /// Write the post state to the database.
+    /// 将post state写入到db中
     pub fn write_to_db<'a, TX: DbTxMut<'a> + DbTx<'a>>(
         mut self,
         tx: &TX,
@@ -595,12 +625,15 @@ impl PostState {
         self.write_history_to_db(tx)?;
 
         // Write new storage state
+        // 写入新的storage state
         tracing::trace!(target: "provider::post_state", len = self.storage.len(), "Writing new storage state");
         let mut storages_cursor = tx.cursor_dup_write::<tables::PlainStorageState>()?;
         for (address, storage) in self.storage.into_iter() {
             // If the storage was wiped at least once, remove all previous entries from the
             // database.
+            // 如果storage被擦除了至少一次，移除所有的previous entries，从数据库中
             if storage.wiped() {
+                // 从plain state擦除storage
                 tracing::trace!(target: "provider::post_state", ?address, "Wiping storage from plain state");
                 if storages_cursor.seek_exact(address)?.is_some() {
                     storages_cursor.delete_current_duplicates()?;
@@ -608,6 +641,7 @@ impl PostState {
             }
 
             for (key, value) in storage.storage {
+                // 更新plain state storage
                 tracing::trace!(target: "provider::post_state", ?address, ?key, "Updating plain state storage");
                 let key: H256 = key.into();
                 if let Some(entry) = storages_cursor.seek_by_key_subkey(address, key)? {
@@ -623,19 +657,23 @@ impl PostState {
         }
 
         // Write new account state
+        // 写入新的account state
         tracing::trace!(target: "provider::post_state", len = self.accounts.len(), "Writing new account state");
         let mut accounts_cursor = tx.cursor_write::<tables::PlainAccountState>()?;
         for (address, account) in self.accounts.into_iter() {
             if let Some(account) = account {
+                // 更新plain state account
                 tracing::trace!(target: "provider::post_state", ?address, "Updating plain state account");
                 accounts_cursor.upsert(address, account)?;
             } else if accounts_cursor.seek_exact(address)?.is_some() {
+                // 删除plain state account
                 tracing::trace!(target: "provider::post_state", ?address, "Deleting plain state account");
                 accounts_cursor.delete_current()?;
             }
         }
 
         // Write bytecode
+        // 写入bytecode
         tracing::trace!(target: "provider::post_state", len = self.bytecode.len(), "Writing bytecodes");
         let mut bytecodes_cursor = tx.cursor_write::<tables::Bytecodes>()?;
         for (hash, bytecode) in self.bytecode.into_iter() {
@@ -643,12 +681,16 @@ impl PostState {
         }
 
         // Write the receipts of the transactions if not pruned
+        // 写入transactions的receipts，如果没有被清理的话
         tracing::trace!(target: "provider::post_state", len = self.receipts.len(), "Writing receipts");
         if !self.receipts.is_empty() && self.prune_targets.receipts != Some(PruneMode::Full) {
+            // 遍历block body indices
             let mut bodies_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
+            // 遍历receipts
             let mut receipts_cursor = tx.cursor_write::<tables::Receipts>()?;
 
             for (block, receipts) in self.receipts {
+                // 如果应该移除receipts，则跳过
                 if self.prune_targets.should_prune_receipts(block, tip) {
                     continue
                 }

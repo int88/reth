@@ -70,6 +70,7 @@ pub struct ExecutionStage<EF: ExecutorFactory> {
 
 impl<EF: ExecutorFactory> ExecutionStage<EF> {
     /// Create new execution stage with specified config.
+    /// 用特定的配置创建新的execution stage
     pub fn new(
         executor_factory: EF,
         thresholds: ExecutionStageThresholds,
@@ -124,6 +125,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         state.add_prune_targets(self.prune_targets);
 
         for block_number in start_block..=max_block {
+            // 从provider根据block number获取td和block
             let td = provider
                 .header_td_by_number(block_number)?
                 .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
@@ -190,7 +192,9 @@ fn execution_checkpoint<DB: Database>(
 ) -> Result<ExecutionCheckpoint, DatabaseError> {
     Ok(match checkpoint.execution_stage_checkpoint() {
         // If checkpoint block range fully matches our range,
+        // 如果checkpoint block range完全匹配我们的range
         // we take the previously used stage checkpoint as-is.
+        // 我们使用之前使用的stage checkpoint
         Some(stage_checkpoint @ ExecutionCheckpoint { block_range, .. })
             if block_range == CheckpointBlockRange::from(start_block..=max_block) =>
         {
@@ -198,6 +202,9 @@ fn execution_checkpoint<DB: Database>(
         }
         // If checkpoint block range precedes our range seamlessly, we take the previously used
         // stage checkpoint and add the amount of gas from our range to the checkpoint total.
+        // 如果checkpoint block
+        // range先于我们的range，我们拿之前使用的checkpoint并且从我们的range的gas到
+        // checkpoint total
         Some(ExecutionCheckpoint {
             block_range: CheckpointBlockRange { to, .. },
             progress: EntitiesCheckpoint { processed, total },
@@ -210,6 +217,8 @@ fn execution_checkpoint<DB: Database>(
         },
         // If checkpoint block range ends on the same block as our range, we take the previously
         // used stage checkpoint.
+        // 如果checkpoint block range和我们的range在同一个block结束，我们那之前使用的stage
+        // checkpoint
         Some(ExecutionCheckpoint { block_range: CheckpointBlockRange { to, .. }, progress })
             if to == max_block =>
         {
@@ -220,6 +229,8 @@ fn execution_checkpoint<DB: Database>(
         }
         // If there's any other non-empty checkpoint, we calculate the remaining amount of total gas
         // to be processed not including the checkpoint range.
+        // 如果有任何其他的非空的checkpoint，我们计算剩余的total
+        // gas，等待处理，但是没有包含checkpoint range
         Some(ExecutionCheckpoint { progress: EntitiesCheckpoint { processed, .. }, .. }) => {
             let after_checkpoint_block_number =
                 calculate_gas_used_from_headers(provider, checkpoint.block_number + 1..=max_block)?;
@@ -363,8 +374,10 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
 
         for (key, storage) in storage_changeset_batch.into_iter().rev() {
             let address = key.address();
+            // 通过subkey查找
             if let Some(v) = plain_storage_cursor.seek_by_key_subkey(address, storage.key)? {
                 if v.key == storage.key {
+                    // 从plain storage中移除
                     plain_storage_cursor.delete_current()?;
                 }
             }
@@ -374,6 +387,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // Discard unwinded changesets
+        // 丢弃unwind changesets
         provider.unwind_table_by_num::<tables::AccountChangeSet>(unwind_to)?;
 
         let mut rev_storage_changeset_walker = storage_changeset.walk_back(None)?;
@@ -382,10 +396,12 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
                 break
             }
             // delete all changesets
+            // 删除所有的changesets
             rev_storage_changeset_walker.delete_current()?;
         }
 
         // Look up the start index for the transaction range
+        // 查找transaction range的start index
         let first_tx_num = provider
             .block_body_indices(*range.start())?
             .ok_or(ProviderError::BlockBodyIndicesNotFound(*range.start()))?
@@ -466,6 +482,7 @@ mod tests {
     use std::sync::Arc;
 
     fn stage() -> ExecutionStage<Factory> {
+        // 构建一个factory
         let factory =
             Factory::new(Arc::new(ChainSpecBuilder::mainnet().berlin_activated().build()));
         ExecutionStage::new(
@@ -633,7 +650,7 @@ mod tests {
         let code = hex!("5a465a905090036002900360015500");
         let balance = U256::from(0x3635c9adc5dea00000u128);
         let code_hash = keccak256(code);
-        // 插入plain account state
+        // 插入plain account state, acc1和acc2
         db_tx
             .put::<tables::PlainAccountState>(
                 acc1,
@@ -731,6 +748,7 @@ mod tests {
         let input = ExecInput {
             target: Some(1),
             /// The progress of this stage the last time it was executed.
+            /// 上一次执行这个stage的时候的进度
             checkpoint: None,
         };
         let mut genesis_rlp = hex!("f901faf901f5a00000000000000000000000000000000000000000000000000000000000000000a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa045571b40ae66ca7480791bbb2887286e4e4c4b1b298b191c889d6959023a32eda056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000808502540be400808000a00000000000000000000000000000000000000000000000000000000000000000880000000000000000c0c0").as_slice();
@@ -746,6 +764,7 @@ mod tests {
         let balance = U256::from(0x3635c9adc5dea00000u128);
         let code_hash = keccak256(code);
         // pre state
+        // pre state
         let provider = factory.provider_rw().unwrap();
 
         let db_tx = provider.tx_ref();
@@ -760,6 +779,7 @@ mod tests {
         provider.commit().unwrap();
 
         // execute
+        // 执行
         let provider = factory.provider_rw().unwrap();
         let mut execution_stage = stage();
         let result = execution_stage.execute(&provider, input).await.unwrap();
@@ -793,12 +813,15 @@ mod tests {
         } if total == block.gas_used);
 
         // assert unwind stage
+        // 对unwind stage进行assert
         assert_eq!(provider.basic_account(acc1), Ok(Some(acc1_info)), "Pre changed of a account");
         assert_eq!(provider.basic_account(acc2), Ok(Some(acc2_info)), "Post changed of a account");
 
         let miner_acc = H160(hex!("2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"));
+        // 第三个account应该被unwind
         assert_eq!(provider.basic_account(miner_acc), Ok(None), "Third account should be unwound");
 
+        // 第一个receipt应该被unwind
         assert_eq!(provider.receipt(0), Ok(None), "First receipt should be unwound");
     }
 
@@ -810,6 +833,7 @@ mod tests {
         let input = ExecInput {
             target: Some(1),
             /// The progress of this stage the last time it was executed.
+            /// 这个stage的进度，在上一次执行的时候
             checkpoint: None,
         };
         let mut genesis_rlp = hex!("f901f8f901f3a00000000000000000000000000000000000000000000000000000000000000000a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa0c9ceb8372c88cb461724d8d3d87e8b933f6fc5f679d4841800e662f4428ffd0da056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b90100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008302000080830f4240808000a00000000000000000000000000000000000000000000000000000000000000000880000000000000000c0c0").as_slice();
@@ -835,7 +859,9 @@ mod tests {
             Account { nonce: 0, balance: U256::ZERO, bytecode_hash: Some(code_hash) };
 
         // set account
+        // 设置account
         let provider = factory.provider_rw().unwrap();
+        // 插入plain account
         provider.tx_ref().put::<tables::PlainAccountState>(caller_address, caller_info).unwrap();
         provider
             .tx_ref()
@@ -846,6 +872,7 @@ mod tests {
             .put::<tables::Bytecodes>(code_hash, Bytecode::new_raw(code.to_vec().into()))
             .unwrap();
         // set storage to check when account gets destroyed.
+        // 设置storage进行检查，当account被摧毁的时候
         provider
             .tx_ref()
             .put::<tables::PlainStorageState>(
@@ -870,6 +897,7 @@ mod tests {
         provider.commit().unwrap();
 
         // assert unwind stage
+        // 对unwind stage进行assert
         let provider = factory.provider_rw().unwrap();
         assert_eq!(provider.basic_account(destroyed_address), Ok(None), "Account was destroyed");
 
@@ -879,6 +907,7 @@ mod tests {
             "There is storage for destroyed account"
         );
         // drops tx so that it returns write privilege to test_tx
+        // 丢弃tx，因此它返回write privilege到test_tx
         drop(provider);
         let plain_accounts = test_tx.table::<tables::PlainAccountState>().unwrap();
         let plain_storage = test_tx.table::<tables::PlainStorageState>().unwrap();
@@ -948,6 +977,7 @@ mod tests {
         let input = ExecInput {
             target: Some(1),
             /// The progress of this stage the last time it was executed.
+            /// 这个stage的进度，它上一次执行的时候
             checkpoint: None,
         };
         let mut genesis_rlp = hex!("f901faf901f5a00000000000000000000000000000000000000000000000000000000000000000a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa045571b40ae66ca7480791bbb2887286e4e4c4b1b298b191c889d6959023a32eda056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000808502540be400808000a00000000000000000000000000000000000000000000000000000000000000000880000000000000000c0c0").as_slice();
@@ -959,6 +989,7 @@ mod tests {
         provider.commit().unwrap();
 
         // insert pre state
+        // 插入pre state
         let provider = factory.provider_rw().unwrap();
         let code = hex!("5a465a905090036002900360015500");
         let code_hash = keccak256(hex!("5a465a905090036002900360015500"));

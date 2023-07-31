@@ -9,6 +9,7 @@ use crate::executor::Executor;
 use std::sync::Arc;
 
 /// Factory that spawn Executor.
+/// 生成Executor的Factory
 #[derive(Clone, Debug)]
 pub struct Factory {
     chain_spec: Arc<ChainSpec>,
@@ -17,17 +18,20 @@ pub struct Factory {
 
 impl Factory {
     /// Create new factory
+    /// 创建新的factory
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { chain_spec, stack: None }
     }
 
     /// Sets the inspector stack for all generated executors.
+    /// 对于所有生成的executors设置inspector stack
     pub fn with_stack(mut self, stack: InspectorStack) -> Self {
         self.stack = Some(stack);
         self
     }
 
     /// Sets the inspector stack for all generated executors using the provided config.
+    /// 使用提供的配置，为所有生成的executors设置inspector stack
     pub fn with_stack_config(mut self, config: InspectorStackConfig) -> Self {
         self.stack = Some(InspectorStack::new(config));
         self

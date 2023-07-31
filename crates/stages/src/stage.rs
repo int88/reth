@@ -15,8 +15,10 @@ use std::{
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct ExecInput {
     /// The target block number the stage needs to execute towards.
+    /// stage需要执行到的target block number
     pub target: Option<BlockNumber>,
     /// The checkpoint of this stage the last time it was executed.
+    /// 这个stage上一次执行的checkpoint
     pub checkpoint: Option<StageCheckpoint>,
 }
 

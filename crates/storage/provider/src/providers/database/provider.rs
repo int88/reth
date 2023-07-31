@@ -47,9 +47,11 @@ use std::{
 pub type DatabaseProviderRO<'this, DB> = DatabaseProvider<'this, <DB as DatabaseGAT<'this>>::TX>;
 
 /// A [`DatabaseProvider`] that holds a read-write database transaction.
+/// 一个[`DatabaseProvider`]维护一个读写的database transaction
 ///
 /// Ideally this would be an alias type. However, there's some weird compiler error (<https://github.com/rust-lang/rust/issues/102211>), that forces us to wrap this in a struct instead.
 /// Once that issue is solved, we can probably revert back to being an alias type.
+/// 理想情况下这应该是一个alias type，然而，会有一些奇怪的编译错误
 #[derive(Debug)]
 pub struct DatabaseProviderRW<'this, DB: Database>(
     pub DatabaseProvider<'this, <DB as DatabaseGAT<'this>>::TXMut>,
@@ -561,7 +563,9 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
     }
 
     /// Unwind table by some number key.
+    /// 通过一些key对table进行Unwind
     /// Returns number of rows unwound.
+    /// 返回被unwind的行数
     ///
     /// Note: Key is not inclusive and specified key would stay in db.
     #[inline]
@@ -688,6 +692,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
 
 impl<'this, TX: DbTx<'this>> AccountReader for DatabaseProvider<'this, TX> {
     fn basic_account(&self, address: Address) -> Result<Option<Account>> {
+        // 获取plain account state
         Ok(self.tx.get::<tables::PlainAccountState>(address)?)
     }
 }
@@ -1110,6 +1115,7 @@ impl<'this, TX: DbTx<'this>> ReceiptProvider for DatabaseProvider<'this, TX> {
     fn receipts_by_block(&self, block: BlockHashOrNumber) -> Result<Option<Vec<Receipt>>> {
         if let Some(number) = self.convert_hash_or_number(block)? {
             if let Some(body) = self.block_body_indices(number)? {
+                // 获取body
                 let tx_range = body.tx_num_range();
                 return if tx_range.is_empty() {
                     Ok(Some(Vec::new()))

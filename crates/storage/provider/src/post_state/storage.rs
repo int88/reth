@@ -43,13 +43,17 @@ impl StorageWipe {
 }
 
 /// Latest storage state for the account.
+/// 对于account最新的storage state
 ///
 /// # Wiped Storage
 ///
 /// The `times_wiped` field indicates the number of times the storage was wiped in this poststate.
+/// `times_wiped`字段表示storage在poststate中被擦除的次数
 ///
 /// If `times_wiped` is greater than 0, then the account was selfdestructed at some point, and the
 /// values contained in `storage` should be the only values written to the database.
+/// 如果`times_wiped`大于0，那么account在某个节点自我结构，
+/// 并且包含在`storage`中的值是唯一被写入数据库的值
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Storage {
     /// The number of times the storage was wiped.
@@ -67,6 +71,7 @@ impl Storage {
 
 /// A mapping of `block -> account -> slot -> old value` that represents what slots were changed,
 /// and what their values were prior to that change.
+/// 映射关于`block -> account -> slot -> old value`代表改变的slots以及它们在改变之前的值
 #[derive(Default, Clone, Eq, PartialEq, Debug, Deref)]
 pub struct StorageChanges {
     /// The inner mapping of block changes.

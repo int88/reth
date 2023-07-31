@@ -14,8 +14,10 @@ use reth_primitives::{
 use std::marker::PhantomData;
 
 /// State provider over latest state that takes tx reference.
+/// task tx引用的最新的state的State provider
 pub struct LatestStateProviderRef<'a, 'b, TX: DbTx<'a>> {
     /// database transaction
+    /// database的抽象
     db: &'b TX,
     /// Phantom data over lifetime
     phantom: PhantomData<&'a TX>,
@@ -24,6 +26,7 @@ pub struct LatestStateProviderRef<'a, 'b, TX: DbTx<'a>> {
 impl<'a, 'b, TX: DbTx<'a>> LatestStateProviderRef<'a, 'b, TX> {
     /// Create new state provider
     pub fn new(db: &'b TX) -> Self {
+        // 用db构建一个state provider
         Self { db, phantom: PhantomData {} }
     }
 }

@@ -102,6 +102,7 @@ pub type Address = H160;
 /// A transaction hash is a kecack hash of an RLP encoded signed transaction.
 pub type TxHash = H256;
 /// The sequence number of all existing transactions.
+/// 所有已经存在的transactions的sequence number
 pub type TxNumber = u64;
 /// The index of transaction in a block.
 pub type TxIndex = u64;

@@ -245,6 +245,7 @@ impl ChainSpec {
     }
 
     /// Get the fork condition for the given fork.
+    /// 获取给定fork的fork condition
     pub fn fork(&self, fork: Hardfork) -> ForkCondition {
         self.hardforks.get(&fork).copied().unwrap_or(ForkCondition::Never)
     }
@@ -609,8 +610,10 @@ impl From<&Arc<ChainSpec>> for ChainSpecBuilder {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ForkCondition {
     /// The fork is activated after a certain block.
+    /// fork在一个特定的block之后被激活
     Block(BlockNumber),
     /// The fork is activated after a total difficulty has been reached.
+    /// fork在一个td到达之后被激活
     TTD {
         /// The block number at which TTD is reached, if it is known.
         ///
@@ -623,8 +626,10 @@ pub enum ForkCondition {
         total_difficulty: U256,
     },
     /// The fork is activated after a specific timestamp.
+    /// fork在一个特定的时间戳之后被激活
     Timestamp(u64),
     /// The fork is never activated
+    /// fork从不被激活
     #[default]
     Never,
 }
@@ -636,10 +641,13 @@ impl ForkCondition {
     }
 
     /// Checks whether the fork condition is satisfied at the given block.
+    /// 校验fork condition是否在给定的block满足
     ///
     /// For TTD conditions, this will only return true if the activation block is already known.
+    /// 对于TTD conditions，这只会返回true，如果activation block已经知道了
     ///
     /// For timestamp conditions, this will always return false.
+    /// 对于timestamp的情况，这总是返回false
     pub fn active_at_block(&self, current_block: BlockNumber) -> bool {
         match self {
             ForkCondition::Block(block) => current_block >= *block,

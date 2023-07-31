@@ -30,9 +30,12 @@ pub enum Hook {
 }
 
 /// An inspector that calls multiple inspectors in sequence.
+/// 一个inspector按顺序调用多个inspectors
 ///
 /// If a call to an inspector returns a value other than [InstructionResult::Continue] (or
 /// equivalent) the remaining inspectors are not called.
+/// 如果对于inspector的一个调用返回一个值，而不是[InstructionResult::Continue]（或者对等的）
+/// 剩余的inspectors不被调用
 #[derive(Default, Clone)]
 pub struct InspectorStack {
     /// An inspector that prints the opcode traces to the console.

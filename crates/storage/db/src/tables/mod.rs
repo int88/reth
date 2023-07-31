@@ -298,19 +298,25 @@ table!(
 
 table!(
     /// Stores all smart contract bytecodes.
+    /// 存储所有的smart contract bytecodes
     /// There will be multiple accounts that have same bytecode
+    /// 可能有多个accounts有着同样的bytecode
     /// So we would need to introduce reference counter.
+    /// 因此我们需要引入引用计数
     /// This will be small optimization on state.
+    /// 这是对state的小优化
     ( Bytecodes ) H256 | Bytecode
 );
 
 table!(
     /// Stores the current state of an [`Account`].
+    /// 存储一个[`Account`]的当前的state
     ( PlainAccountState ) Address | Account
 );
 
 dupsort!(
     /// Stores the current value of a storage key.
+    /// 存储一个storage key的当前的value
     ( PlainStorageState ) Address | [H256] StorageEntry
 );
 

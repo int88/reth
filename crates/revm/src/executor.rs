@@ -105,6 +105,8 @@ where
 
     /// Commit change to the run-time database, and update the given [PostState] with the changes
     /// made in the transaction, which can be persisted to the database.
+    /// 提交change到run-time
+    /// database，并且更新给定的[PostState]用transaction中的changes，它可以被持久化到db中
     fn commit_changes(
         &mut self,
         block_number: BlockNumber,
@@ -176,19 +178,23 @@ where
 
     /// Runs a single transaction in the configured environment and proceeds
     /// to return the result and state diff (without applying it).
+    /// 运行单个transaction，在配置的环境并且继续返回result以及state diff（而不应用它）
     ///
     /// Assumes the rest of the block environment has been filled via `init_block_env`.
+    /// 假设block environment的剩余部分已经通过`init_block_env`填充
     pub fn transact(
         &mut self,
         transaction: &TransactionSigned,
         sender: Address,
     ) -> Result<ResultAndState, BlockExecutionError> {
         // Fill revm structure.
+        // 填充revm结构
         fill_tx_env(&mut self.evm.env.tx, transaction, sender);
 
         let hash = transaction.hash();
         let out = if self.stack.should_inspect(&self.evm.env, hash) {
             // execution with inspector.
+            // 用inspector执行
             let output = self.evm.inspect(&mut self.stack);
             tracing::trace!(
                 target: "evm",
@@ -198,21 +204,27 @@ where
             output
         } else {
             // main execution.
+            // 主要的执行
             self.evm.transact()
         };
         out.map_err(|e| BlockValidationError::EVM { hash, message: format!("{e:?}") }.into())
     }
 
     /// Runs the provided transactions and commits their state to the run-time database.
+    /// 运行给定的transactions并且提交它们的state到run-time database
     ///
     /// The returned [PostState] can be used to persist the changes to disk, and contains the
     /// changes made by each transaction.
+    /// 返回的[PostState]可以用于持久化变更到磁盘，以及每个transaction包含的changes
     ///
     /// The changes in [PostState] have a transition ID associated with them: there is one
     /// transition ID for each transaction (with the first executed tx having transition ID 0, and
     /// so on).
+    /// [PostState]中的changes都有一个transition ID与它们相关，对于每个transaction有一个transaction
+    /// ID 第一个executed tx有transition ID 0
     ///
     /// The second returned value represents the total gas used by this block of transactions.
+    /// 第二个返回的值表示这个block的transactions使用的完整的gas
     pub fn execute_transactions(
         &mut self,
         block: &Block,
@@ -232,6 +244,7 @@ where
         for (transaction, sender) in block.body.iter().zip(senders) {
             // The sum of the transaction’s gas limit, Tg, and the gas utilised in this block prior,
             // must be no greater than the block’s gasLimit.
+            // transaction的gas limit的sum, tg以及这个block之前使用的gas，必须不大于block的gasLimit
             let block_available_gas = block.header.gas_limit - cumulative_gas_used;
             if transaction.gas_limit() > block_available_gas {
                 return Err(BlockValidationError::TransactionGasLimitMoreThanAvailableBlockGas {
@@ -241,9 +254,11 @@ where
                 .into())
             }
             // Execute transaction.
+            // 执行transaction
             let ResultAndState { result, state } = self.transact(transaction, sender)?;
 
             // commit changes
+            // 提交changes
             self.commit_changes(
                 block.number,
                 state,
@@ -252,9 +267,11 @@ where
             );
 
             // append gas used
+            // 扩展使用的gas
             cumulative_gas_used += result.gas_used();
 
             // Push transaction changeset and calculate header bloom filter for receipt.
+            // 推送transaction changeset并且计算header bloom filter，对于receipt
             post_state.add_receipt(
                 block.number,
                 Receipt {
@@ -305,9 +322,11 @@ where
         senders: Option<Vec<Address>>,
     ) -> Result<PostState, BlockExecutionError> {
         let (post_state, cumulative_gas_used) =
+            // 执行transactions
             self.execute_transactions(block, total_difficulty, senders)?;
 
         // Check if gas used matches the value set in header.
+        // 检查是否使用的gas匹配header中设置的值
         if block.gas_used != cumulative_gas_used {
             return Err(BlockValidationError::BlockGasUsed {
                 got: cumulative_gas_used,
@@ -325,6 +344,7 @@ where
         total_difficulty: U256,
         senders: Option<Vec<Address>>,
     ) -> Result<PostState, BlockExecutionError> {
+        // 执行execute
         let post_state = self.execute(block, total_difficulty, senders)?;
 
         // TODO Before Byzantium, receipts contained state root that would mean that expensive
@@ -332,6 +352,7 @@ where
         // transaction This was replaced with is_success flag.
         // See more about EIP here: https://eips.ethereum.org/EIPS/eip-658
         if self.chain_spec.fork(Hardfork::Byzantium).active_at_block(block.header.number) {
+            // 校验receipt
             verify_receipt(
                 block.header.receipts_root,
                 block.header.logs_bloom,
@@ -395,6 +416,7 @@ where
 ///
 /// Note: This does _not_ commit to the underlying database [DatabaseRef], but only to the
 /// [CacheDB].
+/// 注意：这没有提交到底层的[DatabaseRef]，但是只有到[CacheDB]
 pub fn commit_state_changes<DB>(
     db: &mut CacheDB<DB>,
     post_state: &mut PostState,
@@ -405,6 +427,7 @@ pub fn commit_state_changes<DB>(
     DB: DatabaseRef,
 {
     // iterate over all changed accounts
+    // 遍历所有的changed accounts
     for (address, account) in changes {
         if account.is_destroyed {
             // get old account that we are destroying.
@@ -515,6 +538,7 @@ pub fn commit_state_changes<DB>(
             let mut storage_changeset = BTreeMap::new();
 
             // insert storage into new db account.
+            // 插入storage到新的db account
             cached_account.storage.extend(account.storage.into_iter().map(|(key, value)| {
                 if value.is_changed() {
                     storage_changeset.insert(key, (value.original_value(), value.present_value()));
@@ -523,6 +547,7 @@ pub fn commit_state_changes<DB>(
             }));
 
             // Insert into change.
+            // 插入change
             if !storage_changeset.is_empty() {
                 post_state.change_storage(block_number, address, storage_changeset);
             }

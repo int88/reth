@@ -3,25 +3,31 @@ use paste::paste;
 use serde::{Deserialize, Serialize};
 
 /// Pruning configuration for every part of the data that can be pruned.
+/// Pruning配置对于data的各个部分，可以被pruned
 #[derive(Debug, Clone, Default, Copy, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct PruneTargets {
     /// Sender Recovery pruning configuration.
+    /// Sender Recovery pruning的配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sender_recovery: Option<PruneMode>,
     /// Transaction Lookup pruning configuration.
+    /// Transaction Lookup的pruning配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transaction_lookup: Option<PruneMode>,
     /// Receipts pruning configuration.
+    /// Receipts的pruning配置
     #[serde(
         skip_serializing_if = "Option::is_none",
         deserialize_with = "deserialize_opt_prune_mode_with_min_distance::<64, _>"
     )]
     pub receipts: Option<PruneMode>,
     /// Account History pruning configuration.
+    /// Account History的pruning配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub account_history: Option<PruneMode>,
     /// Storage History pruning configuration.
+    /// Storage History的pruning配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub storage_history: Option<PruneMode>,
 }

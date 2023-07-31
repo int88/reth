@@ -113,6 +113,7 @@ pub fn fill_tx_env_with_recovered(tx_env: &mut TxEnv, transaction: &TransactionS
 }
 
 /// Fill transaction environment from a [Transaction] and the given sender address.
+/// 从一个[Transaction]以及给定的sender address填充transaction环境
 pub fn fill_tx_env<T>(tx_env: &mut TxEnv, transaction: T, sender: Address)
 where
     T: AsRef<Transaction>,
