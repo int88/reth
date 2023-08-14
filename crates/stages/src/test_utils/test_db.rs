@@ -162,6 +162,7 @@ impl TestTransaction {
 
     /// Check that there is no table entry above a given
     /// number by [Table::Key]
+    /// 检查没有table entry超过给定的number，通过[Table::Key]
     pub fn ensure_no_entry_above<T, F>(&self, num: u64, mut selector: F) -> Result<(), DbError>
     where
         T: Table,
@@ -210,6 +211,7 @@ impl TestTransaction {
 
     /// Insert ordered collection of [SealedHeader] into the corresponding tables
     /// that are supposed to be populated by the headers stage.
+    /// 插入一系列有序的[SealedHeader]到对应的tables，它们应该被headers stage填充
     pub fn insert_headers<'a, I>(&self, headers: I) -> Result<(), DbError>
     where
         I: Iterator<Item = &'a SealedHeader>,
@@ -235,9 +237,12 @@ impl TestTransaction {
     }
 
     /// Insert ordered collection of [SealedBlock] into corresponding tables.
+    /// 插入一系列有序的[SealedBlock]到对应的tables
     /// Superset functionality of [TestTransaction::insert_headers].
+    /// 是[TestTransaction::insert_headers]的超集功能
     ///
     /// Assumes that there's a single transition for each transaction (i.e. no block rewards).
+    /// 假设对于每个transaction（例如，没有block rewards）有单个的transition
     pub fn insert_blocks<'a, I>(&self, blocks: I, tx_offset: Option<u64>) -> Result<(), DbError>
     where
         I: Iterator<Item = &'a SealedBlock>,
@@ -246,14 +251,17 @@ impl TestTransaction {
             let mut next_tx_num = tx_offset.unwrap_or_default();
 
             blocks.into_iter().try_for_each(|block| {
+                // 插入header
                 Self::insert_header(tx, &block.header)?;
                 // Insert into body tables.
+                // 插入到body tables
                 let block_body_indices = StoredBlockBodyIndices {
                     first_tx_num: next_tx_num,
                     tx_count: block.body.len() as u64,
                 };
 
                 if !block.body.is_empty() {
+                    // body不为空，插入transaction block
                     tx.put::<tables::TransactionBlock>(
                         block_body_indices.last_tx_num(),
                         block.number,
@@ -262,6 +270,7 @@ impl TestTransaction {
                 tx.put::<tables::BlockBodyIndices>(block.number, block_body_indices)?;
 
                 block.body.iter().try_for_each(|body_tx| {
+                    // 插入transactions
                     tx.put::<tables::Transactions>(next_tx_num, body_tx.clone().into())?;
                     next_tx_num += 1;
                     Ok(())
@@ -271,6 +280,7 @@ impl TestTransaction {
     }
 
     /// Insert collection of ([Address], [Account]) into corresponding tables.
+    /// 插入一系列的([Address], [Account])到对应的tables
     pub fn insert_accounts_and_storages<I, S>(&self, accounts: I) -> Result<(), DbError>
     where
         I: IntoIterator<Item = (Address, (Account, S))>,
@@ -281,10 +291,12 @@ impl TestTransaction {
                 let hashed_address = keccak256(address);
 
                 // Insert into account tables.
+                // 插入到account tables
                 tx.put::<tables::PlainAccountState>(address, account)?;
                 tx.put::<tables::HashedAccount>(hashed_address, account)?;
 
                 // Insert into storage tables.
+                // 插入到storage tables
                 storage.into_iter().filter(|e| e.value != U256::ZERO).try_for_each(|entry| {
                     let hashed_entry = StorageEntry { key: keccak256(entry.key), ..entry };
 

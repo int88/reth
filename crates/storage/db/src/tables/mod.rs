@@ -244,6 +244,7 @@ table!(
 
 table!(
     /// Stores the total difficulty from a block header.
+    /// 存储td，来自于一个block header
     ( HeaderTD ) BlockNumber | CompactU256
 );
 
@@ -287,8 +288,10 @@ table!(
 
 table!(
     /// Stores the mapping of transaction number to the blocks number.
+    /// 存储transaction number到blocks number的映射
     ///
     /// The key is the highest transaction ID in the block.
+    /// key是block中最高的transaction ID
     ( TransactionBlock ) TxNumber | BlockNumber
 );
 

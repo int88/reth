@@ -19,8 +19,10 @@ use std::{
 // relevant crates?
 
 /// Returns a random number generator that can be seeded using the `SEED` environment variable.
+/// 返回一系列的随机number generator，可以用`SEED`环境变量进行seeded
 ///
 /// If `SEED` is not set, a random seed is used.
+/// 如果`SEED`没有设置，使用一个随机的seed
 pub fn rng() -> StdRng {
     if let Ok(seed) = std::env::var("SEED") {
         let mut hasher = DefaultHasher::new();
@@ -32,11 +34,14 @@ pub fn rng() -> StdRng {
 }
 
 /// Generates a range of random [SealedHeader]s.
+/// 生成一系列随机的[SealedHeader]s
 ///
 /// The parent hash of the first header
 /// in the result will be equal to `head`.
+/// 第一个header的parent hash会等于`head`
 ///
 /// The headers are assumed to not be correct if validated.
+/// headers假设是不正确的，如果被校验的话
 pub fn random_header_range<R: Rng>(
     rng: &mut R,
     range: std::ops::Range<u64>,
@@ -54,8 +59,10 @@ pub fn random_header_range<R: Rng>(
 }
 
 /// Generate a random [SealedHeader].
+/// 生成一个随机的[SealedHeader]
 ///
 /// The header is assumed to not be correct if validated.
+/// header假设是不正确的，如果被校验的话
 pub fn random_header<R: Rng>(rng: &mut R, number: u64, parent: Option<H256>) -> SealedHeader {
     let header = reth_primitives::Header {
         number,
@@ -113,8 +120,12 @@ pub fn generate_keys<R: Rng>(rng: &mut R, count: usize) -> Vec<KeyPair> {
 /// Generate a random block filled with signed transactions (generated using
 /// [random_signed_tx]). If no transaction count is provided, the number of transactions
 /// will be random, otherwise the provided count will be used.
+/// 生成一个随机的block，用signed
+/// transactions填充（使用[random_signed_tx]生成），如果没有提供transaction count
+/// 生成的transactions数目是随机的，否则会使用提供的count
 ///
 /// All fields use the default values (and are assumed to be invalid) except for:
+/// 所有字段使用默认的值（并且假设是非法的）除了
 ///
 /// - `parent_hash`
 /// - `transactions_root`
@@ -122,8 +133,10 @@ pub fn generate_keys<R: Rng>(rng: &mut R, count: usize) -> Vec<KeyPair> {
 ///
 /// Additionally, `gas_used` and `gas_limit` always exactly match the total `gas_limit` of all
 /// transactions in the block.
+/// 另外，`gas_used`以及`gas_limit`总是完美匹配total `gas_limit`对于block中的所有trnasactions
 ///
 /// The ommer headers are not assumed to be valid.
+/// ommer headers不假设是合法的
 pub fn random_block<R: Rng>(
     rng: &mut R,
     number: u64,
@@ -132,18 +145,22 @@ pub fn random_block<R: Rng>(
     ommers_count: Option<u8>,
 ) -> SealedBlock {
     // Generate transactions
+    // 生成transactions
     let tx_count = tx_count.unwrap_or_else(|| rng.gen::<u8>());
     let transactions: Vec<TransactionSigned> =
         (0..tx_count).map(|_| random_signed_tx(rng)).collect();
     let total_gas = transactions.iter().fold(0, |sum, tx| sum + tx.transaction.gas_limit());
 
     // Generate ommers
+    // 生成ommers
     let ommers_count = ommers_count.unwrap_or_else(|| rng.gen_range(0..2));
     let ommers =
         (0..ommers_count).map(|_| random_header(rng, number, parent).unseal()).collect::<Vec<_>>();
 
     // Calculate roots
+    // 计算roots
     let transactions_root = proofs::calculate_transaction_root(&transactions);
+    // 计算ommers root
     let ommers_hash = proofs::calculate_ommers_root(&ommers);
 
     SealedBlock {
@@ -165,11 +182,14 @@ pub fn random_block<R: Rng>(
 }
 
 /// Generate a range of random blocks.
+/// 生成一系列随机的blocks
 ///
 /// The parent hash of the first block
 /// in the result will be equal to `head`.
+/// 第一个block的parent hash在结果中会等于`head`
 ///
 /// See [random_block] for considerations when validating the generated blocks.
+/// 查看[random_block]当考虑校验生成的blocks
 pub fn random_block_range<R: Rng>(
     rng: &mut R,
     block_numbers: RangeInclusive<BlockNumber>,
@@ -179,7 +199,9 @@ pub fn random_block_range<R: Rng>(
     let mut blocks =
         Vec::with_capacity(block_numbers.end().saturating_sub(*block_numbers.start()) as usize);
     for idx in block_numbers {
+        // 遍历block numbers，随机tx count
         let tx_count = tx_count.clone().sample_single(rng);
+        // 生成随机的block，加入到blocks
         blocks.push(random_block(
             rng,
             idx,

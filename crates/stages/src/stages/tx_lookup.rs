@@ -40,6 +40,7 @@ impl Default for TransactionLookupStage {
 
 impl TransactionLookupStage {
     /// Create new instance of [TransactionLookupStage].
+    /// 创建[TransactionLookupStage]的新实例
     pub fn new(commit_threshold: u64) -> Self {
         Self { commit_threshold }
     }
@@ -73,6 +74,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         let tx = provider.tx_ref();
         // 获取transaction cursor
         let mut tx_cursor = tx.cursor_read::<tables::Transactions>()?;
+        // 遍历transactions
         let tx_walker = tx_cursor.walk_range(tx_range)?;
 
         let chunk_size = (tx_range_size / rayon::current_num_threads()).max(1);
@@ -101,6 +103,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         let mut tx_list = Vec::with_capacity(transaction_count);
 
         // Iterate over channels and append the tx hashes to be sorted out later
+        // 遍历channels并且扩展tx hashes到后面被排序
         for mut channel in channels {
             while let Some(tx) = channel.recv().await {
                 let (tx_hash, tx_id) = tx.map_err(|boxed| *boxed)?;
@@ -109,6 +112,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         }
 
         // Sort before inserting the reverse lookup for hash -> tx_id.
+        // 排序，在插入reverse lookup，对于hash -> tx_id
         tx_list.par_sort_unstable_by(|txa, txb| txa.0.cmp(&txb.0));
 
         let mut txhash_cursor = tx.cursor_write::<tables::TxHashNumber>()?;
@@ -116,7 +120,10 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         // If the last inserted element in the database is equal or bigger than the first
         // in our set, then we need to insert inside the DB. If it is smaller then last
         // element in the DB, we can append to the DB.
+        // 如果第一个插入的element，在databsae中等于或者大于我们的集合中的第一个，我们需要插入到DB
+        // 如果小于DB中的最后一个原色，我们可以扩展到DB
         // Append probably only ever happens during sync, on the first table insertion.
+        // Append可能只在sync的时候发生，在第一个table insertion
         let insert = tx_list
             .first()
             .zip(txhash_cursor.last()?)
@@ -127,6 +134,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
 
         for (tx_hash, id) in tx_list {
             if insert {
+                // 插入tx hash cursor
                 txhash_cursor.insert(tx_hash, id)?;
             } else {
                 txhash_cursor.append(tx_hash, id)?;
@@ -150,6 +158,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         let (range, unwind_to, _) = input.unwind_block_range_with_threshold(self.commit_threshold);
 
         // Cursors to unwind tx hash to number
+        // unwind tx hash到number映射的cursor
         let mut body_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
         let mut tx_hash_number_cursor = tx.cursor_write::<tables::TxHashNumber>()?;
         let mut transaction_cursor = tx.cursor_read::<tables::Transactions>()?;
@@ -160,8 +169,10 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
             }
 
             // Delete all transactions that belong to this block
+            // 删除所有属于这个block的transactions
             for tx_id in body.tx_num_range() {
                 // First delete the transaction and hash to id mapping
+                // 首先删除transaction以及hash到id的映射
                 if let Some((_, transaction)) = transaction_cursor.seek_exact(tx_id)? {
                     if tx_hash_number_cursor.seek_exact(transaction.hash())?.is_some() {
                         tx_hash_number_cursor.delete_current()?;
@@ -178,6 +189,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
 }
 
 /// Calculates the hash of the given transaction
+/// 计算给定的transaction的hash
 #[inline]
 fn calculate_hash(
     entry: Result<(TxNumber, TransactionSignedNoHash), DatabaseError>,
@@ -271,11 +283,13 @@ mod tests {
     }
 
     /// Execute the stage twice with input range that exceeds the commit threshold
+    /// 执行stage两次，输入的range超过了commit threshold
     #[tokio::test]
     async fn execute_intermediate_commit_transaction_lookup() {
         let threshold = 50;
         let mut runner = TransactionLookupTestRunner::default();
         runner.set_threshold(threshold);
+        // 输入超过了threshold
         let (stage_progress, previous_stage) = (1000, 1100); // input exceeds threshold
         let first_input = ExecInput {
             target: Some(previous_stage),
@@ -284,18 +298,22 @@ mod tests {
         let mut rng = generators::rng();
 
         // Seed only once with full input range
+        // 只有一次才是full input range，对于seed
         let seed =
             random_block_range(&mut rng, stage_progress + 1..=previous_stage, H256::zero(), 0..4); // set tx count range high enough to hit the threshold
+                                                                                                   // 插入blocks
         runner.tx.insert_blocks(seed.iter(), None).expect("failed to seed execution");
 
         let total_txs = runner.tx.table::<tables::Transactions>().unwrap().len() as u64;
 
         // Execute first time
+        // 第一次执行
         let result = runner.execute(first_input).await.unwrap();
         let mut tx_count = 0;
         let expected_progress = seed
             .iter()
             .find(|x| {
+                // 统计tx count
                 tx_count += x.body.len();
                 tx_count as u64 > threshold
             })
@@ -316,11 +334,13 @@ mod tests {
         );
 
         // Execute second time to completion
+        // 第二次执行到完成
         runner.set_threshold(u64::MAX);
         let second_input = ExecInput {
             target: Some(previous_stage),
             checkpoint: Some(StageCheckpoint::new(expected_progress)),
         };
+        // 再次执行stage
         let result = runner.execute(second_input).await.unwrap();
         assert_matches!(result, Ok(_));
         assert_eq!(
@@ -343,6 +363,7 @@ mod tests {
 
     impl Default for TransactionLookupTestRunner {
         fn default() -> Self {
+            // 设置threshold为1000
             Self { threshold: 1000, tx: TestTransaction::default() }
         }
     }
@@ -398,11 +419,14 @@ mod tests {
         type Seed = Vec<SealedBlock>;
 
         fn seed_execution(&mut self, input: ExecInput) -> Result<Self::Seed, TestRunnerError> {
+            // 获取block range的开始和结束
             let stage_progress = input.checkpoint().block_number;
             let end = input.target();
             let mut rng = generators::rng();
 
+            // 随机生成blocks
             let blocks = random_block_range(&mut rng, stage_progress + 1..=end, H256::zero(), 0..2);
+            // 插入blocks
             self.tx.insert_blocks(blocks.iter(), None)?;
             Ok(blocks)
         }
@@ -434,10 +458,12 @@ mod tests {
                             // 根据tx id获取transaction
                             let transaction =
                                 provider.transaction_by_id(tx_id)?.expect("no transaction entry");
+                            // 判断tx id和根据transaction hash获取的transaction id是否相等
                             assert_eq!(Some(tx_id), provider.transaction_id(transaction.hash())?);
                         }
                     }
                 }
+                // 确保对于block没有hash
                 None => self.ensure_no_hash_by_block(input.checkpoint().block_number)?,
             };
             Ok(())

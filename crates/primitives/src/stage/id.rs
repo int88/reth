@@ -1,6 +1,8 @@
 /// Stage IDs for all known stages.
+/// 所有已知的stages的Stage IDs
 ///
 /// For custom stages, use [`StageId::Other`]
+/// 对于自定义的stages，使用[`StageId::Other`]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[allow(missing_docs)]
 pub enum StageId {

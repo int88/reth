@@ -125,12 +125,16 @@ impl std::ops::DerefMut for BlockWithSenders {
 #[rlp(trailing)]
 pub struct SealedBlock {
     /// Locked block header.
+    /// 锁住的block headers
     pub header: SealedHeader,
     /// Transactions with signatures.
+    /// 有着signatures的transactions
     pub body: Vec<TransactionSigned>,
     /// Ommer/uncle headers
+    /// Ommer/uncle的headers
     pub ommers: Vec<Header>,
     /// Block withdrawals.
+    /// block withdrawals
     pub withdrawals: Option<Vec<Withdrawal>>,
 }
 

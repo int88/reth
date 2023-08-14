@@ -21,15 +21,20 @@ use tracing::*;
 /// The body stage downloads block bodies.
 ///
 /// The body stage downloads block bodies for all block headers stored locally in the database.
+/// body stage下载block bodies，对于所有存储在本地数据库的block headers
 ///
 /// # Empty blocks
 ///
 /// Blocks with an ommers hash corresponding to no ommers *and* a transaction root corresponding to
 /// no transactions will not have a block body downloaded for them, since it would be meaningless to
 /// do so.
+/// 有着ommers hash对应no ommers以及一个transaction root对应no transaction将不会为它们下载block
+/// body，因为这样做 是没有意义的
 ///
 /// This also means that if there is no body for the block in the database (assuming the
 /// block number <= the synced block of this stage), then the block can be considered empty.
+/// 这同样意味着如果在数据库中没有block的body（假设block number 小于等于这个stage的synced
+/// block），那么block可以 考虑是空的
 ///
 /// # Tables
 ///
@@ -43,6 +48,7 @@ use tracing::*;
 /// # Genesis
 ///
 /// This stage expects that the genesis has been inserted into the appropriate tables:
+/// 这个stage假设genesis已经被插入到合适的tables
 ///
 /// - The header tables (see [`HeaderStage`][crate::stages::HeaderStage])
 /// - The [`BlockOmmers`][reth_db::tables::BlockOmmers] table
@@ -65,6 +71,8 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
 
     /// Download block bodies from the last checkpoint for this stage up until the latest synced
     /// header, limited by the stage's batch size.
+    /// 下载block bodies，从这个stage的最新的checkpoint开始，直到最新的synced header，被stage的batch
+    /// size 所限制
     async fn execute(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -76,10 +84,12 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
 
         let range = input.next_block_range();
         // Update the header range on the downloader
+        // 更新downloader中的header range
         self.downloader.set_download_range(range.clone())?;
         let (from_block, to_block) = range.into_inner();
 
         // Cursors used to write bodies, ommers and transactions
+        // 用于写入bodies, ommers以及transactions的cursors
         let tx = provider.tx_ref();
         let mut block_indices_cursor = tx.cursor_write::<tables::BlockBodyIndices>()?;
         let mut tx_cursor = tx.cursor_write::<tables::Transactions>()?;
@@ -88,12 +98,15 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         let mut withdrawals_cursor = tx.cursor_write::<tables::BlockWithdrawals>()?;
 
         // Get id for the next tx_num of zero if there are no transactions.
+        // 获取下一个tx_num of zero，如果没有transactions
         let mut next_tx_num = tx_cursor.last()?.map(|(id, _)| id + 1).unwrap_or_default();
 
         debug!(target: "sync::stages::bodies", stage_progress = from_block, target = to_block, start_tx_id = next_tx_num, "Commencing sync");
 
         // Task downloader can return `None` only if the response relaying channel was closed. This
         // is a fatal error to prevent the pipeline from running forever.
+        // Task downloader可以返回`None`只有response relaying channel被关闭的时候，这是一个fatal
+        // error来防止 pipeline一直运行
         let downloaded_bodies =
             self.downloader.try_next().await?.ok_or(StageError::ChannelClosed)?;
 
@@ -102,6 +115,7 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         let mut highest_block = from_block;
         for response in downloaded_bodies {
             // Write block
+            // 写入block
             let block_number = response.block_number();
 
             let block_indices = StoredBlockBodyIndices {
@@ -114,25 +128,31 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             match response {
                 BlockResponse::Full(block) => {
                     // write transaction block index
+                    // 写入 transaction block index
                     if !block.body.is_empty() {
                         tx_block_cursor.append(block_indices.last_tx_num(), block.number)?;
                     }
 
                     // Write transactions
+                    // 写入transactions
                     for transaction in block.body {
                         // Append the transaction
+                        // 扩展transaction
                         tx_cursor.append(next_tx_num, transaction.into())?;
                         // Increment transaction id for each transaction.
+                        // 对于每个transaction增加transaction id
                         next_tx_num += 1;
                     }
 
                     // Write ommers if any
+                    // 写入ommers，如果有的话
                     if !block.ommers.is_empty() {
                         ommers_cursor
                             .append(block_number, StoredBlockOmmers { ommers: block.ommers })?;
                     }
 
                     // Write withdrawals if any
+                    // 写入withdrawals，如果有的话
                     if let Some(withdrawals) = block.withdrawals {
                         if !withdrawals.is_empty() {
                             withdrawals_cursor
@@ -144,6 +164,7 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             };
 
             // insert block meta
+            // 插入block meta
             block_indices_cursor.append(block_number, block_indices)?;
 
             highest_block = block_number;
@@ -152,6 +173,9 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         // The stage is "done" if:
         // - We got fewer blocks than our target
         // - We reached our target and the target was not limited by the batch size of the stage
+        // stage为"done" 如果：
+        // - 我们获得了比我们的target少的blocks
+        // - 我们到达了target并且target没有被stage的batch size限制
         let done = highest_block == to_block;
         Ok(ExecOutput {
             checkpoint: StageCheckpoint::new(highest_block)
@@ -168,11 +192,13 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
     ) -> Result<UnwindOutput, StageError> {
         let tx = provider.tx_ref();
         // Cursors to unwind bodies, ommers
+        // 用于unwind bodies, ommers的cursors
         let mut body_cursor = tx.cursor_write::<tables::BlockBodyIndices>()?;
         let mut transaction_cursor = tx.cursor_write::<tables::Transactions>()?;
         let mut ommers_cursor = tx.cursor_write::<tables::BlockOmmers>()?;
         let mut withdrawals_cursor = tx.cursor_write::<tables::BlockWithdrawals>()?;
         // Cursors to unwind transitions
+        // 对transitions进行unwind的cursors
         let mut tx_block_cursor = tx.cursor_write::<tables::TransactionBlock>()?;
 
         let mut rev_walker = body_cursor.walk_back(None)?;
@@ -182,6 +208,7 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             }
 
             // Delete the ommers entry if any
+            // 删除ommers entry，如果有的话
             if ommers_cursor.seek_exact(number)?.is_some() {
                 ommers_cursor.delete_current()?;
             }
@@ -192,6 +219,7 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             }
 
             // Delete all transaction to block values.
+            // 删除所有transaction到block values
             if !block_meta.is_empty() &&
                 tx_block_cursor.seek_exact(block_meta.last_tx_num())?.is_some()
             {
@@ -199,14 +227,17 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             }
 
             // Delete all transactions that belong to this block
+            // 删除所有属于这个block的transactions
             for tx_id in block_meta.tx_num_range() {
                 // First delete the transaction
+                // 首先删除transaction
                 if transaction_cursor.seek_exact(tx_id)?.is_some() {
                     transaction_cursor.delete_current()?;
                 }
             }
 
             // Delete the current body value
+            // 删除当前的body value
             rev_walker.delete_current()?;
         }
 
@@ -558,10 +589,12 @@ mod tests {
                 let start = input.checkpoint().block_number;
                 let end = input.target();
                 let mut rng = generators::rng();
+                // 生成随机的block range
                 let blocks = random_block_range(&mut rng, start..=end, GENESIS_HASH, 0..2);
                 self.tx.insert_headers_with_td(blocks.iter().map(|block| &block.header))?;
                 if let Some(progress) = blocks.first() {
                     // Insert last progress data
+                    // 插入最后的progress data
                     self.tx.commit(|tx| {
                         let body = StoredBlockBodyIndices {
                             first_tx_num: 0,
@@ -604,12 +637,14 @@ mod tests {
                     None => input.checkpoint(),
                 }
                 .block_number;
+                // 校验db blocks
                 self.validate_db_blocks(highest_block, highest_block)
             }
         }
 
         impl UnwindStageTestRunner for BodyTestRunner {
             fn validate_unwind(&self, input: UnwindInput) -> Result<(), TestRunnerError> {
+                // 确保没有超过key的entry
                 self.tx.ensure_no_entry_above::<tables::BlockBodyIndices, _>(
                     input.unwind_to,
                     |key| key,
@@ -630,6 +665,7 @@ mod tests {
 
         impl BodyTestRunner {
             /// Get the last available tx id if any
+            /// 获取最新可用的tx id，如果有的话
             pub(crate) fn get_last_tx_id(&self) -> Result<Option<TxNumber>, TestRunnerError> {
                 let last_body = self.tx.query(|tx| {
                     let v = tx.cursor_read::<tables::BlockBodyIndices>()?.last()?;
@@ -644,6 +680,7 @@ mod tests {
             }
 
             /// Validate that the inserted block data is valid
+            /// 校验插入的block data是合法的
             pub(crate) fn validate_db_blocks(
                 &self,
                 prev_progress: BlockNumber,
@@ -651,6 +688,7 @@ mod tests {
             ) -> Result<(), TestRunnerError> {
                 self.tx.query(|tx| {
                     // Acquire cursors on body related tables
+                    // 需要body相关的tables的cursors
                     let mut headers_cursor = tx.cursor_read::<tables::Headers>()?;
                     let mut bodies_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
                     let mut ommers_cursor = tx.cursor_read::<tables::BlockOmmers>()?;
@@ -668,7 +706,9 @@ mod tests {
                         let (number, body) = entry?;
 
                         // Validate sequentiality only after prev progress,
+                        // 只有在pre progress之后顺序校验
                         // since the data before is mocked and can contain gaps
+                        // 因为之前的data是mocked并且可以包含gaps
                         if number > prev_progress {
                             if let Some(prev_key) = prev_number {
                                 assert_eq!(prev_key + 1, number, "Body entries must be sequential");
@@ -676,6 +716,7 @@ mod tests {
                         }
 
                         // Validate that the current entry is below or equals to the highest allowed block
+                        // 校验当前的entry小于或者等于最高允许的block
                         assert!(
                             number <= highest_block,
                             "We wrote a block body outside of our synced range. Found block with number {number}, highest block according to stage is {highest_block}",
@@ -683,6 +724,7 @@ mod tests {
 
                         let (_, header) = headers_cursor.seek_exact(number)?.expect("to be present");
                         // Validate that ommers exist if any
+                        // 校验ommers存在，如果有的话
                         let stored_ommers =  ommers_cursor.seek_exact(number)?;
                         if header.ommers_hash_is_empty() {
                             assert!(stored_ommers.is_none(), "Unexpected ommers entry");

@@ -7,6 +7,7 @@ use reth_provider::DatabaseProviderRW;
 ///
 /// This stage does not write anything; it's checkpoint is used to denote the highest fully synced
 /// block.
+/// 这个stage不写任何东西，它的checkpoint用来表示最高的完全同步的block
 #[derive(Default, Debug, Clone)]
 pub struct FinishStage;
 
@@ -21,6 +22,7 @@ impl<DB: Database> Stage<DB> for FinishStage {
         _provider: &DatabaseProviderRW<'_, &DB>,
         input: ExecInput,
     ) -> Result<ExecOutput, StageError> {
+        // 设置done为true
         Ok(ExecOutput { checkpoint: StageCheckpoint::new(input.target()), done: true })
     }
 
@@ -71,10 +73,12 @@ mod tests {
         fn seed_execution(&mut self, input: ExecInput) -> Result<Self::Seed, TestRunnerError> {
             let start = input.checkpoint().block_number;
             let mut rng = generators::rng();
+            // 随机生成header
             let head = random_header(&mut rng, start, None);
             self.tx.insert_headers_with_td(std::iter::once(&head))?;
 
             // use previous progress as seed size
+            // 使用之前的progress作为seed size
             let end = input.target.unwrap_or_default() + 1;
 
             if start + 1 >= end {
@@ -93,10 +97,12 @@ mod tests {
             output: Option<ExecOutput>,
         ) -> Result<(), TestRunnerError> {
             if let Some(output) = output {
+                // stage总是应该为done
                 assert!(output.done, "stage should always be done");
                 assert_eq!(
                     output.checkpoint.block_number,
                     input.target(),
+                    // stage progress总是应该匹配之前stage的progress
                     "stage progress should always match progress of previous stage"
                 );
             }

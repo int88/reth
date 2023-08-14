@@ -178,6 +178,7 @@ impl Header {
     }
 
     /// Calculate hash and seal the Header so that it can't be changed.
+    /// 计算hash并且seal the Header，这样它不能被改变
     pub fn seal_slow(self) -> SealedHeader {
         let hash = self.hash_slow();
         self.seal(hash)

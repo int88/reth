@@ -54,9 +54,12 @@ pub trait DbCursorRO<'tx, T: Table> {
         Self: Sized;
 
     /// Get an iterator that walks through the table in reverse order.
+    /// 获取一个iterator，以反方向遍历table
     ///
     /// If `start_key` is `None`, then the walker will start from the last entry of the table,
     /// otherwise it starts at the entry greater than or equal to the provided key.
+    /// 如果`start_key`为`None`，那么walker会从table的last
+    /// entry开始，否则它会从大于或者等于提供的key 的entry开始
     fn walk_back<'cursor>(
         &'cursor mut self,
         start_key: Option<T::Key>,
