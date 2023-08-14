@@ -281,6 +281,7 @@ table!(
 
 table!(
     /// Stores the mapping of the transaction hash to the transaction number.
+    /// 存储transaction hash到transaction number之间的映射
     ( TxHashNumber ) TxHash | TxNumber
 );
 

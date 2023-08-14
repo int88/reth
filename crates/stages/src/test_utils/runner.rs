@@ -17,14 +17,17 @@ pub(crate) enum TestRunnerError {
 }
 
 /// A generic test runner for stages.
+/// 对于stage的一个通用的test runner
 #[async_trait::async_trait]
 pub(crate) trait StageTestRunner {
     type S: Stage<DatabaseEnv> + 'static;
 
     /// Return a reference to the database.
+    /// 返回对于数据库的引用
     fn tx(&self) -> &TestTransaction;
 
     /// Return an instance of a Stage.
+    /// 返回一个Stage的实例
     fn stage(&self) -> Self::S;
 }
 
@@ -33,9 +36,11 @@ pub(crate) trait ExecuteStageTestRunner: StageTestRunner {
     type Seed: Send + Sync;
 
     /// Seed database for stage execution
+    /// 对于stage execution填充数据库
     fn seed_execution(&mut self, input: ExecInput) -> Result<Self::Seed, TestRunnerError>;
 
     /// Validate stage execution
+    /// 校验stage execution
     fn validate_execution(
         &self,
         input: ExecInput,
@@ -43,6 +48,7 @@ pub(crate) trait ExecuteStageTestRunner: StageTestRunner {
     ) -> Result<(), TestRunnerError>;
 
     /// Run [Stage::execute] and return a receiver for the result.
+    /// 运行[Stage::execute]并且对于结果返回一个receiver
     fn execute(&self, input: ExecInput) -> oneshot::Receiver<Result<ExecOutput, StageError>> {
         let (tx, rx) = oneshot::channel();
         let (db, mut stage) = (self.tx().inner_raw(), self.stage());
@@ -50,14 +56,17 @@ pub(crate) trait ExecuteStageTestRunner: StageTestRunner {
             let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
             let provider = factory.provider_rw().unwrap();
 
+            // 执行stage execute
             let result = stage.execute(&provider, input).await;
             provider.commit().expect("failed to commit");
+            // 发送结果
             tx.send(result).expect("failed to send message")
         });
         rx
     }
 
     /// Run a hook after [Stage::execute]. Required for Headers & Bodies stages.
+    /// 在[Stage::execute]之后运行一个hook，对于Headers & Bodies stages需要
     async fn after_execution(&self, _seed: Self::Seed) -> Result<(), TestRunnerError> {
         Ok(())
     }
@@ -66,9 +75,11 @@ pub(crate) trait ExecuteStageTestRunner: StageTestRunner {
 #[async_trait::async_trait]
 pub(crate) trait UnwindStageTestRunner: StageTestRunner {
     /// Validate the unwind
+    /// 校验unwind
     fn validate_unwind(&self, input: UnwindInput) -> Result<(), TestRunnerError>;
 
     /// Run [Stage::unwind] and return a receiver for the result.
+    /// 运行[Stage::unwind]并且对于result返回一个receiver
     async fn unwind(&self, input: UnwindInput) -> Result<UnwindOutput, StageError> {
         let (tx, rx) = oneshot::channel();
         let (db, mut stage) = (self.tx().inner_raw(), self.stage());
@@ -84,6 +95,7 @@ pub(crate) trait UnwindStageTestRunner: StageTestRunner {
     }
 
     /// Run a hook before [Stage::unwind]. Required for MerkleStage.
+    /// 在[Stage::unwind]之前运行一个hook，对于MerkleStage是必须的
     fn before_unwind(&self, _input: UnwindInput) -> Result<(), TestRunnerError> {
         Ok(())
     }

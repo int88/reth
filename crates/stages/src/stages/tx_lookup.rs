@@ -21,10 +21,14 @@ use tracing::*;
 ///
 /// This stage walks over the bodies table, and sets the transaction hash of each transaction in a
 /// block to the corresponding `BlockNumber` at each block. This is written to the
+/// 这个stage遍历bodies table，并且设置每个transaction的transaction
+/// hash在一个block中，到对应的`BlockNumber` 对于每一个block，
 /// [`tables::TxHashNumber`] This is used for looking up changesets via the transaction hash.
+/// 它会写入到[`tables::TxHashNumber`]，这用于通过transaction hash查找changesets
 #[derive(Debug, Clone)]
 pub struct TransactionLookupStage {
     /// The number of lookup entries to commit at once
+    /// 一次性提交的lookup entries
     commit_threshold: u64,
 }
 
@@ -49,12 +53,14 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
     }
 
     /// Write transaction hash -> id entries
+    /// 写入transaction hash到id entries的映射
     async fn execute(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
         input: ExecInput,
     ) -> Result<ExecOutput, StageError> {
         if input.target_reached() {
+            // 如果已经到达了target
             return Ok(ExecOutput::done(input.checkpoint()))
         }
         let (tx_range, block_range, is_final_range) =
@@ -65,6 +71,7 @@ impl<DB: Database> Stage<DB> for TransactionLookupStage {
         debug!(target: "sync::stages::transaction_lookup", ?tx_range, "Updating transaction lookup");
 
         let tx = provider.tx_ref();
+        // 获取transaction cursor
         let mut tx_cursor = tx.cursor_read::<tables::Transactions>()?;
         let tx_walker = tx_cursor.walk_range(tx_range)?;
 
@@ -210,10 +217,12 @@ mod tests {
 
     #[tokio::test]
     async fn execute_single_transaction_lookup() {
+        // 之前的state，以及已经处理的stage
         let (previous_stage, stage_progress) = (500, 100);
         let mut rng = generators::rng();
 
         // Set up the runner
+        // 设置runner
         let runner = TransactionLookupTestRunner::default();
         let input = ExecInput {
             target: Some(previous_stage),
@@ -221,6 +230,7 @@ mod tests {
         };
 
         // Insert blocks with a single transaction at block `stage_progress + 10`
+        // 插入blocks，有着单个的transaction，在block `stage_progress + 10`
         let non_empty_block_number = stage_progress + 10;
         let blocks = (stage_progress..=input.target())
             .map(|number| {
@@ -233,11 +243,14 @@ mod tests {
                 )
             })
             .collect::<Vec<_>>();
+        // 插入blocks
         runner.tx.insert_blocks(blocks.iter(), None).expect("failed to insert blocks");
 
+        // 执行blocks
         let rx = runner.execute(input);
 
         // Assert the successful result
+        // 对成功的结果进行assert
         let result = rx.await.unwrap();
         assert_matches!(
             result,
@@ -248,10 +261,12 @@ mod tests {
                     total
                 }))
             }, done: true }) if block_number == previous_stage && processed == total &&
+                // transaction table的长度
                 total == runner.tx.table::<tables::Transactions>().unwrap().len() as u64
         );
 
         // Validate the stage execution
+        // 校验stage execution
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "execution validation");
     }
 
@@ -341,9 +356,11 @@ mod tests {
         ///
         /// 1. If there are any entries in the [tables::TxHashNumber] table above a given block
         ///    number.
+        /// 1. 如果[tables::TxHashNumber]中有任何的entries超过一个给定的block number则panic
         ///
         /// 2. If the is no requested block entry in the bodies table, but [tables::TxHashNumber] is
         ///    not empty.
+        /// 2. 如果在bodies table中没有请求的block entry，但是[tables::TxHashNumber]不为空
         fn ensure_no_hash_by_block(&self, number: BlockNumber) -> Result<(), TestRunnerError> {
             let body_result = self
                 .tx
@@ -351,6 +368,7 @@ mod tests {
                 .block_body_indices(number)?
                 .ok_or(ProviderError::BlockBodyIndicesNotFound(number));
             match body_result {
+                // 确保entry中没有超过这个block number
                 Ok(body) => self.tx.ensure_no_entry_above_by_value::<tables::TxHashNumber, _>(
                     body.last_tx_num(),
                     |key| key,
@@ -405,12 +423,15 @@ mod tests {
                         return Ok(())
                     }
 
+                    // 获取block body indices
                     let mut body_cursor =
                         provider.tx_ref().cursor_read::<tables::BlockBodyIndices>()?;
+                    // 找到start block
                     body_cursor.seek_exact(start_block)?;
 
                     while let Some((_, body)) = body_cursor.next()? {
                         for tx_id in body.tx_num_range() {
+                            // 根据tx id获取transaction
                             let transaction =
                                 provider.transaction_by_id(tx_id)?.expect("no transaction entry");
                             assert_eq!(Some(tx_id), provider.transaction_id(transaction.hash())?);

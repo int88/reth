@@ -178,6 +178,7 @@ impl TestTransaction {
 
     /// Check that there is no table entry above a given
     /// number by [Table::Value]
+    /// 检查在给定的[Table::Value]，没有table entry超过给定的number
     pub fn ensure_no_entry_above_by_value<T, F>(
         &self,
         num: u64,
