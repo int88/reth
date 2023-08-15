@@ -51,6 +51,7 @@ impl StoredBlockBodyIndices {
     }
 
     /// Return the index of the next transaction after this block.
+    /// 返回这个block之后的下一个transaction的index
     pub fn next_tx_num(&self) -> TxNumber {
         self.first_tx_num + self.tx_count
     }

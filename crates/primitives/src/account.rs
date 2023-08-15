@@ -46,11 +46,14 @@ impl Account {
 }
 
 /// Bytecode for an account.
+/// 对于一个account的Bytecode
 ///
 /// A wrapper around [`revm::primitives::Bytecode`][RevmBytecode] with encoding/decoding support.
+/// 对于[`revm::primitives::Bytecode`][RevmBytecode]的封装，有着encoding/decoding的支持
 ///
 /// Note: Upon decoding bytecode from the database, you *should* set the code hash using
 /// [`Self::with_code_hash`].
+/// 注意：当从数据库对bytecode进行decoding，你应该使用[`Self::with_code_hash`]设置code hash
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Bytecode(pub RevmBytecode);
 

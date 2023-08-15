@@ -50,9 +50,12 @@ pub(crate) trait ExecuteStageTestRunner: StageTestRunner {
     /// Run [Stage::execute] and return a receiver for the result.
     /// 运行[Stage::execute]并且对于结果返回一个receiver
     fn execute(&self, input: ExecInput) -> oneshot::Receiver<Result<ExecOutput, StageError>> {
+        // 生成channel
         let (tx, rx) = oneshot::channel();
+        // 获取db和stage
         let (db, mut stage) = (self.tx().inner_raw(), self.stage());
         tokio::spawn(async move {
+            // 生成新的factory
             let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
             let provider = factory.provider_rw().unwrap();
 

@@ -73,11 +73,13 @@ impl<'this, DB: Database> DerefMut for DatabaseProviderRW<'this, DB> {
 
 impl<'this, DB: Database> DatabaseProviderRW<'this, DB> {
     /// Commit database transaction
+    /// 提交database transaction
     pub fn commit(self) -> Result<bool> {
         self.0.commit()
     }
 
     /// Consume `DbTx` or `DbTxMut`.
+    /// 消费`DbTx`或者`DbTxMut`
     pub fn into_tx(self) -> <DB as DatabaseGAT<'this>>::TXMut {
         self.0.into_tx()
     }
@@ -568,6 +570,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
     /// 返回被unwind的行数
     ///
     /// Note: Key is not inclusive and specified key would stay in db.
+    /// 注意：Key不被包含并且指定的key应该保留在db中
     #[inline]
     pub fn unwind_table_by_num<T>(&self, num: u64) -> std::result::Result<usize, DatabaseError>
     where

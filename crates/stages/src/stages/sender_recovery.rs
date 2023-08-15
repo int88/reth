@@ -22,10 +22,13 @@ use tracing::*;
 /// The sender recovery stage iterates over existing transactions,
 /// recovers the transaction signer and stores them
 /// in [`TxSenders`][reth_db::tables::TxSenders] table.
+/// sender recovery stage遍历已经存在的transactions，恢复transaction signer并且存储
+/// 它们到[`TxSenders`][reth_db::tables::TxSenders] table
 #[derive(Clone, Debug)]
 pub struct SenderRecoveryStage {
     /// The size of inserted items after which the control
     /// flow will be returned to the pipeline for commit
+    /// 插入的items的数目，之后control flow会返回到pipeline用于commit
     pub commit_threshold: u64,
 }
 
@@ -51,8 +54,11 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
 
     /// Retrieve the range of transactions to iterate over by querying
     /// [`BlockBodyIndices`][reth_db::tables::BlockBodyIndices],
-    /// collect transactions within that range,
-    /// recover signer for each transaction and store entries in
+    /// 获取一系列的transactions用于迭代，
+    /// 通过访问[`BlockBodyIndices`][reth_db::tables::BlockBodyIndices], collect transactions
+    /// within that range, recover signer for each transaction and store entries in
+    /// 在范围内，对每个transaction恢复signer并且存储entries到[`TxSenders`][reth_db::tables::TxSenders]
+    /// 这个table中
     /// the [`TxSenders`][reth_db::tables::TxSenders] table.
     async fn execute(
         &mut self,
@@ -68,7 +74,9 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
         let end_block = *block_range.end();
 
         // No transactions to walk over
+        // 没有transactions需要遍历
         if tx_range.is_empty() {
+            // 已经达到了target transaction
             info!(target: "sync::stages::sender_recovery", ?tx_range, "Target transaction already reached");
             return Ok(ExecOutput {
                 checkpoint: StageCheckpoint::new(end_block)
@@ -80,15 +88,19 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
         let tx = provider.tx_ref();
 
         // Acquire the cursor for inserting elements
+        // 需要cursor用于插入元素
         let mut senders_cursor = tx.cursor_write::<tables::TxSenders>()?;
 
         // Acquire the cursor over the transactions
+        // 需要cursor用于遍历transactions
         let mut tx_cursor = tx.cursor_read::<RawTable<tables::Transactions>>()?;
         // Walk the transactions from start to end index (inclusive)
+        // 遍历transactions从start到end index（包括）
         let raw_tx_range = RawKey::new(tx_range.start)..RawKey::new(tx_range.end);
         let tx_walker = tx_cursor.walk_range(raw_tx_range)?;
 
         // Iterate over transactions in chunks
+        // 遍历chunks中的transactions
         info!(target: "sync::stages::sender_recovery", ?tx_range, "Recovering senders");
 
         // channels used to return result of sender recovery.
@@ -96,10 +108,13 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
 
         // Spawn recovery jobs onto the default rayon threadpool and send the result through the
         // channel.
+        // 生成recovery jobs到默认的rayon threadpool并且发送结果到channel
         //
         // We try to evenly divide the transactions to recover across all threads in the threadpool.
         // Chunks are submitted instead of individual transactions to reduce the overhead of work
         // stealing in the threadpool workers.
+        // 我们试着均分transactiosn来recover，跨越threadpool中的所有threads，
+        // Chunks被提交而不是单个的 transactions来减少threadpool workers的work stealing
         let chunk_size = self.commit_threshold as usize / rayon::current_num_threads();
         // prevents an edge case
         // where the chunk size is either 0 or too small
@@ -126,6 +141,7 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
         }
 
         // Iterate over channels and append the sender in the order that they are received.
+        // 遍历channels并且按顺序扩展sender，按照它们接收的顺序
         for mut channel in channels {
             while let Some(recovered) = channel.recv().await {
                 let (tx_id, sender) = match recovered {
@@ -134,12 +150,14 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
                         match *error {
                             SenderRecoveryStageError::FailedRecovery(err) => {
                                 // get the block number for the bad transaction
+                                // 获取bad transaction的block number
                                 let block_number = tx
                                     .get::<tables::TransactionBlock>(err.tx)?
                                     .ok_or(ProviderError::BlockNumberForTransactionIndexNotFound)?;
 
                                 // fetch the sealed header so we can use it in the sender recovery
                                 // unwind
+                                // 获取sealed header，这样我们可以使用它，在sender recovery unwind
                                 let sealed_header = provider
                                     .sealed_header(block_number)?
                                     .ok_or(ProviderError::HeaderNotFound(block_number.into()))?;
@@ -153,6 +171,7 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
                         }
                     }
                 };
+                // 扩展，tx_id作为key，sender作为value
                 senders_cursor.append(tx_id, sender)?;
             }
         }
@@ -173,6 +192,7 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
         let (_, unwind_to, _) = input.unwind_block_range_with_threshold(self.commit_threshold);
 
         // Lookup latest tx id that we should unwind to
+        // 寻找最新的我们需要unwind to的tx
         let latest_tx_id = provider
             .block_body_indices(unwind_to)?
             .ok_or(ProviderError::BlockBodyIndicesNotFound(unwind_to))?
@@ -218,9 +238,11 @@ fn stage_checkpoint<DB: Database>(
 #[error(transparent)]
 enum SenderRecoveryStageError {
     /// A transaction failed sender recovery
+    /// 一个transaction恢复sender失败
     FailedRecovery(FailedSenderRecoveryError),
 
     /// A different type of stage error occurred
+    /// 一个不同类型的stage error发生
     StageError(#[from] StageError),
 }
 
@@ -252,6 +274,7 @@ mod tests {
     stage_test_suite_ext!(SenderRecoveryTestRunner, sender_recovery);
 
     /// Execute a block range with a single transaction
+    /// 执行一个block range，有着单个的transaction
     #[tokio::test]
     async fn execute_single_transaction() {
         let (previous_stage, stage_progress) = (500, 100);
@@ -265,6 +288,7 @@ mod tests {
         };
 
         // Insert blocks with a single transaction at block `stage_progress + 10`
+        // 插入有着单个transaction的blocks到block `stage_progress + 10`
         let non_empty_block_number = stage_progress + 10;
         let blocks = (stage_progress..=input.target())
             .map(|number| {
@@ -277,11 +301,14 @@ mod tests {
                 )
             })
             .collect::<Vec<_>>();
+        // 插入blocks
         runner.tx.insert_blocks(blocks.iter(), None).expect("failed to insert blocks");
 
+        // 执行runner
         let rx = runner.execute(input);
 
         // Assert the successful result
+        // 对成功的结果进行校验
         let result = rx.await.unwrap();
         assert_matches!(
             result,
@@ -295,10 +322,12 @@ mod tests {
         );
 
         // Validate the stage execution
+        // 校验stage execution
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "execution validation");
     }
 
     /// Execute the stage twice with input range that exceeds the commit threshold
+    /// 执行stage两次，其中input range超过了commit threshold
     #[tokio::test]
     async fn execute_intermediate_commit() {
         let mut rng = generators::rng();
@@ -309,6 +338,8 @@ mod tests {
         let (stage_progress, previous_stage) = (1000, 1100); // input exceeds threshold
 
         // Manually seed once with full input range
+        // 用完整的input range进行手动的seed
+        // 将tx count range设置的足够高来达到threshold
         let seed =
             random_block_range(&mut rng, stage_progress + 1..=previous_stage, H256::zero(), 0..4); // set tx count range high enough to hit the threshold
         runner.tx.insert_blocks(seed.iter(), None).expect("failed to seed execution");
@@ -321,6 +352,7 @@ mod tests {
         };
 
         // Execute first time
+        // 第一次执行
         let result = runner.execute(first_input).await.unwrap();
         let mut tx_count = 0;
         let expected_progress = seed
@@ -346,6 +378,7 @@ mod tests {
         );
 
         // Execute second time to completion
+        // 第二次执行完成
         runner.set_threshold(u64::MAX);
         let second_input = ExecInput {
             target: Some(previous_stage),
@@ -357,6 +390,7 @@ mod tests {
             result.as_ref().unwrap(),
             &ExecOutput {
                 checkpoint: StageCheckpoint::new(previous_stage).with_entities_stage_checkpoint(
+                    // 执行结果
                     EntitiesCheckpoint { processed: total_transactions, total: total_transactions }
                 ),
                 done: true
@@ -385,9 +419,11 @@ mod tests {
         /// # Panics
         ///
         /// 1. If there are any entries in the [tables::TxSenders] table above a given block number.
+        /// 1. 如果[tables::TxSenders] table有任何的entries，超过一个给定的block number
         ///
         /// 2. If the is no requested block entry in the bodies table, but [tables::TxSenders] is
         ///    not empty.
+        /// 2. 如果bodies table没有请求的block entry，但是[table::TxSenders]不为空
         fn ensure_no_senders_by_block(&self, block: BlockNumber) -> Result<(), TestRunnerError> {
             let body_result = self
                 .tx
@@ -427,6 +463,7 @@ mod tests {
             let stage_progress = input.checkpoint().block_number;
             let end = input.target();
 
+            // 生成random block range
             let blocks = random_block_range(&mut rng, stage_progress..=end, H256::zero(), 0..2);
             self.tx.insert_blocks(blocks.iter(), None)?;
             Ok(blocks)
@@ -447,12 +484,14 @@ mod tests {
                         return Ok(())
                     }
 
+                    // 获取block body indices的cursor
                     let mut body_cursor =
                         provider.tx_ref().cursor_read::<tables::BlockBodyIndices>()?;
                     body_cursor.seek_exact(start_block)?;
 
                     while let Some((_, body)) = body_cursor.next()? {
                         for tx_id in body.tx_num_range() {
+                            // 获取transaction
                             let transaction: TransactionSigned = provider
                                 .transaction_by_id_no_hash(tx_id)?
                                 .map(|tx| TransactionSigned {
@@ -461,8 +500,10 @@ mod tests {
                                     transaction: tx.transaction,
                                 })
                                 .expect("no transaction entry");
+                            // 从transaction获取signer
                             let signer =
                                 transaction.recover_signer().expect("failed to recover signer");
+                            // 确保恢复的signer和从provider拿到的transaction sender是一样的
                             assert_eq!(Some(signer), provider.transaction_sender(tx_id)?)
                         }
                     }

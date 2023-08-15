@@ -42,6 +42,7 @@ use tracing::*;
 /// - [tables::PlainStorageState]
 ///
 /// Tables updated after state finishes execution:
+/// 在state执行结束之后更新的tables
 /// - [tables::PlainAccountState]
 /// - [tables::PlainStorageState]
 /// - [tables::Bytecodes]
@@ -49,9 +50,13 @@ use tracing::*;
 /// - [tables::StorageChangeSet]
 ///
 /// For unwinds we are accessing:
+/// 对于unwinds我们要访问
 /// - [tables::BlockBodyIndices] get tx index to know what needs to be unwinded
+/// - [tables::BlockBodyIndices]获取tx index，知道什么需要被unwind
 /// - [tables::AccountHistory] to remove change set and apply old values to
+/// - [tables::AccountHistory]来移除change set并且应用old value
 /// - [tables::PlainAccountState] [tables::StorageHistory] to remove change set and apply old values
+/// - [tables::PlainAccountState] [tables::StorageHistory]用来移除change set并且应用old values
 /// to [tables::PlainStorageState]
 // false positive, we cannot derive it if !DB: Debug.
 #[allow(missing_debug_implementations)]
@@ -673,6 +678,7 @@ mod tests {
         // 执行stage
         let output = execution_stage.execute(&provider, input).await.unwrap();
         provider.commit().unwrap();
+        // 校验output
         assert_matches!(output, ExecOutput {
             checkpoint: StageCheckpoint {
                 block_number: 1,
@@ -713,6 +719,7 @@ mod tests {
         // assert accounts
         // 校验accounts
         assert_eq!(
+            // 一个account的post change
             provider.basic_account(account1),
             Ok(Some(account1_info)),
             "Post changed of a account"
@@ -731,6 +738,7 @@ mod tests {
         // 对storage进行assert
         // Get on dupsort would return only first value. This is good enough for this test.
         assert_eq!(
+            // 获取account1的plain storage state
             provider.tx_ref().get::<tables::PlainStorageState>(account1),
             Ok(Some(StorageEntry { key: H256::from_low_u64_be(1), value: U256::from(2) })),
             "Post changed of a account"
