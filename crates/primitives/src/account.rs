@@ -7,25 +7,31 @@ use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
 /// An Ethereum account.
+/// 一个Ethereum account
 #[main_codec]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Account {
     /// Account nonce.
+    /// Account的nonce信息
     pub nonce: u64,
     /// Account balance.
+    /// Account的balance信息
     pub balance: U256,
     /// Hash of the account's bytecode.
+    /// account的bytecode的哈希值
     pub bytecode_hash: Option<H256>,
 }
 
 impl Account {
     /// Whether the account has bytecode.
+    /// account是否有bytecode
     pub fn has_bytecode(&self) -> bool {
         self.bytecode_hash.is_some()
     }
 
     /// After SpuriousDragon empty account is defined as account with nonce == 0 && balance == 0 &&
     /// bytecode = None.
+    /// 在SpuriousDragon empty account被定义为有着nonce == 0 && balance == 0 && bytecode == None之后
     pub fn is_empty(&self) -> bool {
         let is_bytecode_empty = match self.bytecode_hash {
             None => true,
@@ -37,6 +43,7 @@ impl Account {
 
     /// Returns an account bytecode's hash.
     /// In case of no bytecode, returns [`KECCAK_EMPTY`].
+    /// 返回一个account的bytecode的hash，万一没有bytecode，则返回[`KECCAK_EMPTY`].
     pub fn get_bytecode_hash(&self) -> H256 {
         match self.bytecode_hash {
             Some(hash) => hash,

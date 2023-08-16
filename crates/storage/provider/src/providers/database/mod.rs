@@ -22,12 +22,16 @@ pub use provider::{DatabaseProvider, DatabaseProviderRO, DatabaseProviderRW};
 use reth_interfaces::db::LogLevel;
 
 /// A common provider that fetches data from a database.
+/// 一个公共的provider，从一个databsae中拉取数据
 ///
 /// This provider implements most provider or provider factory traits.
+/// 这个provider实现了大多数provider或者provider factory的traits
 #[derive(Debug)]
 pub struct ProviderFactory<DB> {
     /// Database
+    /// 数据库
     db: DB,
+    /// Chain spec
     /// Chain spec
     chain_spec: Arc<ChainSpec>,
 }

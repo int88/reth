@@ -17,11 +17,14 @@ pub const EIP1559_TX_TYPE_ID: u8 = 2;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Serialize, Deserialize)]
 pub enum TxType {
     /// Legacy transaction pre EIP-2929
+    /// EIP-2929之前的Legacy transaction
     #[default]
     Legacy = 0_isize,
     /// AccessList transaction
+    /// AccessList的transaction
     EIP2930 = 1_isize,
     /// Transaction with Priority fee
+    /// 有着Priority fee的Transaction
     EIP1559 = 2_isize,
 }
 

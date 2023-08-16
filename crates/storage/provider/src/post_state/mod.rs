@@ -113,6 +113,7 @@ impl PostState {
     }
 
     /// Add a pruning configuration.
+    /// 添加一个pruning配置
     pub fn add_prune_targets(&mut self, prune_targets: PruneTargets) {
         self.prune_targets = prune_targets;
     }

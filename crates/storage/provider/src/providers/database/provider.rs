@@ -1104,6 +1104,7 @@ impl<'this, TX: DbTx<'this>> TransactionsProvider for DatabaseProvider<'this, TX
 
 impl<'this, TX: DbTx<'this>> ReceiptProvider for DatabaseProvider<'this, TX> {
     fn receipt(&self, id: TxNumber) -> Result<Option<Receipt>> {
+        // 直接从receipt table获取数据
         Ok(self.tx.get::<tables::Receipts>(id)?)
     }
 
@@ -1123,6 +1124,7 @@ impl<'this, TX: DbTx<'this>> ReceiptProvider for DatabaseProvider<'this, TX> {
                 return if tx_range.is_empty() {
                     Ok(Some(Vec::new()))
                 } else {
+                    // 获取receipts table
                     let mut receipts_cursor = self.tx.cursor_read::<tables::Receipts>()?;
                     let receipts = receipts_cursor
                         .walk_range(tx_range)?
@@ -1733,10 +1735,12 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         let block_number = block.number;
         self.tx.put::<tables::CanonicalHeaders>(block.number, block.hash())?;
         // Put header with canonical hashes.
+        // 放入header，有着canonical hashes
         self.tx.put::<tables::Headers>(block.number, block.header.as_ref().clone())?;
         self.tx.put::<tables::HeaderNumbers>(block.hash(), block.number)?;
 
         // total difficulty
+        // 放入td
         let ttd = if block.number == 0 {
             block.difficulty
         } else {
@@ -1748,6 +1752,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         self.tx.put::<tables::HeaderTD>(block.number, ttd.into())?;
 
         // insert body ommers data
+        // 插入body ommers data
         if !block.ommers.is_empty() {
             self.tx.put::<tables::BlockOmmers>(
                 block.number,
@@ -1780,6 +1785,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         };
 
         for (transaction, sender) in tx_iter {
+            // 插入transactions
             let hash = transaction.hash();
             self.tx.put::<tables::TxSenders>(next_tx_num, sender)?;
             self.tx.put::<tables::Transactions>(next_tx_num, transaction.into())?;
@@ -1789,6 +1795,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
 
         if let Some(withdrawals) = block.withdrawals {
             if !withdrawals.is_empty() {
+                // 放入block withdrawals
                 self.tx.put::<tables::BlockWithdrawals>(
                     block_number,
                     StoredBlockWithdrawals { withdrawals },
@@ -1797,9 +1804,11 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         }
 
         let block_indices = StoredBlockBodyIndices { first_tx_num, tx_count };
+        // 放入block indices
         self.tx.put::<tables::BlockBodyIndices>(block_number, block_indices.clone())?;
 
         if !block_indices.is_empty() {
+            // 放入transaction block
             self.tx.put::<tables::TransactionBlock>(block_indices.last_tx_num(), block_number)?;
         }
 

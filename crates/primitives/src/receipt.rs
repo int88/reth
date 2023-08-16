@@ -14,6 +14,7 @@ use std::cmp::Ordering;
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Receipt {
     /// Receipt type.
+    /// Receipt的类型
     pub tx_type: TxType,
     /// If transaction is executed successfully.
     /// 如果transaction被成功执行

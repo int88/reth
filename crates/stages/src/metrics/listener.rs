@@ -13,6 +13,7 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tracing::trace;
 
 /// Alias type for metric producers to use.
+/// 使用的metric producers的alias type
 pub type MetricEventsSender = UnboundedSender<MetricEvent>;
 
 /// Collection of metric events.

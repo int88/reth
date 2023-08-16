@@ -127,6 +127,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         // Execute block range
         // 执行block range
         let mut state = PostState::default();
+        // 添加prune targets
         state.add_prune_targets(self.prune_targets);
 
         for block_number in start_block..=max_block {
@@ -450,8 +451,10 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
 #[derive(Debug)]
 pub struct ExecutionStageThresholds {
     /// The maximum number of blocks to process before the execution stage commits.
+    /// 在execution stage提交之前的处理的blocks的数目
     pub max_blocks: Option<u64>,
     /// The maximum amount of state changes to keep in memory before the execution stage commits.
+    /// 在execution stage提交之前的最大的保存在内存中的state changes的数目
     pub max_changes: Option<u64>,
 }
 
@@ -826,7 +829,7 @@ mod tests {
         assert_eq!(provider.basic_account(acc2), Ok(Some(acc2_info)), "Post changed of a account");
 
         let miner_acc = H160(hex!("2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"));
-        // 第三个account应该被unwind
+        // 第三个account应该被unwind，即不包含miner account
         assert_eq!(provider.basic_account(miner_acc), Ok(None), "Third account should be unwound");
 
         // 第一个receipt应该被unwind
@@ -853,6 +856,7 @@ mod tests {
         provider.commit().unwrap();
 
         // variables
+        // 变量，各种地址
         let caller_address = H160(hex!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"));
         let destroyed_address = H160(hex!("095e7baea6a6c7c4c2dfeb977efac326af552d87"));
         let beneficiary_address = H160(hex!("2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"));
@@ -862,6 +866,7 @@ mod tests {
         let code_hash = keccak256(code);
 
         // pre state
+        // 执行之前的state情况
         let caller_info = Account { nonce: 0, balance, bytecode_hash: None };
         let destroyed_info =
             Account { nonce: 0, balance: U256::ZERO, bytecode_hash: Some(code_hash) };
@@ -899,6 +904,7 @@ mod tests {
         provider.commit().unwrap();
 
         // execute
+        // 执行
         let provider = factory.provider_rw().unwrap();
         let mut execution_stage = stage();
         let _ = execution_stage.execute(&provider, input).await.unwrap();
@@ -907,9 +913,11 @@ mod tests {
         // assert unwind stage
         // 对unwind stage进行assert
         let provider = factory.provider_rw().unwrap();
+        // account被destroyed
         assert_eq!(provider.basic_account(destroyed_address), Ok(None), "Account was destroyed");
 
         assert_eq!(
+            // destroyed address也不存在了
             provider.tx_ref().get::<tables::PlainStorageState>(destroyed_address),
             Ok(None),
             "There is storage for destroyed account"
@@ -922,6 +930,7 @@ mod tests {
 
         assert_eq!(
             plain_accounts,
+            // plain accounts仅包含beneficiary address和caller address
             vec![
                 (
                     beneficiary_address,
@@ -947,6 +956,7 @@ mod tests {
         let storage_changesets = test_tx.table::<tables::StorageChangeSet>().unwrap();
 
         assert_eq!(
+            // account changeset的情况
             account_changesets,
             vec![
                 (
@@ -962,6 +972,7 @@ mod tests {
         );
 
         assert_eq!(
+            // storage changsets的情况
             storage_changesets,
             vec![
                 (
@@ -1030,6 +1041,7 @@ mod tests {
                              expect_num_receipts: usize| async move {
             let provider = factory.provider_rw().unwrap();
 
+            // 构建execution stage
             let mut execution_stage = ExecutionStage::new(
                 Factory::new(Arc::new(ChainSpecBuilder::mainnet().berlin_activated().build())),
                 ExecutionStageThresholds { max_blocks: Some(100), max_changes: None },
@@ -1039,6 +1051,7 @@ mod tests {
             execution_stage.execute(&provider, input).await.unwrap();
             assert_eq!(
                 provider.receipts_by_block(1.into()).unwrap().unwrap().len(),
+                // 期望的receipts的数目
                 expect_num_receipts
             );
         };

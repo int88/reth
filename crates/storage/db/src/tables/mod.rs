@@ -297,6 +297,7 @@ table!(
 
 table!(
     /// (Canonical only) Stores transaction receipts.
+    /// （只针对canonical）存储transaction receipts
     ( Receipts ) TxNumber | Receipt
 );
 
