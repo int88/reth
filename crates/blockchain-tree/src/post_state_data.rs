@@ -5,6 +5,7 @@ use reth_provider::{post_state::PostState, PostStateDataProvider};
 use std::collections::BTreeMap;
 
 /// Structure that bundles references of data needs to implement [`PostStateDataProvider`]
+/// Structure捆绑对于data的引用，需要实现[`PostStateDataProvider`]
 #[derive(Clone, Debug)]
 pub struct PostStateDataRef<'a> {
     /// The wrapped state after execution of one or more transactions and/or blocks.

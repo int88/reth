@@ -93,6 +93,7 @@ where
     }
 
     /// Initializes the config and block env.
+    /// 初始化配置以及block env
     fn init_env(&mut self, header: &Header, total_difficulty: U256) {
         fill_cfg_and_block_env(
             &mut self.evm.env.cfg,
@@ -1195,6 +1196,7 @@ mod tests {
 
     /// If the account is created and destroyed within the same transaction, we shouldn't generate
     /// the changeset.
+    /// 如果account被创建并且在同一个transaction中被摧毁，我们不应该生成changeset
     #[test]
     fn test_account_created_destroyed() {
         let address = Address::random();

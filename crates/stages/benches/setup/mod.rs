@@ -86,18 +86,23 @@ pub(crate) fn unwind_hashes<S: Clone + Stage<DatabaseEnv>>(
 }
 
 // Helper for generating testdata for the benchmarks.
+// Helper用于生成testdata，为了benchmarks
 // Returns the path to the database file.
+// 返回到数据库文件的路径
 pub(crate) fn txs_testdata(num_blocks: u64) -> PathBuf {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata").join("txs-bench");
     let txs_range = 100..150;
 
     // number of storage changes per transition
+    // 每个transition的storage changes
     let n_changes = 0..3;
 
     // range of possible values for a storage key
+    // 一个storage key的可能值的范围
     let key_range = 0..300;
 
     // number of accounts
+    // accounts的数目
     let n_eoa = 131;
     let n_contract = 31;
 
@@ -130,6 +135,7 @@ pub(crate) fn txs_testdata(num_blocks: u64) -> PathBuf {
         tx.insert_accounts_and_storages(start_state.clone()).unwrap();
 
         // make first block after genesis have valid state root
+        // 确保genesis之后的第一个block有正确的state root
         let (root, updates) = StateRoot::new(tx.inner_rw().tx_ref()).root_with_updates().unwrap();
         let second_block = blocks.get_mut(1).unwrap();
         let cloned_second = second_block.clone();
@@ -155,6 +161,7 @@ pub(crate) fn txs_testdata(num_blocks: u64) -> PathBuf {
         tx.insert_accounts_and_storages(final_state).unwrap();
 
         // make last block have valid state root
+        // 让最后一个block有valid state root
         let root = {
             let tx_mut = tx.inner_rw();
             let root = StateRoot::new(tx_mut.tx_ref()).root().unwrap();
@@ -166,11 +173,14 @@ pub(crate) fn txs_testdata(num_blocks: u64) -> PathBuf {
         let cloned_last = last_block.clone();
         let mut updated_header = cloned_last.header.unseal();
         updated_header.state_root = root;
+        // 设置last_block
         *last_block = SealedBlock { header: updated_header.seal_slow(), ..cloned_last };
 
+        // 插入blocks
         tx.insert_blocks(blocks.iter(), None).unwrap();
 
         // initialize TD
+        // 初始化TD
         tx.commit(|tx| {
             let (head, _) = tx.cursor_read::<tables::Headers>()?.first()?.unwrap_or_default();
             tx.put::<tables::HeaderTD>(head, reth_primitives::U256::from(0).into())

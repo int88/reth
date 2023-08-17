@@ -33,6 +33,7 @@ pub struct Command {
     config: Option<PathBuf>,
 
     /// The path to the data dir for all reth files and subdirectories.
+    /// 到data dir的路径，对于所有的reth files和子目录
     ///
     /// Defaults to the OS-specific data directory:
     ///

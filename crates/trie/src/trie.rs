@@ -19,6 +19,7 @@ use reth_rlp::Encodable;
 use std::{collections::HashMap, ops::RangeInclusive};
 
 /// StateRoot is used to compute the root node of a state trie.
+/// StateRoot用于计算一个state trie的root node
 pub struct StateRoot<'a, 'b, TX, H> {
     /// A reference to the database transaction.
     pub tx: &'a TX,

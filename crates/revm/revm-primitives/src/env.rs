@@ -6,6 +6,7 @@ use reth_primitives::{
 use revm::primitives::{AnalysisKind, BlockEnv, CfgEnv, SpecId, TransactTo, TxEnv};
 
 /// Convenience function to call both [fill_cfg_env] and [fill_block_env]
+/// 同时调用 [fill_cfg_env]和[fill_block_env]的convenience函数
 pub fn fill_cfg_and_block_env(
     cfg: &mut CfgEnv,
     block_env: &mut BlockEnv,
@@ -19,6 +20,7 @@ pub fn fill_cfg_and_block_env(
 }
 
 /// Fill [CfgEnv] fields according to the chain spec and given header
+/// 填充[CfgEnv]字段，根据chain spec和给定的header
 pub fn fill_cfg_env(
     cfg_env: &mut CfgEnv,
     chain_spec: &ChainSpec,
@@ -43,6 +45,7 @@ pub fn fill_cfg_env(
 }
 
 /// Fill block environment from Block.
+/// 从Block填充block environment
 pub fn fill_block_env(
     block_env: &mut BlockEnv,
     chain_spec: &ChainSpec,
