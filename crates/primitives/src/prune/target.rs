@@ -47,6 +47,7 @@ macro_rules! should_prune_method {
         )+
 
         /// Sets pruning to all targets.
+        /// 设置清理所有的targets
         pub fn all() -> Self {
             PruneTargets {
                 $(
@@ -60,11 +61,13 @@ macro_rules! should_prune_method {
 
 impl PruneTargets {
     /// Sets pruning to no target.
+    /// 设置pruning为no target
     pub fn none() -> Self {
         PruneTargets::default()
     }
 
     /// Check if target block should be pruned
+    /// 检查是否target block应该被pruned
     pub fn should_prune(&self, target: &PruneMode, block: BlockNumber, tip: BlockNumber) -> bool {
         match target {
             PruneMode::Full => true,
