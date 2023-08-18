@@ -27,7 +27,9 @@ impl ExecInput {
     }
 
     /// Return the next block number after the current
+    /// 返回下一个block number，在current之后
     /// +1 is needed to skip the present block and always start from block number 1, not 0.
+    /// +1是必须的，来跳过当前的block并且总是从block number 1开始，而不是0
     pub fn next_block(&self) -> BlockNumber {
         let current_block = self.checkpoint();
         current_block.block_number + 1

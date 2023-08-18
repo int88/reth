@@ -197,6 +197,7 @@ where
     /// be used to download and execute the missing blocks.
     pipeline_run_threshold: u64,
     /// Controls pruning triggered by engine updates.
+    /// 控制engine updates触发的pruning
     prune: Option<EnginePruneController<DB>>,
 }
 
@@ -282,6 +283,7 @@ where
             max_block,
             blockchain.chain_spec(),
         );
+        // 构建Engine Prune Controller
         let prune = pruner.map(|pruner| EnginePruneController::new(pruner, task_spawner));
         let mut this = Self {
             sync,

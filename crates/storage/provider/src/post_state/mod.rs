@@ -96,6 +96,7 @@ impl PostState {
     }
 
     /// Add a pruning configuration.
+    /// 添加一个pruning配置
     pub fn add_prune_modes(&mut self, prune_modes: PruneModes) {
         self.prune_modes = prune_modes;
     }

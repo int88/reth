@@ -6,9 +6,11 @@ use paste::paste;
 use serde::{Deserialize, Serialize};
 
 /// Minimum distance necessary from the tip so blockchain tree can work correctly.
+/// 从tip开始最小的distance，这样blockchain tree可以正确工作
 pub const MINIMUM_PRUNING_DISTANCE: u64 = 128;
 
 /// Pruning configuration for every part of the data that can be pruned.
+/// 对于每个部分的pruning配置，其中的data能够被清理
 #[derive(Debug, Clone, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct PruneModes {

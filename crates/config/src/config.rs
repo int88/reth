@@ -18,6 +18,7 @@ pub struct Config {
     // TODO(onbjerg): Can we make this easier to maintain when we add/remove stages?
     pub stages: StageConfig,
     /// Configuration for pruning.
+    /// pruning的配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prune: Option<PruneConfig>,
     /// Configuration for the discovery service.
@@ -279,12 +280,15 @@ impl Default for IndexHistoryConfig {
 }
 
 /// Pruning configuration.
+/// Pruning配置
 #[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct PruneConfig {
     /// Minimum pruning interval measured in blocks.
+    /// 最小的pruning时间间隔，以blocks为时间
     pub block_interval: u64,
     /// Pruning configuration for every part of the data that can be pruned.
+    /// Pruning配置，对于每个可用被pruned的部分
     pub parts: PruneModes,
 }
 

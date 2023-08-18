@@ -20,6 +20,7 @@ pub struct PruningArgs {
 
 impl PruningArgs {
     /// Returns pruning configuration.
+    /// 返回pruning配置
     pub fn prune_config(&self, _chain_spec: Arc<ChainSpec>) -> eyre::Result<Option<PruneConfig>> {
         Ok(if self.full {
             eyre::bail!("full node is not supported yet, keep an eye on next releases");

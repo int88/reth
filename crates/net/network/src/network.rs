@@ -94,8 +94,10 @@ impl NetworkHandle {
     }
 
     /// Returns a new [`FetchClient`] that can be cloned and shared.
+    /// 返回一个新的[`FetchClient`]可以cloned以及共享
     ///
     /// The [`FetchClient`] is the entrypoint for sending requests to the network.
+    /// [`FetchClient`]是entrypoint用于发送请求到network
     pub async fn fetch_client(&self) -> Result<FetchClient, oneshot::error::RecvError> {
         let (tx, rx) = oneshot::channel();
         let _ = self.manager().send(NetworkHandleMessage::FetchClient(tx));

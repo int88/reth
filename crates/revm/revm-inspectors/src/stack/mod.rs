@@ -13,9 +13,13 @@ mod maybe_owned;
 pub use maybe_owned::MaybeOwnedInspector;
 
 /// One can hook on inspector execution in 3 ways:
+/// 可用hook到inspector的execiont，按照以下三种方式：
 /// - Block: Hook on block execution
+/// - BLock: hook到block的执行
 /// - BlockWithIndex: Hook on block execution transaction index
+/// - BlockWithIndex: hook到特定的transaction index的执行
 /// - Transaction: Hook on a specific transaction hash
+/// - Transaction: hook到特定的transaction hash
 #[derive(Debug, Default, Clone)]
 pub enum Hook {
     #[default]
@@ -24,8 +28,10 @@ pub enum Hook {
     /// Hook on a specific block.
     Block(u64),
     /// Hook on a specific transaction hash.
+    /// 对一个特定的transaction hash进行hook
     Transaction(TxHash),
     /// Hooks on every transaction in a block.
+    /// Hooks到一个block的每个transactions
     All,
 }
 

@@ -3,6 +3,7 @@ use reth_codecs::{main_codec, Compact};
 use thiserror::Error;
 
 /// Part of the data that can be pruned.
+/// 内部清单的部分的数据
 #[main_codec]
 #[derive(Debug, Display, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum PrunePart {
@@ -24,6 +25,7 @@ pub enum PrunePart {
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum PrunePartError {
     /// Invalid configuration of a prune part.
+    /// 对于一个prune part的非法配置
     #[error("The configuration provided for {0} is invalid.")]
     Configuration(PrunePart),
 }

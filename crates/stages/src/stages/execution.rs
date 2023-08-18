@@ -64,13 +64,16 @@ pub struct ExecutionStage<EF: ExecutorFactory> {
     /// and full calculations across [`super::MerkleStage`], [`super::AccountHashingStage`] and
     /// [`super::StorageHashingStage`]. This is required to figure out if can prune or not
     /// changesets on subsequent pipeline runs.
+    /// 在后续的pipeline运行的changesets
     external_clean_threshold: u64,
     /// Pruning configuration.
+    /// Pruning的位置
     prune_modes: PruneModes,
 }
 
 impl<EF: ExecutorFactory> ExecutionStage<EF> {
     /// Create new execution stage with specified config.
+    /// 创建新的execution stage，用特定的配置
     pub fn new(
         executor_factory: EF,
         thresholds: ExecutionStageThresholds,
@@ -170,6 +173,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         }
 
         // Write remaining changes
+        // 写入剩余的changes
         trace!(target: "sync::stages::execution", accounts = state.accounts().len(), "Writing updated state to database");
         let start = Instant::now();
         state.write_to_db(provider.tx_ref(), max_block)?;
@@ -184,11 +188,14 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
     }
 
     /// Adjusts the prune modes related to changesets.
+    /// 调整和changesets相关的prune modes
     ///
     /// This function verifies whether the [`super::MerkleStage`] or Hashing stages will run from
     /// scratch. If at least one stage isn't starting anew, it implies that pruning of
     /// changesets cannot occur. This is determined by checking the highest clean threshold
     /// (`self.external_clean_threshold`) across the stages.
+    /// 这个函数校验是否[`super::MerkleStage`]或者Hashing
+    /// stages会从头开始运行，如果至少一个stage不是从新的开始，它表明对于changesets的pruning不能发生
     ///
     /// Given that `start_block` changes with each checkpoint, it's necessary to inspect
     /// [`tables::AccountsTrie`] to ensure that [`super::MerkleStage`] hasn't
@@ -203,9 +210,12 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
 
         // If we're not executing MerkleStage from scratch (by threshold or first-sync), then erase
         // changeset related pruning configurations
+        // 如果我们不是从头开始执行MerkleStage（通过threshold或者第一次sync），之后移除changeset，
+        // 和pruning配置 相关的changset
         if !(max_block - start_block > self.external_clean_threshold ||
             provider.tx_ref().entries::<tables::AccountsTrie>()?.is_zero())
         {
+            // account history和storage history都设置为None
             prune_modes.account_history = None;
             prune_modes.storage_history = None;
         }

@@ -418,6 +418,7 @@ table!(
 
 table!(
     /// Stores the highest pruned block number and prune mode of each prune part.
+    /// 存储最高的pruned block number以及每个prune part的prune mode
     ( PruneCheckpoints ) PrunePart | PruneCheckpoint
 );
 

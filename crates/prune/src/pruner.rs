@@ -48,6 +48,7 @@ impl Default for BatchSizes {
 }
 
 /// Pruning routine. Main pruning logic happens in [Pruner::run].
+/// Pruning routein，主要的pruning逻辑发生在[Pruner::run]
 pub struct Pruner<DB> {
     metrics: Metrics,
     provider_factory: ProviderFactory<DB>,
@@ -56,6 +57,7 @@ pub struct Pruner<DB> {
     min_block_interval: u64,
     /// Last pruned block number. Used in conjunction with `min_block_interval` to determine
     /// when the pruning needs to be initiated.
+    /// 上一次pruned block number，用于`min_block_interval`来决定什么时候pruning应该被初始化
     last_pruned_block_number: Option<BlockNumber>,
     modes: PruneModes,
     batch_sizes: BatchSizes,
@@ -63,6 +65,7 @@ pub struct Pruner<DB> {
 
 impl<DB: Database> Pruner<DB> {
     /// Creates a new [Pruner].
+    /// 创建一个新的[Pruner]
     pub fn new(
         db: DB,
         chain_spec: Arc<ChainSpec>,
@@ -81,6 +84,7 @@ impl<DB: Database> Pruner<DB> {
     }
 
     /// Run the pruner
+    /// 运行pruner
     pub fn run(&mut self, tip_block_number: BlockNumber) -> PrunerResult {
         trace!(
             target: "pruner",
@@ -91,6 +95,7 @@ impl<DB: Database> Pruner<DB> {
 
         let provider = self.provider_factory.provider_rw()?;
 
+        // 清理receipts
         if let Some((to_block, prune_mode)) =
             self.modes.prune_target_block_receipts(tip_block_number)?
         {
@@ -102,6 +107,7 @@ impl<DB: Database> Pruner<DB> {
                 .record(part_start.elapsed())
         }
 
+        // 清理transaction lookup
         if let Some((to_block, prune_mode)) =
             self.modes.prune_target_block_transaction_lookup(tip_block_number)?
         {
@@ -113,6 +119,7 @@ impl<DB: Database> Pruner<DB> {
                 .record(part_start.elapsed())
         }
 
+        // 清理sender recovery
         if let Some((to_block, prune_mode)) =
             self.modes.prune_target_block_sender_recovery(tip_block_number)?
         {
@@ -124,6 +131,7 @@ impl<DB: Database> Pruner<DB> {
                 .record(part_start.elapsed())
         }
 
+        // 清理block account history
         if let Some((to_block, prune_mode)) =
             self.modes.prune_target_block_account_history(tip_block_number)?
         {
@@ -135,6 +143,7 @@ impl<DB: Database> Pruner<DB> {
                 .record(part_start.elapsed())
         }
 
+        // 清理block storage history
         if let Some((to_block, prune_mode)) =
             self.modes.prune_target_block_storage_history(tip_block_number)?
         {
@@ -184,12 +193,17 @@ impl<DB: Database> Pruner<DB> {
 
     /// Get next inclusive tx number range to prune according to the checkpoint and `to_block` block
     /// number.
+    /// 获取下一个inclusive tx number range去prune，根据checkpoint以及`to_block`的block number
     ///
     /// To get the range start:
+    /// 获取range start:
     /// 1. If checkpoint exists, get next block body and return its first tx number.
+    /// 1. 如果checkpoint存在，获取下一个block body并且返回它的第一个tx number
     /// 2. If checkpoint doesn't exist, return 0.
+    /// 2. 如果checkpoint不存在，返回0
     ///
     /// To get the range end: get last tx number for the provided `to_block`.
+    /// 获取range end：获取最后一个tx number，对于提供的`to_block`
     fn get_next_tx_num_range_from_checkpoint(
         &self,
         provider: &DatabaseProviderRW<'_, DB>,
@@ -201,9 +215,11 @@ impl<DB: Database> Pruner<DB> {
             // Checkpoint exists, prune from the next block after the highest pruned one
             .map(|checkpoint| checkpoint.block_number + 1)
             // No checkpoint exists, prune from genesis
+            // 没有checkpoint，从genesis开始清理
             .unwrap_or(0);
 
         // Get first transaction
+        // 获取第一个transaction
         let from_tx_num =
             provider.block_body_indices(from_block_number)?.map(|body| body.first_tx_num);
         // If no block body index is found, the DB is either corrupted or we've already pruned up to
@@ -262,6 +278,7 @@ impl<DB: Database> Pruner<DB> {
     }
 
     /// Prune transaction lookup entries up to the provided block, inclusive.
+    /// 对于提供的block清理transaction lookup entries
     #[instrument(level = "trace", skip(self, provider), target = "pruner")]
     fn prune_transaction_lookup(
         &self,
@@ -290,6 +307,7 @@ impl<DB: Database> Pruner<DB> {
             let tx_range = i..(i + self.batch_sizes.transaction_lookup as u64).min(last_tx_num + 1);
 
             // Retrieve transactions in the range and calculate their hashes in parallel
+            // 按照range获取transactions并且并行计算它们的hashes
             let mut hashes = provider
                 .transactions_by_tx_range(tx_range.clone())?
                 .into_par_iter()
@@ -297,6 +315,7 @@ impl<DB: Database> Pruner<DB> {
                 .collect::<Vec<_>>();
 
             // Number of transactions retrieved from the database should match the tx range count
+            // 从db获取的transactions数目应该和tx range count匹配
             let tx_count = tx_range.clone().count();
             if hashes.len() != tx_count {
                 return Err(PrunerError::InconsistentData(
@@ -305,8 +324,10 @@ impl<DB: Database> Pruner<DB> {
             }
 
             // Pre-sort hashes to prune them in order
+            // 对hashes进行排序，按需清理它们
             hashes.sort_unstable();
 
+            // 从table中移除
             let rows = provider.prune_table_with_iterator::<tables::TxHashNumber>(hashes)?;
             processed += rows;
             trace!(
@@ -680,11 +701,13 @@ mod tests {
         let mut tx_hash_numbers = Vec::new();
         for block in &blocks {
             for transaction in &block.body {
+                // 遍历body，推入tx hash numbers
                 tx_hash_numbers.push((transaction.hash, tx_hash_numbers.len() as u64));
             }
         }
         tx.insert_tx_hash_numbers(tx_hash_numbers).expect("insert tx hash numbers");
 
+        // 校验transactions table的大小和block里body长度的总和一致
         assert_eq!(
             tx.table::<tables::Transactions>().unwrap().len(),
             blocks.iter().map(|block| block.body.len()).sum::<usize>()
@@ -696,6 +719,7 @@ mod tests {
 
         let test_prune = |to_block: BlockNumber| {
             let prune_mode = PruneMode::Before(to_block);
+            // 构建新的pruner
             let pruner = Pruner::new(
                 tx.inner_raw(),
                 MAINNET.clone(),
@@ -710,6 +734,7 @@ mod tests {
 
             let provider = tx.inner_rw();
             assert_matches!(
+                // 移除transaction lookup
                 pruner.prune_transaction_lookup(&provider, to_block, prune_mode),
                 Ok(())
             );
@@ -717,18 +742,22 @@ mod tests {
 
             assert_eq!(
                 tx.table::<tables::TxHashNumber>().unwrap().len(),
+                // 从to_block开始的body
                 blocks[to_block as usize + 1..].iter().map(|block| block.body.len()).sum::<usize>()
             );
             assert_eq!(
+                // 获取prune checkpoint
                 tx.inner().get_prune_checkpoint(PrunePart::TransactionLookup).unwrap(),
                 Some(PruneCheckpoint { block_number: to_block, prune_mode })
             );
         };
 
         // Pruning first time ever, no previous checkpoint is present
+        // 第一次pruning，没有之前的checkpoint存在
         test_prune(10);
         // Prune second time, previous checkpoint is present, should continue pruning from where
         // ended last time
+        // 第二次prune，之前的checkpoint存在，应该继续pruning，从上一次的end开始
         test_prune(20);
     }
 

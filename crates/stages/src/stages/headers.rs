@@ -28,9 +28,11 @@ use tracing::*;
 pub enum HeaderSyncMode {
     /// A sync mode in which the stage continuously requests the downloader for
     /// next blocks.
+    /// 一个sync模式，stage持续请求downloader，对于后续的blocks
     Continuous,
     /// A sync mode in which the stage polls the receiver for the next tip
     /// to download from.
+    /// 一个sync mode，stage拉取receiver，对于下一个需要下载的tip
     Tip(watch::Receiver<H256>),
 }
 

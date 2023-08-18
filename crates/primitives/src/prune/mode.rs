@@ -17,6 +17,7 @@ pub enum PruneMode {
 impl PruneMode {
     /// Returns block up to which variant pruning needs to be done, inclusive, according to the
     /// provided tip.
+    /// 返回block直到variant pruning需要被处理，包含，根据提供的tip
     pub fn prune_target_block(
         &self,
         tip: BlockNumber,
@@ -37,6 +38,7 @@ impl PruneMode {
     }
 
     /// Check if target block should be pruned according to the provided prune mode and tip.
+    /// 检查是否target block应该被pruned，根据提供的prune mode和tip
     pub fn should_prune(&self, block: BlockNumber, tip: BlockNumber) -> bool {
         match self {
             PruneMode::Full => true,

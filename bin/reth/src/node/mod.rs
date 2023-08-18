@@ -194,6 +194,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
     }
 
     /// Execute `node` command
+    /// 执行`node`命令
     pub async fn execute(mut self, ctx: CliContext) -> eyre::Result<()> {
         info!(target: "reth::cli", "reth {} starting", SHORT_VERSION);
 
@@ -230,6 +231,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             Arc::new(BeaconConsensus::new(Arc::clone(&self.chain)))
         };
 
+        // 初始化trusted nodes
         self.init_trusted_nodes(&mut config);
 
         debug!(target: "reth::cli", "Spawning metrics listener task");
@@ -238,6 +240,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         ctx.task_executor.spawn_critical("metrics listener task", metrics_listener);
 
         // configure blockchain tree
+        // 配置blockchain tree
         let tree_externals = TreeExternals::new(
             db.clone(),
             Arc::clone(&consensus),
@@ -249,6 +252,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         // depth at least N blocks must be sent at once.
         let (canon_state_notification_sender, _receiver) =
             tokio::sync::broadcast::channel(tree_config.max_reorg_depth() as usize * 2);
+        // 构建blockchain treee
         let blockchain_tree = ShareableBlockchainTree::new(
             BlockchainTree::new(
                 tree_externals,
@@ -259,9 +263,11 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         );
 
         // setup the blockchain provider
+        // 设置blockchain provider
         let factory = ProviderFactory::new(Arc::clone(&db), Arc::clone(&self.chain));
         let blockchain_db = BlockchainProvider::new(factory, blockchain_tree.clone())?;
 
+        // 构建transaction pool
         let transaction_pool = reth_transaction_pool::Pool::eth_pool(
             EthTransactionValidator::with_additional_tasks(
                 blockchain_db.clone(),
@@ -274,6 +280,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         info!(target: "reth::cli", "Transaction pool initialized");
 
         // spawn txpool maintenance task
+        // 生成txpool的维护的task
         {
             let pool = transaction_pool.clone();
             let chain_events = blockchain_db.canonical_state_stream();
@@ -292,6 +299,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         }
 
         info!(target: "reth::cli", "Connecting to P2P network");
+        // 连接到p2p network
         let network_secret_path =
             self.network.p2p_secret_key.clone().unwrap_or_else(|| data_dir.p2p_secret_path());
         debug!(target: "reth::cli", ?network_secret_path, "Loading p2p key file");
@@ -306,6 +314,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             secret_key,
             default_peers_path.clone(),
         );
+        // 构建network
         let network = self
             .start_network(
                 network_config,
@@ -321,6 +330,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         let (consensus_engine_tx, consensus_engine_rx) = unbounded_channel();
 
         debug!(target: "reth::cli", "Spawning payload builder service");
+        // 构建payload builder
         let payload_builder = self.ext.spawn_payload_builder_service(
             &self.builder,
             blockchain_db.clone(),
@@ -341,7 +351,9 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             self.pruning.prune_config(Arc::clone(&self.chain))?.or(config.prune.clone());
 
         // Configure the pipeline
+        // 配置pipeline
         let (mut pipeline, client) = if self.dev.dev {
+            // dev模式的reth
             info!(target: "reth::cli", "Starting Reth in dev mode");
 
             let mining_mode = if let Some(interval) = self.dev.block_time {
@@ -410,15 +422,19 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             Some(tip)
         } else if self.debug.continuous {
             // Set genesis as the initial pipeline target.
+            // 设置genesis作为initial pipeline target
             // This will allow the downloader to start
+            // 这会允许downloader开始下载
             debug!(target: "reth::cli", "Continuous sync mode enabled");
             Some(genesis_hash)
         } else {
             None
         };
 
+        // 构建pruner
         let pruner = prune_config.map(|prune_config| {
             info!(target: "reth::cli", "Pruner initialized");
+            // 构建pruner
             reth_prune::Pruner::new(
                 db.clone(),
                 self.chain.clone(),
@@ -429,6 +445,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         });
 
         // Configure the consensus engine
+        // 配置consensus engine
         let (beacon_consensus_engine, beacon_engine_handle) = BeaconConsensusEngine::with_channel(
             client,
             pipeline,
@@ -464,6 +481,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             events::handle_events(Some(network.clone()), Some(head.number), events),
         );
 
+        // 构建engine api
         let engine_api = EngineApi::new(
             blockchain_db.clone(),
             self.chain.clone(),
@@ -474,10 +492,12 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         info!(target: "reth::cli", "Engine API handler initialized");
 
         // extract the jwt secret from the args if possible
+        // 从参数中抽取出jwt secret，如果可能的话
         let default_jwt_path = data_dir.jwt_path();
         let jwt_secret = self.rpc.jwt_secret(default_jwt_path)?;
 
         // Start RPC servers
+        // 启动RPC servers
         let (_rpc_server, _auth_server) = self
             .rpc
             .start_servers(
@@ -493,6 +513,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             .await?;
 
         // Run consensus engine to completion
+        // 运行consensus engine到结束
         let (tx, rx) = oneshot::channel();
         info!(target: "reth::cli", "Starting consensus engine");
         ctx.task_executor.spawn_critical_blocking("consensus engine", async move {
@@ -509,11 +530,14 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         } else {
             // The pipeline has finished downloading blocks up to `--debug.tip` or
             // `--debug.max-block`. Keep other node components alive for further usage.
+            // pipeline已经结束下载blocks，直到`--debug.tip`或者`--debug.max-block`，
+            // 保持其他的node组件 alive用于后续使用
             futures::future::pending().await
         }
     }
 
     /// Constructs a [Pipeline] that's wired to the network
+    /// 构建一个[Pipeline]，关联到network
     #[allow(clippy::too_many_arguments)]
     async fn build_networked_pipeline<DB, Client>(
         &self,
@@ -531,6 +555,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         Client: HeadersClient + BodiesClient + Clone + 'static,
     {
         // building network downloaders using the fetch client
+        // 使用fetch clinet构建network downloaders
         let header_downloader = ReverseHeadersDownloaderBuilder::from(config.stages.headers)
             .build(client.clone(), Arc::clone(&consensus))
             .into_task_with(task_executor);
@@ -743,6 +768,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         let mut builder = Pipeline::builder();
 
         if let Some(max_block) = max_block {
+            // 配置builder使用max block
             debug!(target: "reth::cli", max_block, "Configuring builder to use max block");
             builder = builder.with_max_block(max_block)
         }
@@ -751,6 +777,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         use reth_revm_inspectors::stack::InspectorStackConfig;
         let factory = reth_revm::Factory::new(self.chain.clone());
 
+        // stack配置
         let stack_config = InspectorStackConfig {
             use_printer_tracer: self.debug.print_inspector,
             hook: if let Some(hook_block) = self.debug.hook_block {
@@ -768,10 +795,12 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
 
         let header_mode =
             if continuous { HeaderSyncMode::Continuous } else { HeaderSyncMode::Tip(tip_rx) };
+        // 构建pipeline
         let pipeline = builder
             .with_tip_sender(tip_tx)
             .with_metrics_tx(metrics_tx.clone())
             .add_stages(
+                // 默认的stage加上一系列其他的stages
                 DefaultStages::new(
                     header_mode,
                     Arc::clone(&consensus),
@@ -787,6 +816,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
                     commit_threshold: stage_config.sender_recovery.commit_threshold,
                 })
                 .set(
+                    // 设置execution stage
                     ExecutionStage::new(
                         factory,
                         ExecutionStageThresholds {

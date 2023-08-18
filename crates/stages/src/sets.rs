@@ -53,6 +53,7 @@ use reth_provider::ExecutorFactory;
 use std::sync::Arc;
 
 /// A set containing all stages to run a fully syncing instance of reth.
+/// 一个集合，包含所有的stages，用于运行一个reth实例的fully syncing实例
 ///
 /// A combination of (in order)
 ///
@@ -77,13 +78,16 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct DefaultStages<H, B, EF> {
     /// Configuration for the online stages
+    /// 配置online stages
     online: OnlineStages<H, B>,
     /// Executor factory needs for execution stage
+    /// execution stage需要的Executor factory
     executor_factory: EF,
 }
 
 impl<H, B, EF> DefaultStages<H, B, EF> {
     /// Create a new set of default stages with default values.
+    /// 创建一个新的一系列default stages，有着默认值
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,
@@ -144,6 +148,7 @@ pub struct OnlineStages<H, B> {
 
 impl<H, B> OnlineStages<H, B> {
     /// Create a new set of online stages with default values.
+    /// 创建一个新的online stages，有着默认值
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,

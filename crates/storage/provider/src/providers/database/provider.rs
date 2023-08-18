@@ -625,6 +625,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
 
     /// Prune the table for the specified pre-sorted key iterator.
     /// Returns number of rows pruned.
+    /// 对于特定的pre-sorted key iterator，清理table，返回被清理的rows的数目
     pub fn prune_table_with_iterator<T: Table>(
         &self,
         keys: impl IntoIterator<Item = T::Key>,
