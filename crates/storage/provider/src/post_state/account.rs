@@ -9,15 +9,18 @@ use std::collections::{btree_map::Entry, BTreeMap};
 #[derive(Default, Clone, Eq, PartialEq, Debug, Deref)]
 pub struct AccountChanges {
     /// The inner mapping of block changes.
+    /// block changes的内部映射
     #[deref]
     pub inner: BTreeMap<BlockNumber, BTreeMap<Address, Option<Account>>>,
     /// Hand tracked change size.
+    /// 追踪change size
     pub size: usize,
 }
 
 impl AccountChanges {
     /// Insert account change at specified block number. The value is **not** updated if it already
     /// exists.
+    /// 在特定的block number插入account change，value不更新，如果它已经存在的话
     pub fn insert(
         &mut self,
         block: BlockNumber,

@@ -27,15 +27,19 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 // todo: rewrite all the docs for this
 /// The state of accounts after execution of one or more transactions, including receipts and new
 /// bytecode.
+/// 在执行一个或者多个transactions之后的state of accounts，包含receipts和新的bytecode
 ///
 /// The latest state can be found in `accounts`, `storage`, and `bytecode`. The receipts for the
 /// transactions that lead to these changes can be found in `receipts`, and each change leading to
 /// this state can be found in `changes`.
+/// 最新的state可以在`accounts`, `storage`和`bytecode`中找到，对于导致这些改变的receipts for the
+/// transactions 可以在`receipts`中找到，并且每个导致这个state的change可以在`changes`中找到
 ///
 /// # Wiped Storage
 ///
 /// The [Storage] type has a field, `wiped` which denotes whether the pre-existing storage in the
 /// database should be cleared or not.
+/// [Storage]类型有个字段为`wiped`，表明是否pre-existing storage在db中被清除
 ///
 /// If `wiped` is true, then the account was selfdestructed at some point, and the values contained
 /// in `storage` should be the only values written to the database.
@@ -60,8 +64,10 @@ pub use storage::{Storage, StorageChanges, StorageChangeset, StorageTransition, 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
 pub struct PostState {
     /// The state of all modified accounts after execution.
+    /// 在执行之后所有修改的accounts
     ///
     /// If the value contained is `None`, then the account should be deleted.
+    /// 如果value的值为`None`，则account应该被删除
     accounts: BTreeMap<Address, Option<Account>>,
     /// The state of all modified storage after execution
     ///
@@ -69,18 +75,25 @@ pub struct PostState {
     /// from the database.
     storage: BTreeMap<Address, Storage>,
     /// The state of accounts before they were changed in the given block.
+    /// accounts的state，在他们在给定的block改变之前
     ///
     /// If the value is `None`, then the account is new, otherwise it is a change.
+    /// 如果value为`None`，则account是新的，否则这是一个变更
     account_changes: AccountChanges,
     /// The state of account storage before it was changed in the given block.
+    /// account storage的状态，在它在给定的block改变之前
     ///
     /// This map only contains old values for storage slots.
+    /// 这个map只包含storage slots的old values
     storage_changes: StorageChanges,
     /// New code created during the execution
+    /// 执行过程中产生的新的code
     bytecode: BTreeMap<H256, Bytecode>,
     /// The receipt(s) of the executed transaction(s).
+    /// 执行的transactions的receipt
     receipts: BTreeMap<BlockNumber, Vec<Receipt>>,
     /// Pruning configuration.
+    /// Pruning的配置
     prune_modes: PruneModes,
 }
 
@@ -264,6 +277,7 @@ impl PostState {
     /// # Returns
     ///
     /// The state root for this [PostState].
+    /// 返回这个[PostState]的state root
     pub fn state_root_slow<'a, 'tx, TX: DbTx<'tx>>(
         &self,
         tx: &'a TX,
@@ -431,13 +445,16 @@ impl PostState {
     }
 
     /// Add a newly created account to the post-state.
+    /// 在post-state中添加一个新创建的account
     pub fn create_account(
         &mut self,
         block_number: BlockNumber,
         address: Address,
         account: Account,
     ) {
+        // 插入accounts
         self.accounts.insert(address, Some(account));
+        // 插入account changes
         self.account_changes.insert(block_number, address, None, Some(account));
     }
 
@@ -457,6 +474,7 @@ impl PostState {
     }
 
     /// Mark an account as destroyed.
+    /// 将一个account标记为删除
     pub fn destroy_account(
         &mut self,
         block_number: BlockNumber,
@@ -464,14 +482,17 @@ impl PostState {
         account: Account,
     ) {
         self.accounts.insert(address, None);
+        // 插入account changes
         self.account_changes.insert(block_number, address, Some(account), None);
 
         let storage = self.storage.entry(address).or_default();
+        // 将storage标记为wiped
         storage.times_wiped += 1;
         let wipe =
             if storage.times_wiped == 1 { StorageWipe::Primary } else { StorageWipe::Secondary };
 
         let wiped_storage = std::mem::take(&mut storage.storage);
+        // 插入storage changes
         self.storage_changes.insert_for_block_and_address(
             block_number,
             address,
@@ -599,6 +620,7 @@ impl PostState {
     }
 
     /// Write the post state to the database.
+    /// 将post state写入到db中
     pub fn write_to_db<'a, TX: DbTxMut<'a> + DbTx<'a>>(
         mut self,
         tx: &TX,
@@ -607,11 +629,13 @@ impl PostState {
         self.write_history_to_db(tx, tip)?;
 
         // Write new storage state
+        // 写入新的storage state
         tracing::trace!(target: "provider::post_state", len = self.storage.len(), "Writing new storage state");
         let mut storages_cursor = tx.cursor_dup_write::<tables::PlainStorageState>()?;
         for (address, storage) in self.storage.into_iter() {
             // If the storage was wiped at least once, remove all previous entries from the
             // database.
+            // 如果storage至少被擦除了一次，从db中移除所有之前的entries
             if storage.wiped() {
                 tracing::trace!(target: "provider::post_state", ?address, "Wiping storage from plain state");
                 if storages_cursor.seek_exact(address)?.is_some() {
@@ -620,6 +644,7 @@ impl PostState {
             }
 
             for (key, value) in storage.storage {
+                // 更新plain state storage中的值
                 tracing::trace!(target: "provider::post_state", ?address, ?key, "Updating plain state storage");
                 let key: H256 = key.into();
                 if let Some(entry) = storages_cursor.seek_by_key_subkey(address, key)? {
@@ -635,6 +660,7 @@ impl PostState {
         }
 
         // Write new account state
+        // 写入新的account state
         tracing::trace!(target: "provider::post_state", len = self.accounts.len(), "Writing new account state");
         let mut accounts_cursor = tx.cursor_write::<tables::PlainAccountState>()?;
         for (address, account) in self.accounts.into_iter() {
@@ -648,6 +674,7 @@ impl PostState {
         }
 
         // Write bytecode
+        // 写入bytecode
         tracing::trace!(target: "provider::post_state", len = self.bytecode.len(), "Writing bytecodes");
         let mut bytecodes_cursor = tx.cursor_write::<tables::Bytecodes>()?;
         for (hash, bytecode) in self.bytecode.into_iter() {
@@ -655,6 +682,7 @@ impl PostState {
         }
 
         // Write the receipts of the transactions if not pruned
+        // 写入receipts of the transactions，如果没有被pruned
         tracing::trace!(target: "provider::post_state", len = self.receipts.len(), "Writing receipts");
         if !self.receipts.is_empty() && self.prune_modes.receipts != Some(PruneMode::Full) {
             let mut bodies_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
@@ -669,16 +697,20 @@ impl PostState {
             // Empty implies that there is going to be
             // addresses to include in the filter in a future block. None means there isn't any kind
             // of configuration.
+            // Empty意味着会在future block中会有address包含在filter，None意味着不会有这样的配置
             let mut address_filter: Option<(u64, Vec<&Address>)> = None;
 
             for (block, receipts) in self.receipts {
                 // [`PrunePart::Receipts`] takes priority over [`PrunePart::ContractLogs`]
+                // [`PrunePart::Receipts`]的优先级高于[`PrunePart::ContractLogs`]
                 if receipts.is_empty() || self.prune_modes.should_prune_receipts(block, tip) {
                     continue
                 }
 
                 // All receipts from the last 128 blocks are required for blockchain tree, even with
                 // [`PrunePart::ContractLogs`].
+                // 最新的128个blocks的所有的receipts对于blockchain
+                // tree都是必须的，即使有[`PrunePart::ContractLogs`]
                 let prunable_receipts =
                     PruneMode::Distance(MINIMUM_PRUNING_DISTANCE).should_prune(block, tip);
 
@@ -689,6 +721,7 @@ impl PostState {
 
                     // Get all addresses higher than the previous checked block up to the current
                     // one
+                    // 获取所有的地址，高于之前检查的blcok，直到当前的
                     if let Some((prev_block, filter)) = &mut address_filter {
                         for (_, addresses) in contract_log_pruner.range(*prev_block..=block) {
                             filter.extend_from_slice(addresses.as_slice())
@@ -708,6 +741,8 @@ impl PostState {
                         // If there is an address_filter, and it does not contain any of the
                         // contract addresses, then skip writing this
                         // receipt.
+                        // 如果有一个address_filter并且它不包含任何的contract
+                        // addresses，那么跳过写入receipt
                         if let Some((_, filter)) = &address_filter {
                             if !receipt.logs.iter().any(|log| filter.contains(&&log.address)) {
                                 continue
@@ -1917,6 +1952,7 @@ mod tests {
     fn post_state_state_root() {
         let mut state: BTreeMap<Address, (Account, BTreeMap<H256, U256>)> = (0..10)
             .map(|key| {
+                // 构建account
                 let account = Account { nonce: 1, balance: U256::from(key), bytecode_hash: None };
                 let storage =
                     (1..11).map(|key| (H256::from_low_u64_be(key), U256::from(key))).collect();
@@ -1924,12 +1960,16 @@ mod tests {
             })
             .collect();
 
+        // 创建db
         let db: Arc<DatabaseEnv> = create_test_rw_db();
 
         // insert initial state to the database
+        // 插入初始的state到db中
         db.update(|tx| {
+            // 遍历state
             for (address, (account, storage)) in state.iter() {
                 let hashed_address = keccak256(address);
+                // 插入hashes account
                 tx.put::<tables::HashedAccount>(hashed_address, *account).unwrap();
                 for (slot, value) in storage {
                     tx.put::<tables::HashedStorage>(
@@ -1947,9 +1987,11 @@ mod tests {
 
         let block_number = 1;
         let tx = db.tx().unwrap();
+        // 构建新的post state
         let mut post_state = PostState::new();
 
         // database only state root is correct
+        // 只有state root的db是正确的
         assert_eq!(
             post_state.state_root_slow(&tx).unwrap(),
             state_root(
@@ -1961,6 +2003,7 @@ mod tests {
         );
 
         // destroy account 1
+        // 摧毁accout 1
         let address_1 = Address::from_low_u64_be(1);
         let account_1_old = state.remove(&address_1).unwrap();
         post_state.destroy_account(block_number, address_1, account_1_old.0);
@@ -1975,6 +2018,7 @@ mod tests {
         );
 
         // change slot 2 in account 2
+        // 改变account 2中的slot 2
         let address_2 = Address::from_low_u64_be(2);
         let slot_2 = U256::from(2);
         let slot_2_key = H256(slot_2.to_be_bytes());
@@ -1982,6 +2026,7 @@ mod tests {
             *state.get(&address_2).unwrap().1.get(&slot_2_key).unwrap();
         let address_2_slot_2_new_value = U256::from(100);
         state.get_mut(&address_2).unwrap().1.insert(slot_2_key, address_2_slot_2_new_value);
+        // 改变storage
         post_state.change_storage(
             block_number,
             address_2,
@@ -1998,6 +2043,7 @@ mod tests {
         );
 
         // change balance of account 3
+        // 改变account 3的balance
         let address_3 = Address::from_low_u64_be(3);
         let address_3_account_old = state.get(&address_3).unwrap().0;
         let address_3_account_new = Account { balance: U256::from(24), ..address_3_account_old };

@@ -399,6 +399,7 @@ impl<DB: Database> Pruner<DB> {
     }
 
     /// Prune account history up to the provided block, inclusive.
+    /// 清理account history直到提供的block，包括它
     #[instrument(level = "trace", skip(self, provider), target = "pruner")]
     fn prune_account_history(
         &self,

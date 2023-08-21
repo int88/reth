@@ -7,10 +7,13 @@ use reth_codecs::{main_codec, Compact};
 #[serde(rename_all = "lowercase")]
 pub enum PruneMode {
     /// Prune all blocks.
+    /// 清理所有的blocks
     Full,
     /// Prune blocks before the `head-N` block number. In other words, keep last N + 1 blocks.
+    /// 清理`head-N`的block number之前的blocks，换句话说，保留最新的N + 1个blocks
     Distance(u64),
     /// Prune blocks before the specified block number. The specified block number is not pruned.
+    /// 清理特定的block number之前的blocks，指定的block number不被pruned
     Before(BlockNumber),
 }
 

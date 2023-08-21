@@ -670,8 +670,12 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
     /// Prune the table for the specified key range, calling `chunk_callback` after every
     /// `batch_size` pruned rows with number of total unique keys and total rows pruned. For dupsort
     /// tables, these numbers will be different as one key can correspond to multiple rows.
+    /// 清理table，用特定的key
+    /// range，调用`chunk_callable`，在每次清理`batch_size`的rows，用所有的unique keys之后
+    /// 对于dupsort tabels，这些numbers会和对应多个rows的key不一样
     ///
     /// Returns number of rows pruned.
+    /// 返回清理的rows
     pub fn prune_table_with_range_in_batches<T: Table>(
         &self,
         keys: impl RangeBounds<T::Key>,
@@ -685,6 +689,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
         let mut previous_key = None;
 
         while let Some((key, _)) = walker.next().transpose()? {
+            // 将当前的row删除
             walker.delete_current()?;
             deleted_rows += 1;
             if previous_key.as_ref().map(|previous_key| previous_key != &key).unwrap_or(true) {
@@ -693,11 +698,13 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
             }
 
             if deleted_rows % batch_size == 0 {
+                // 执行回调函数
                 batch_callback(deleted_keys, deleted_rows);
             }
         }
 
         if deleted_rows % batch_size != 0 {
+            // 执行回调函数
             batch_callback(deleted_keys, deleted_rows);
         }
 

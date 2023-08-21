@@ -43,6 +43,7 @@ impl StorageWipe {
 }
 
 /// Latest storage state for the account.
+/// 对于account最新的storage state
 ///
 /// # Wiped Storage
 ///
@@ -50,16 +51,20 @@ impl StorageWipe {
 ///
 /// If `times_wiped` is greater than 0, then the account was selfdestructed at some point, and the
 /// values contained in `storage` should be the only values written to the database.
+/// 如果`times_wiped`大于0，则account至少在某个节点selfdestructed，
+/// 并且包含在`storage`中的values应该是唯一被写入 db中的值
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Storage {
     /// The number of times the storage was wiped.
     pub times_wiped: u64,
     /// The storage slots.
+    /// storage slots
     pub storage: BTreeMap<U256, U256>,
 }
 
 impl Storage {
     /// Returns `true` if the storage was wiped at any point.
+    /// 返回`true`如果storage在任何节点被wiped一次
     pub fn wiped(&self) -> bool {
         self.times_wiped > 0
     }
