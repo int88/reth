@@ -156,6 +156,7 @@ impl<DB: Database> Pruner<DB> {
         }
 
         provider.commit()?;
+        // 最新的pruned block number
         self.last_pruned_block_number = Some(tip_block_number);
 
         let elapsed = start.elapsed();
@@ -171,7 +172,9 @@ impl<DB: Database> Pruner<DB> {
     }
 
     /// Returns `true` if the pruning is needed at the provided tip block number.
+    /// 返回`true`如果pruning在提供的tip block number上是需要的
     /// This determined by the check against minimum pruning interval and last pruned block number.
+    /// 这取决于检查minimum pruning interval和最新的pruned block number
     pub fn is_pruning_needed(&self, tip_block_number: BlockNumber) -> bool {
         if self.last_pruned_block_number.map_or(true, |last_pruned_block_number| {
             // Saturating subtraction is needed for the case when the chain was reverted, meaning
@@ -211,8 +214,10 @@ impl<DB: Database> Pruner<DB> {
         to_block: BlockNumber,
     ) -> reth_interfaces::Result<Option<RangeInclusive<TxNumber>>> {
         let from_block_number = provider
+            // 获取相应的prune part的checkpoint
             .get_prune_checkpoint(prune_part)?
             // Checkpoint exists, prune from the next block after the highest pruned one
+            // Checkpoint存在，从next block开始prune，在最高的pruned one之后
             .map(|checkpoint| checkpoint.block_number + 1)
             // No checkpoint exists, prune from genesis
             // 没有checkpoint，从genesis开始清理
@@ -224,6 +229,8 @@ impl<DB: Database> Pruner<DB> {
             provider.block_body_indices(from_block_number)?.map(|body| body.first_tx_num);
         // If no block body index is found, the DB is either corrupted or we've already pruned up to
         // the latest block, so there's no thing to prune now.
+        // 如果没有找到block body index，DB要么已经corrupted或者我们已经清理到latest
+        // block，因此我们没有需要 prune的了
         let Some(from_tx_num) = from_tx_num else { return Ok(None) };
 
         let to_tx_num = match provider.block_body_indices(to_block)? {
@@ -236,6 +243,7 @@ impl<DB: Database> Pruner<DB> {
     }
 
     /// Prune receipts up to the provided block, inclusive.
+    /// 清理receipts直到提供的block，包含该block
     #[instrument(level = "trace", skip(self, provider), target = "pruner")]
     fn prune_receipts(
         &self,
@@ -256,6 +264,7 @@ impl<DB: Database> Pruner<DB> {
         };
         let total = range.clone().count();
 
+        // 对tables进行prune
         provider.prune_table_with_iterator_in_batches::<tables::Receipts>(
             range,
             self.batch_sizes.receipts,
@@ -269,6 +278,7 @@ impl<DB: Database> Pruner<DB> {
             },
         )?;
 
+        // 保存prune checkpoint
         provider.save_prune_checkpoint(
             PrunePart::Receipts,
             PruneCheckpoint { block_number: to_block, prune_mode },
@@ -640,6 +650,7 @@ mod tests {
         let mut receipts = Vec::new();
         for block in &blocks {
             for transaction in &block.body {
+                // 设置random receipt
                 receipts
                     .push((receipts.len() as u64, random_receipt(&mut rng, transaction, Some(0))));
             }

@@ -642,6 +642,7 @@ where
         if self.is_prune_active() {
             // We can only process new forkchoice updates if the pruner is idle, since it requires
             // exclusive access to the database
+            // 我们只能处理新的fcu如果pruner为idle，因为它需要对于db的独占访问
             warn!(
                 target: "consensus::engine",
                 "Pruning is in progress, skipping forkchoice update. \
@@ -1145,10 +1146,14 @@ where
 
     /// When the pipeline or the pruner is active, the tree is unable to commit any additional
     /// blocks since the pipeline holds exclusive access to the database.
+    /// 当pipeline或者pruner处于active的时候，tree不能提交任何额外的blocks，因为pipeline持有对于db的
+    /// 独占访问
     ///
     /// In this scenario we buffer the payload in the tree if the payload is valid, once the
     /// pipeline or pruner is finished, the tree is then able to also use the buffered payloads to
     /// commit to a (newer) canonical chain.
+    /// 这种情况下我们缓存payload在tree，如果payload是合法的，一旦pipeline或者pruner结束，
+    /// tree能够使用buffered payloads 提交一个更新的canonical chain
     ///
     /// This will return `SYNCING` if the block was buffered successfully, and an error if an error
     /// occurred while buffering the block.
@@ -1260,6 +1265,7 @@ where
     ///
     /// This is invoked after a pruner run to update the tree with the most recent canonical
     /// hashes.
+    /// 这在一个pruner运行来更新tree，用最新的canonical hashes，之后被调用
     fn update_tree_on_finished_pruner(&mut self) -> Result<(), Error> {
         self.blockchain.restore_canonical_hashes()
     }
@@ -1604,8 +1610,10 @@ where
     }
 
     /// Event handler for events emitted by the [EnginePruneController].
+    /// 对于[EnginePruneController]发出的事件的handler
     ///
     /// This returns a result to indicate whether the engine future should resolve (fatal error).
+    /// 这返回一个result来表明是否engine future需要解决（fatal error）
     fn on_prune_event(
         &mut self,
         event: EnginePruneEvent,
@@ -1618,6 +1626,9 @@ where
                 // Engine can't process any FCU/payload messages from CL while we're pruning, as
                 // pruner needs an exclusive write access to the database. To prevent CL from
                 // sending us unneeded updates, we need to respond `true` on `eth_syncing` request.
+                // Engine不能处理任何来自CL的FCU/payload message，当我们在pruning的时候，因为pruner
+                // 需要对于db的独占访问，为了防止CL给我们发送不需要的updates，我们需要回复`true`，
+                // 对于 `eth_syncing`请求
                 self.sync_state_updater.update_sync_state(SyncState::Syncing);
             }
             EnginePruneEvent::TaskDropped => {
@@ -1629,15 +1640,18 @@ where
                 match result {
                     Ok(_) => {
                         // Update the state and hashes of the blockchain tree if possible.
+                        // 更新blockchain tree的state和hashes，如果可能的话
                         match self.update_tree_on_finished_pruner() {
                             Ok(()) => {}
                             Err(error) => {
+                                // 回复blockchain tree失败
                                 error!(target: "consensus::engine", ?error, "Error restoring blockchain tree state");
                                 return Some(Err(error.into()))
                             }
                         };
                     }
                     // Any pruner error at this point is fatal.
+                    // 这个时候任何的pruner error都是致命的
                     Err(error) => return Some(Err(error.into())),
                 };
             }
@@ -1647,20 +1661,24 @@ where
     }
 
     /// Returns `true` if the prune controller's pruner is idle.
+    /// 返回`true`如果prune controller的pruner处于idle
     fn is_prune_idle(&self) -> bool {
         self.prune.as_ref().map(|prune| prune.is_pruner_idle()).unwrap_or(true)
     }
 
     /// Returns `true` if the prune controller's pruner is active.
+    /// 返回`true`如果prune controller的pruner是active的
     fn is_prune_active(&self) -> bool {
         !self.is_prune_idle()
     }
 
     /// Polls the prune controller, if it exists, and processes the event [`EnginePruneEvent`]
     /// emitted by it.
+    /// 轮询prune controller，如果它存在，并且处理它发射的[`EnginePruneEvent`]事件
     ///
     /// Returns [`Option::Some`] if prune controller emitted an event which resulted in the error
     /// (see [`Self::on_prune_event`] for error handling)
+    /// 返回[`Option::Some`]如果prune controller发出一个事件，这导致错误
     fn poll_prune(
         &mut self,
         cx: &mut Context<'_>,
@@ -1702,6 +1720,8 @@ where
         loop {
             // Poll prune controller first if it's active, as we will not be able to process any
             // engine messages until it's finished.
+            // 首先拉取prune controller，如果它是active的，因为我们不能处理任何的engine
+            // messages，知道它完成
             if this.is_prune_active() {
                 if let Some(res) = this.poll_prune(cx) {
                     return Poll::Ready(res)
@@ -1712,6 +1732,7 @@ where
             let mut sync_pending = false;
 
             // handle next engine message
+            // 处理下一个engine message
             match this.engine_message_rx.poll_next_unpin(cx) {
                 Poll::Ready(Some(msg)) => match msg {
                     BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, tx } => {
@@ -1744,11 +1765,13 @@ where
                 }
                 Poll::Pending => {
                     // no more CL messages to process
+                    // 没有更多的CL messages需要处理
                     engine_messages_pending = true;
                 }
             }
 
             // process sync events if any
+            // 处理sync events，如果有的话
             match this.sync.poll(cx) {
                 Poll::Ready(sync_event) => {
                     if let Some(res) = this.on_sync_event(sync_event) {
@@ -1762,12 +1785,17 @@ where
             }
 
             // we're pending if both engine messages and sync events are pending (fully drained)
+            // 我们处于pending，如果engine messages和sync events都处于pending（fully drained）
             let is_pending = engine_messages_pending && sync_pending;
 
             // Poll prune controller if all conditions are met:
+            // 轮询prune controller，如果所有的条件都已经满足
             // 1. Pipeline is idle
+            // 1. Pipeline处于idle状态
             // 2. No engine and sync messages are pending
+            // 2. 没有engine以及sync messages处于pending状态
             // 3. Latest FCU status is not INVALID
+            // 3. 最新的FCU status不是非法的
             if this.sync.is_pipeline_idle() &&
                 is_pending &&
                 !this.forkchoice_state_tracker.is_latest_invalid()

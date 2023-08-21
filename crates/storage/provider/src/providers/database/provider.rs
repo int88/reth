@@ -635,8 +635,11 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
 
     /// Prune the table for the specified pre-sorted key iterator, calling `chunk_callback` after
     /// every `batch_size` pruned rows with number of total rows pruned.
+    /// 清理table，对于特定的pre-sorted key iterator，调用`chunk_callback`在每个`batch_size`清理rows
+    /// 用所有被清理的rows
     ///
     /// Returns number of rows pruned.
+    /// 返回被清理的rows
     pub fn prune_table_with_iterator_in_batches<T: Table>(
         &self,
         keys: impl IntoIterator<Item = T::Key>,

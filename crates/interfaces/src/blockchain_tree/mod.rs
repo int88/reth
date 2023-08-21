@@ -69,9 +69,11 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
 
     /// Reads the last `N` canonical hashes from the database and updates the block indices of the
     /// tree.
+    /// 读取最新的`N`个canonical hashes，从数据库，并且更新tree的block indices
     ///
     /// `N` is the `max_reorg_depth` plus the number of block hashes needed to satisfy the
     /// `BLOCKHASH` opcode in the EVM.
+    /// `N`是`max_reorg_depth`加上block hashes的数目，需要去满足EVM的`BLOCKHASH` opcode
     fn restore_canonical_hashes(&self) -> Result<(), Error>;
 
     /// Make a block and its parent chain part of the canonical chain by committing it to the

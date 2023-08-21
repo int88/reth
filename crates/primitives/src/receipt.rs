@@ -9,18 +9,24 @@ use reth_rlp::{length_of_length, Decodable, Encodable};
 use std::cmp::Ordering;
 
 /// Receipt containing result of transaction execution.
+/// Receipt包含transaction执行的结果
 #[main_codec(zstd)]
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Receipt {
     /// Receipt type.
+    /// Receipt的类型
     pub tx_type: TxType,
     /// If transaction is executed successfully.
+    /// 如果transaction被成功执行
     ///
     /// This is the `statusCode`
+    /// 这是`StatusCode`
     pub success: bool,
     /// Gas used
+    /// 使用的Gas
     pub cumulative_gas_used: u64,
     /// Log send from contracts.
+    /// 来自contracts的Log
     #[cfg_attr(
         any(test, feature = "arbitrary"),
         proptest(

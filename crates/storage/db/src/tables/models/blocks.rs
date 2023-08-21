@@ -1,4 +1,5 @@
 //! Block related models and types.
+//! Block相关的models以及类型
 
 use reth_codecs::{main_codec, Compact};
 use reth_primitives::{Header, TxNumber, Withdrawal, H256};
@@ -8,21 +9,29 @@ use std::ops::Range;
 pub type NumTransactions = u64;
 
 /// The storage of the block body indices
+/// block body indices的存储
+///
 ///
 /// It has the pointer to the transaction Number of the first
 /// transaction in the block and the total number of transactions
+/// 它包含block中第一个transaction的transaction Number以及所有的transactions的数目
 #[derive(Debug, Default, Eq, PartialEq, Clone)]
 #[main_codec]
 pub struct StoredBlockBodyIndices {
     /// The number of the first transaction in this block
+    /// block中第一个transaction的数目
     ///
     /// Note: If the block is empty, this is the number of the first transaction
     /// in the next non-empty block.
+    /// 注意：如果block为空，这个后面第一个非空的block的第一个transaction
     pub first_tx_num: TxNumber,
     /// The total number of transactions in the block
+    /// block中transactions的总数
     ///
     /// NOTE: Number of transitions is equal to number of transactions with
     /// additional transition for block change if block has block reward or withdrawal.
+    /// 注意：transitions的数目等于transactions的总数加上额外的对于block change的transition，如果
+    /// block有block reward或者withdrawal
     pub tx_count: NumTransactions,
 }
 

@@ -342,6 +342,7 @@ pub fn random_contract_account_range<R: Rng>(
 }
 
 /// Generate random receipt for transaction
+/// 为transaction生成随机的receipt
 pub fn random_receipt<R: Rng>(
     rng: &mut R,
     transaction: &TransactionSigned,

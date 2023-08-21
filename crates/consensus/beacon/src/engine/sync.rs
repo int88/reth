@@ -125,6 +125,7 @@ where
     }
 
     /// Returns `true` if the pipeline is idle.
+    /// 返回`true`如果pipeline处于idle状态
     pub(crate) fn is_pipeline_idle(&self) -> bool {
         self.pipeline_state.is_idle()
     }

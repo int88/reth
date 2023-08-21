@@ -260,8 +260,10 @@ table!(
 
 table!(
     /// Stores block indices that contains indexes of transaction and the count of them.
+    /// 存储block indices，包含对于transaction以及它们的数目的索引
     ///
     /// More information about stored indices can be found in the [`StoredBlockBodyIndices`] struct.
+    /// 更多的信息关于存储的indices，可以在[`StoredBlockBodyIndices`]结构中找到
     ( BlockBodyIndices ) BlockNumber | StoredBlockBodyIndices
 );
 

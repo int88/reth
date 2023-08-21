@@ -6,6 +6,7 @@ use std::collections::HashMap;
 #[metrics(scope = "pruner")]
 pub(crate) struct Metrics {
     /// Pruning duration
+    /// Pruning的时间间隔
     pub(crate) duration_seconds: Histogram,
     #[metric(skip)]
     prune_parts: HashMap<PrunePart, PrunerPartMetrics>,

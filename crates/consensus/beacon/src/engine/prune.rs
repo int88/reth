@@ -85,12 +85,15 @@ impl<DB: Database + 'static> EnginePruneController<DB> {
                     self.pruner_task_spawner.spawn_critical_blocking(
                         "pruner task",
                         Box::pin(async move {
+                            // 运行pruner
                             let result = pruner.run(tip_block_number);
                             let _ = tx.send((pruner, result));
                         }),
                     );
+                    // 设置pruner state
                     self.pruner_state = PrunerState::Running(rx);
 
+                    // 返回Prune Event
                     Some(EnginePruneEvent::Started(tip_block_number))
                 } else {
                     self.pruner_state = PrunerState::Idle(Some(pruner));
@@ -123,21 +126,29 @@ impl<DB: Database + 'static> EnginePruneController<DB> {
 }
 
 /// The event type emitted by the [EnginePruneController].
+/// [EnginePruneController]发出的事件
 #[derive(Debug)]
 pub(crate) enum EnginePruneEvent {
     /// Pruner is not ready
+    /// Pruner没有ready
     NotReady,
     /// Pruner started with tip block number
+    /// Pruner通过tip block number开始了
     Started(BlockNumber),
     /// Pruner finished
+    /// Pruner结束了
     ///
     /// If this is returned, the pruner is idle.
+    /// 如果返回了，pruner处于idle
     Finished {
         /// Final result of the pruner run.
+        /// pruner运行的最后结果
         result: Result<(), PrunerError>,
     },
     /// Pruner task was dropped after it was started, unable to receive it because channel
     /// closed. This would indicate a panicked pruner task
+    /// Pruner task被丢弃，在它启动之后，不能接受到，因为channel被关闭了，这表明一个panicked pruner
+    /// task
     TaskDropped,
 }
 
@@ -150,6 +161,8 @@ pub(crate) enum EnginePruneEvent {
 /// running, it acquires the write lock over the database. This means that we cannot forward to the
 /// blockchain tree any messages that would result in database writes, since it would result in a
 /// deadlock.
+/// 注意：这两个状态之间的差别很重要，因为当pruner处于运行，它需要对于db的write
+/// block，这意味着我们不能推进 blockchain tree，那些任何会导致db写的message，因为这会导致deadlock
 enum PrunerState<DB> {
     /// Pruner is idle.
     Idle(Option<Pruner<DB>>),
