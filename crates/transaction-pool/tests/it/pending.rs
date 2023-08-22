@@ -6,6 +6,7 @@ use reth_transaction_pool::{
 
 #[tokio::test(flavor = "multi_thread")]
 async fn txpool_new_pending_txs() {
+    // 创建testing pool
     let txpool = testing_pool();
     let mut mock_tx_factory = MockTransactionFactory::default();
     let transaction = mock_tx_factory.create_eip1559();

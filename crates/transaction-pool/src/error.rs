@@ -21,6 +21,7 @@ pub trait PoolTransactionError: std::error::Error + Send + Sync {
 #[derive(Debug, thiserror::Error)]
 pub enum PoolError {
     /// Same transaction already imported
+    /// 同样的transaction已经被导入了
     #[error("[{0:?}] Already imported")]
     AlreadyImported(TxHash),
     /// Thrown if a replacement transaction's gas price is below the already imported transaction

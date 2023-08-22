@@ -70,9 +70,11 @@ impl From<u64> for SenderId {
 }
 
 /// A unique identifier of a transaction of a Sender.
+/// 唯一标识符，对于一个Sender的一个transaction
 ///
 /// This serves as an identifier for dependencies of a transaction:
 /// A transaction with a nonce higher than the current state nonce depends on `tx.nonce - 1`.
+/// 一个transaction有着高于当前的state nonce，依赖于`tx.nonce - 1`
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct TransactionId {
     /// Sender of this transaction

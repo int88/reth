@@ -350,6 +350,7 @@ impl<T: TransactionOrdering> TxPool<T> {
         }
 
         // Update sender info with balance and nonce
+        // 用balance和nonce更新sender信息
         self.sender_info
             .entry(tx.sender_id())
             .or_default()
@@ -359,10 +360,12 @@ impl<T: TransactionOrdering> TxPool<T> {
             Ok(InsertOk { transaction, move_to, replaced_tx, updates, .. }) => {
                 self.add_new_transaction(transaction.clone(), replaced_tx.clone(), move_to);
                 // Update inserted transactions metric
+                // 更新插入的transactions的metric
                 self.metrics.inserted_transactions.increment(1);
                 let UpdateOutcome { promoted, discarded } = self.process_updates(updates);
 
                 // This transaction was moved to the pending pool.
+                // 这个transaction移动到pending pool
                 let replaced = replaced_tx.map(|(tx, _)| tx);
                 let res = if move_to.is_pending() {
                     AddedTransaction::Pending(AddedPendingTransaction {
@@ -379,6 +382,7 @@ impl<T: TransactionOrdering> TxPool<T> {
             }
             Err(e) => {
                 // Update invalid transactions metric
+                // 更新invalid transactions的metric
                 self.metrics.invalid_transactions.increment(1);
                 match e {
                     InsertErr::Underpriced { existing, transaction: _ } => {
@@ -585,9 +589,11 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Ensures that the transactions in the sub-pools are within the given bounds.
+    /// 确保sub-pools中的transactions在给定的范围内
     ///
     /// If the current size exceeds the given bounds, the worst transactions are evicted from the
     /// pool and returned.
+    /// 如果当前的size超过了给定的bounds，则最差的transactions会被从pool中驱逐并且返回
     pub(crate) fn discard_worst(&mut self) -> Vec<Arc<ValidPoolTransaction<T::Transaction>>> {
         let mut removed = Vec::new();
 
@@ -657,9 +663,12 @@ impl<T: TransactionOrdering> fmt::Debug for TxPool<T> {
 }
 
 /// Container for _all_ transaction in the pool.
+/// 包含pool中的所有transaction
 ///
 /// This is the sole entrypoint that's guarding all sub-pools, all sub-pool actions are always
 /// derived from this set. Updates returned from this type must be applied to the sub-pools.
+/// 这是维护所有sub-pools的唯一入口，所有的sub-pool
+/// actions总是从这个集合衍生而来，这个类型返回的Updates必须应用到sub-pools
 pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// Minimum base fee required by the protocol.
     ///
@@ -672,8 +681,10 @@ pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// _All_ transactions identified by their hash.
     by_hash: HashMap<TxHash, Arc<ValidPoolTransaction<T>>>,
     /// _All_ transaction in the pool sorted by their sender and nonce pair.
+    /// pool中所有的transactions，通过sender以及nonce pair排序
     txs: BTreeMap<TransactionId, PoolInternalTransaction<T>>,
     /// Tracks the number of transactions by sender that are currently in the pool.
+    /// 追踪sender的transactions的数目，当前在pool中
     tx_counter: FnvHashMap<SenderId, usize>,
     /// The current block number the pool keeps track of.
     last_seen_block_number: u64,
@@ -1053,8 +1064,10 @@ impl<T: PoolTransaction> AllTransactions<T> {
     ///
     /// If the transaction already exists, it will be replaced if not underpriced.
     /// Returns info to which sub-pool the transaction should be moved.
+    /// 返回信息，关于这个transaction应该被移动到哪个sub-pool
     /// Also returns a set of pool updates triggered by this insert, that need to be handled by the
     /// caller.
+    /// 同时返回一系列的pool updates，由这个插入触发，需要被caller处理
     ///
     /// These can include:
     ///      - closing nonce gaps of descendant transactions
@@ -1093,6 +1106,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         }
 
         // Ensure tx does not exceed block gas limit
+        // 确保tx没有超过block gas limit
         if transaction.gas_limit() < self.block_gas_limit {
             state.insert(TxState::NOT_TOO_MUCH_GAS);
         }
@@ -1107,6 +1121,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         };
 
         // try to insert the transaction
+        // 试着插入transaction
         match self.txs.entry(*transaction.id()) {
             Entry::Vacant(entry) => {
                 // Insert the transaction in both maps
@@ -1138,6 +1153,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         }
 
         // The next transaction of this sender
+        // 这个sender的下一个transaction
         let on_chain_id = TransactionId::new(transaction.sender_id(), on_chain_nonce);
         {
             let mut descendants = self.descendant_txs_mut(&on_chain_id).peekable();
@@ -1162,10 +1178,12 @@ impl<T: PoolTransaction> AllTransactions<T> {
             };
 
             // Traverse all transactions of the sender and update existing transactions
+            // 遍历这个sender的所有transactions并且更新已经存在的transactions
             for (id, tx) in descendants {
                 let current_pool = tx.subpool;
 
                 // If there's a nonce gap, we can shortcircuit
+                // 如果有nonce gap，我们可以短路
                 if next_nonce != id.nonce {
                     break
                 }
@@ -1187,6 +1205,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 }
 
                 // Update ancestor condition.
+                // 更新ancestor的状态
                 if has_parked_ancestor {
                     tx.state.remove(TxState::NO_PARKED_ANCESTORS);
                 } else {
@@ -1195,13 +1214,16 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 has_parked_ancestor = !tx.state.is_pending();
 
                 // update the pool based on the state
+                // 更新pool基于state
                 tx.subpool = tx.state.into();
 
                 if tx_id.eq(id) {
                     // if it is the new transaction, track the state
+                    // 如果这是新的transaction，追踪state
                     state = tx.state;
                 } else {
                     // check if anything changed
+                    // 检查是否发生了任何变更
                     if current_pool != tx.subpool {
                         updates.push(PoolUpdate {
                             id: *id,
@@ -1218,6 +1240,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         }
 
         // If this wasn't a replacement transaction we need to update the counter.
+        // 如果这不是一个replacement transaction，我们需要更新counter
         if replaced_tx.is_none() {
             self.tx_inc(tx_id.sender);
         }
@@ -1289,6 +1312,7 @@ pub(crate) enum InsertErr<T: PoolTransaction> {
 }
 
 /// Transaction was successfully inserted into the pool
+/// Transaction被成功插入到pool
 #[derive(Debug)]
 pub(crate) struct InsertOk<T: PoolTransaction> {
     /// Ref to the inserted transaction.
@@ -1299,6 +1323,7 @@ pub(crate) struct InsertOk<T: PoolTransaction> {
     #[allow(unused)]
     state: TxState,
     /// The transaction that was replaced by this.
+    /// 被这个transaction移除的transaction
     replaced_tx: Option<(Arc<ValidPoolTransaction<T>>, SubPool)>,
     /// Additional updates to transactions affected by this change.
     updates: Vec<PoolUpdate>,
@@ -1306,19 +1331,25 @@ pub(crate) struct InsertOk<T: PoolTransaction> {
 
 /// The internal transaction typed used by `AllTransactions` which also additional info used for
 /// determining the current state of the transaction.
+/// 内部的transaction类型，由`AllTransactions`使用，同时有额外的信息用于决定transaction的内部状态
 #[derive(Debug)]
 pub(crate) struct PoolInternalTransaction<T: PoolTransaction> {
     /// The actual transaction object.
+    /// 真正的transaction对象
     pub(crate) transaction: Arc<ValidPoolTransaction<T>>,
     /// The `SubPool` that currently contains this transaction.
+    /// 当前包含这个transaction的`SubPool`
     pub(crate) subpool: SubPool,
     /// Keeps track of the current state of the transaction and therefor in which subpool it should
     /// reside
+    /// 追踪transaction的当前状态以及它应该在哪个subpool
     pub(crate) state: TxState,
     /// The total cost all transactions before this transaction.
+    /// 这个transaction之前的所有transactions的cost
     ///
     /// This is the combined `cost` of all transactions from the same sender that currently
     /// come before this transaction.
+    /// 这是combined `cost`，对于来自同一个sender的所有transactions，在这个transactions之前
     pub(crate) cumulative_cost: U256,
 }
 
@@ -1443,6 +1474,7 @@ mod tests {
         assert!(inserted.state.intersects(expected_state));
 
         // insert the same tx again
+        // 再次插入同样的tx
         let res = pool.insert_tx(valid_tx, on_chain_balance, on_chain_nonce);
         assert!(res.is_err());
         assert_eq!(pool.len(), 1);

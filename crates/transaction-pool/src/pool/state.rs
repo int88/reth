@@ -5,8 +5,10 @@ bitflags::bitflags! {
      #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PartialOrd, Ord)]
     pub(crate) struct TxState: u8 {
         /// Set to `1` if all ancestor transactions are pending.
+        /// 设置为`1`如果所有的transactions都是pending
         const NO_PARKED_ANCESTORS = 0b100000;
         /// Set to `1` of the transaction is either the next transaction of the sender (on chain nonce == tx.nonce) or all prior transactions are also present in the pool.
+        /// 设置为`1`，如果sender的下一个transaction（on chain nonce == tx.nonce）或者所有之前的transactions已经在pool存在
         const NO_NONCE_GAPS = 0b010000;
         /// Bit derived from the sender's balance.
         ///
@@ -49,16 +51,22 @@ impl TxState {
 }
 
 /// Identifier for the transaction Sub-pool
+/// 对于Sub-pool的transaction的标识符
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u8)]
 pub enum SubPool {
     /// The queued sub-pool contains transactions that are not ready to be included in the next
     /// block because they have missing or queued ancestors.
+    /// queued sub-pool包含transactions，没有准备好包含在下一个block，
+    /// 因为他们缺失或者有排队的ancestors
     Queued = 0,
     /// The base-fee sub-pool contains transactions that are not ready to be included in the next
     /// block because they don't meet the base fee requirement.
+    /// base-fee sub-pool包含transactions没有准备好被加入到下一个block，因为他们没有满足base
+    /// fee的要求
     BaseFee,
     /// The pending sub-pool contains transactions that are ready to be included in the next block.
+    /// 准备好被包含到下一个block的transactions的sub-pool
     Pending,
 }
 

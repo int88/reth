@@ -177,11 +177,15 @@ pub trait TransactionValidator: Send + Sync {
 }
 
 /// A valid transaction in the pool.
+/// pool中一个合法的transaction
 ///
 /// This is used as the internal representation of a transaction inside the pool.
+/// 这用于一个pool中的transaction的内部表示
 ///
 /// For EIP-4844 blob transactions this will _not_ contain the blob sidecar which is stored
 /// separately in the [BlobStore](crate::blobstore::BlobStore).
+/// 对于EIP-4844 blob transactions，这不会包含blob
+/// sidecar，它另外存储在[BlobStore](crate::blobstore::BlobStore)
 pub struct ValidPoolTransaction<T: PoolTransaction> {
     /// The transaction
     pub transaction: T,

@@ -110,20 +110,25 @@ pub mod txpool;
 mod update;
 
 /// Transaction pool internals.
+/// Transaction pool的内部实现
 pub struct PoolInner<V: TransactionValidator, T: TransactionOrdering> {
     /// Internal mapping of addresses to plain ints.
     identifiers: RwLock<SenderIdentifiers>,
     /// Transaction validation.
     validator: V,
     /// The internal pool that manages all transactions.
+    /// 内部的Pool，管理所有的transactions
     pool: RwLock<TxPool<T>>,
     /// Pool settings.
     config: PoolConfig,
     /// Manages listeners for transaction state change events.
+    /// 管理Listeners，对于transaction state change的事件
     event_listener: RwLock<PoolEventBroadcast<T::Transaction>>,
     /// Listeners for new pending transactions.
+    /// 对于新的pending transactions的Listeners
     pending_transaction_listener: Mutex<Vec<PendingTransactionListener>>,
     /// Listeners for new transactions added to the pool.
+    /// 对于添加到pool的新的transactions的Listener
     transaction_listener: Mutex<Vec<mpsc::Sender<NewTransactionEvent<T::Transaction>>>>,
 }
 

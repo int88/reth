@@ -104,6 +104,7 @@ impl PostState {
     }
 
     /// Create an empty [PostState] with pre-allocated space for a certain amount of transactions.
+    /// 创建一个空的[PostState]用提前分配的空间，用于一定数目的transactions
     pub fn with_tx_capacity(block: BlockNumber, txs: usize) -> Self {
         Self { receipts: BTreeMap::from([(block, Vec::with_capacity(txs))]), ..Default::default() }
     }
@@ -459,9 +460,11 @@ impl PostState {
     }
 
     /// Add a changed account to the post-state.
+    /// 添加一个changed account到post-state
     ///
     /// If the account also has changed storage values, [PostState::change_storage] should also be
     /// called.
+    /// 如果account也有changed storage values，[PostState::change_storage]也应该被调用
     pub fn change_account(
         &mut self,
         block_number: BlockNumber,
@@ -502,6 +505,7 @@ impl PostState {
     }
 
     /// Add changed storage values to the post-state.
+    /// 添加变更的storage值到post-state
     pub fn change_storage(
         &mut self,
         block_number: BlockNumber,
@@ -522,6 +526,7 @@ impl PostState {
     }
 
     /// Add new bytecode to the post-state.
+    /// 添加新的bytecode到post-state
     pub fn add_bytecode(&mut self, code_hash: H256, bytecode: Bytecode) {
         // Assumption: `insert` will override the value if present, but since the code hash for a
         // given bytecode will always be the same, we are overriding with the same value.
@@ -532,19 +537,23 @@ impl PostState {
     }
 
     /// Add a transaction receipt to the post-state.
+    /// 添加一个transaction receipt到post-state
     ///
     /// Transactions should always include their receipts in the post-state.
+    /// Transactions应该总是包含它们的receipts到post-state
     pub fn add_receipt(&mut self, block: BlockNumber, receipt: Receipt) {
         self.receipts.entry(block).or_default().push(receipt);
     }
 
     /// Write changeset history to the database.
+    /// 写changset history到db
     pub fn write_history_to_db<'a, TX: DbTxMut<'a> + DbTx<'a>>(
         &mut self,
         tx: &TX,
         tip: BlockNumber,
     ) -> Result<(), DbError> {
         // Write storage changes
+        // 写入storage changes
         tracing::trace!(target: "provider::post_state", "Writing storage changes");
         let mut storages_cursor = tx.cursor_dup_write::<tables::PlainStorageState>()?;
         let mut storage_changeset_cursor = tx.cursor_dup_write::<tables::StorageChangeSet>()?;
@@ -600,6 +609,7 @@ impl PostState {
         }
 
         // Write account changes
+        // 写入account changes
         tracing::trace!(target: "provider::post_state", "Writing account changes");
         let mut account_changeset_cursor = tx.cursor_dup_write::<tables::AccountChangeSet>()?;
         for (block_number, account_changes) in
