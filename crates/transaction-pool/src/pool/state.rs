@@ -18,6 +18,7 @@ bitflags::bitflags! {
         /// Bit set to true if the transaction has a lower gas limit than the block's gas limit
         const NOT_TOO_MUCH_GAS = 0b000100;
         /// Covers the Dynamic fee requirement.
+        /// 覆盖动态的fee requirement
         ///
         /// Set to 1 if `feeCap` of the transaction meets the requirement of the pending block.
         const ENOUGH_FEE_CAP_BLOCK = 0b000010;

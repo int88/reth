@@ -1,4 +1,5 @@
 //! The internal transaction pool implementation.
+//! 内部的transaction pool的实现
 use crate::{
     config::TXPOOL_MAX_ACCOUNT_SLOTS_PER_SENDER,
     error::{InvalidPoolTransactionError, PoolError},
@@ -29,8 +30,10 @@ use std::{
 };
 
 /// A pool that manages transactions.
+/// 一个pool管理transactions
 ///
 /// This pool maintains the state of all transactions and stores them accordingly.
+/// 这个pool维护所有transactions的state并且对应地保存它们
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// ```mermaid
@@ -68,6 +71,7 @@ pub struct TxPool<T: TransactionOrdering> {
     /// pending subpool
     ///
     /// Holds transactions that are ready to be executed on the current state.
+    /// 维护已经准备好在当前状态执行的transactions
     pending_pool: PendingPool<T>,
     /// Pool settings to enforce limits etc.
     config: PoolConfig,
@@ -82,8 +86,11 @@ pub struct TxPool<T: TransactionOrdering> {
     ///
     /// Holds all parked transactions that currently violate the dynamic fee requirement but could
     /// be moved to pending if the base fee changes in their favor (decreases) in future blocks.
+    /// 维护所有parked transactions，当前违背了dynamic fee
+    /// requirement，但是可以被移到pending，如果base fee在未来的blocks 发生了改变
     basefee_pool: ParkedPool<BasefeeOrd<T::Transaction>>,
     /// All transactions in the pool.
+    /// pool中的所有transactions
     all_transactions: AllTransactions<T::Transaction>,
     /// Transaction pool metrics
     metrics: TxPoolMetrics,
@@ -93,6 +100,7 @@ pub struct TxPool<T: TransactionOrdering> {
 
 impl<T: TransactionOrdering> TxPool<T> {
     /// Create a new graph pool instance.
+    /// 创建一个新的graph pool的实例
     pub(crate) fn new(ordering: T, config: PoolConfig) -> Self {
         Self {
             sender_info: Default::default(),
@@ -263,11 +271,13 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Updates the transactions for the changed senders.
+    /// 对于changed senders更新transactions
     pub(crate) fn update_accounts(
         &mut self,
         changed_senders: HashMap<SenderId, SenderInfo>,
     ) -> UpdateOutcome<T::Transaction> {
         // track changed accounts
+        // 追踪changed accounts
         self.sender_info.extend(changed_senders.clone());
         // Apply the state changes to the total set of transactions which triggers sub-pool updates.
         let updates = self.all_transactions.update(changed_senders);
@@ -677,6 +687,7 @@ pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// The max gas limit of the block
     block_gas_limit: u64,
     /// Max number of executable transaction slots guaranteed per account
+    /// 每个account保证的最多的可执行的transaction的slots
     max_account_slots: usize,
     /// _All_ transactions identified by their hash.
     by_hash: HashMap<TxHash, Arc<ValidPoolTransaction<T>>>,
@@ -691,6 +702,7 @@ pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// The current block hash the pool keeps track of.
     last_seen_block_hash: H256,
     /// Expected base fee for the pending block.
+    /// 对于pending block期望的base fee
     pending_basefee: u64,
 }
 
@@ -1078,6 +1090,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         on_chain_balance: U256,
         on_chain_nonce: u64,
     ) -> InsertResult<T> {
+        // transaction.nonce()必须大于等于on_chain_nonce
         assert!(on_chain_nonce <= transaction.nonce(), "Invalid transaction");
 
         let transaction = Arc::new(self.ensure_valid(transaction)?);
@@ -1199,6 +1212,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
 
                 if cumulative_cost > on_chain_balance {
                     // sender lacks sufficient funds to pay for this transaction
+                    // sender缺乏足够的funds来支付这个transaction
                     tx.state.remove(TxState::ENOUGH_BALANCE);
                 } else {
                     tx.state.insert(TxState::ENOUGH_BALANCE);
@@ -1290,6 +1304,7 @@ pub(crate) type InsertResult<T> = Result<InsertOk<T>, InsertErr<T>>;
 #[derive(Debug)]
 pub(crate) enum InsertErr<T: PoolTransaction> {
     /// Attempted to replace existing transaction, but was underpriced
+    /// 试着替换已经存在的transaction，但是underpriced
     Underpriced {
         #[allow(unused)]
         transaction: Arc<ValidPoolTransaction<T>>,
@@ -1300,10 +1315,13 @@ pub(crate) enum InsertErr<T: PoolTransaction> {
     /// See also [`MIN_PROTOCOL_BASE_FEE`]
     FeeCapBelowMinimumProtocolFeeCap { transaction: Arc<ValidPoolTransaction<T>>, fee_cap: u128 },
     /// Sender currently exceeds the configured limit for max account slots.
+    /// Sender当前超过了配置的max account slots
     ///
     /// The sender can be considered a spammer at this point.
+    /// 这个时候sender可以认为是一个spammer
     ExceededSenderTransactionsCapacity { transaction: Arc<ValidPoolTransaction<T>> },
     /// Transaction gas limit exceeds block's gas limit
+    /// transaction的gas limit超过了block的gas limit
     TxGasLimitMoreThanAvailableBlockGas {
         transaction: Arc<ValidPoolTransaction<T>>,
         block_gas_limit: u64,
@@ -1362,11 +1380,14 @@ impl<T: PoolTransaction> PoolInternalTransaction<T> {
 }
 
 /// Tracks the result after updating the pool
+/// 追踪在更新pool之后的结果
 #[derive(Debug)]
 pub(crate) struct UpdateOutcome<T: PoolTransaction> {
     /// transactions promoted to the pending pool
+    /// 提交到pending pool的transactions
     pub(crate) promoted: Vec<Arc<ValidPoolTransaction<T>>>,
     /// transaction that failed and were discarded
+    /// 失败并且被丢弃的transactions
     pub(crate) discarded: Vec<TxHash>,
 }
 
@@ -1538,6 +1559,7 @@ mod tests {
         let mut f = MockTransactionFactory::default();
         let mut pool = AllTransactions::default();
         let tx = MockTransaction::eip1559().inc_price().inc_limit();
+        // 对transaction进行clone
         let first = f.validated(tx.clone());
         let _res = pool.insert_tx(first, on_chain_balance, on_chain_nonce);
         let mut replacement = f.validated(tx.rng_hash());
@@ -1553,6 +1575,7 @@ mod tests {
         let on_chain_nonce = 0;
         let mut f = MockTransactionFactory::default();
         let mut pool = AllTransactions::default();
+        // 增加了nonce
         let tx = MockTransaction::eip1559().inc_nonce().inc_price().inc_limit();
         let first = f.validated(tx.clone());
         let _res = pool.insert_tx(first.clone(), on_chain_balance, on_chain_nonce);
@@ -1560,13 +1583,16 @@ mod tests {
         let first_in_pool = pool.get(first.id()).unwrap();
 
         // has nonce gap
+        // 有nonce gap
         assert!(!first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
 
+        // 插入prev
         let prev = f.validated(tx.prev());
         let InsertOk { updates, replaced_tx, state, move_to, .. } =
             pool.insert_tx(prev, on_chain_balance, on_chain_nonce).unwrap();
 
         // no updates since still in queued pool
+        // 没有更新，因为依然在queued pool
         assert!(updates.is_empty());
         assert!(replaced_tx.is_none());
         assert!(state.contains(TxState::NO_NONCE_GAPS));
@@ -1574,6 +1600,7 @@ mod tests {
 
         let first_in_pool = pool.get(first.id()).unwrap();
         // has non nonce gap
+        // 存在non nonce gap
         assert!(first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
     }
 
@@ -1590,6 +1617,7 @@ mod tests {
 
         let first_in_pool = pool.get(first.id()).unwrap();
         // has nonce gap
+        // 存在nonce gap
         assert!(!first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
         assert_eq!(SubPool::Queued, first_in_pool.subpool);
 
@@ -1598,6 +1626,7 @@ mod tests {
             pool.insert_tx(prev, on_chain_balance, on_chain_nonce).unwrap();
 
         // updated previous tx
+        // 更新了之前的tx
         assert_eq!(updates.len(), 1);
         assert!(replaced_tx.is_none());
         assert!(state.contains(TxState::NO_NONCE_GAPS));
@@ -1625,6 +1654,7 @@ mod tests {
 
         assert!(tx.get_gas_price() < pool.pending_basefee as u128);
         // has nonce gap
+        // 存在nonce gap
         assert!(!first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
 
         let prev = f.validated(tx.prev());
@@ -1633,6 +1663,7 @@ mod tests {
 
         assert!(!state.contains(TxState::ENOUGH_FEE_CAP_BLOCK));
         // no updates since still in queued pool
+        // 没有更新，因为依然在queued pool
         assert!(updates.is_empty());
         assert!(replaced_tx.is_none());
         assert!(state.contains(TxState::NO_NONCE_GAPS));
@@ -1640,6 +1671,7 @@ mod tests {
 
         let first_in_pool = pool.get(first.id()).unwrap();
         // has non nonce gap
+        // 有non nonce gap
         assert!(first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
     }
 
@@ -1658,9 +1690,11 @@ mod tests {
 
         assert_eq!(
             pool.max_account_slots,
+            // 获取sender的tx的数目
             pool.tx_count(f.ids.sender_id(&tx.get_sender()).unwrap())
         );
 
+        // 再插入一个tx
         let err =
             pool.insert_tx(f.validated(tx.next()), on_chain_balance, on_chain_nonce).unwrap_err();
         assert!(matches!(err, InsertErr::ExceededSenderTransactionsCapacity { .. }));
@@ -1689,6 +1723,7 @@ mod tests {
             pool.tx_count(f.ids.sender_id(&tx.get_sender()).unwrap())
         );
 
+        // 允许local的spamming
         pool.insert_tx(
             f.validated_with_origin(TransactionOrigin::Local, tx.next()),
             on_chain_balance,
@@ -1724,11 +1759,14 @@ mod tests {
 
         assert_eq!(pool.pending_pool.len(), 1);
 
+        // 更新base fee
         pool.update_basefee((tx.max_fee_per_gas() + 1) as u64);
 
+        // pending pool变为空，basefee pool变为1
         assert!(pool.pending_pool.is_empty());
         assert_eq!(pool.basefee_pool.len(), 1);
 
+        // transaction进入了base fee pool
         assert_eq!(pool.all_transactions.txs.get(&id).unwrap().subpool, SubPool::BaseFee)
     }
 
@@ -1740,6 +1778,7 @@ mod tests {
         let tx = MockTransaction::eip1559().inc_price_by(10);
         let validated = f.validated(tx.clone());
         let id = *validated.id();
+        // 添加transaction
         pool.add_transaction(validated, U256::from(1_000), 0).unwrap();
 
         let next = tx.next();
@@ -1749,10 +1788,12 @@ mod tests {
         assert_eq!(pool.pending_pool.len(), 2);
 
         let mut changed_senders = HashMap::new();
+        // 插入changed senders
         changed_senders.insert(
             id.sender,
             SenderInfo { state_nonce: next.get_nonce(), balance: U256::from(1_000) },
         );
+        // 更新accounts
         let outcome = pool.update_accounts(changed_senders);
         assert_eq!(outcome.discarded.len(), 1);
         assert_eq!(pool.pending_pool.len(), 1);

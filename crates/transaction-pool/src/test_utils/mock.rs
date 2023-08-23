@@ -83,6 +83,7 @@ macro_rules! make_setters_getters {
 }
 
 /// A Bare transaction type used for testing.
+/// 裸的transaction类型用于测试
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MockTransaction {
     Legacy {
@@ -261,12 +262,14 @@ impl MockTransaction {
     }
 
     /// Returns a clone with a decreased nonce
+    /// 返回一个clone，但是有着decreased nonce
     pub fn prev(&self) -> Self {
         let mut next = self.clone().with_hash(H256::random());
         next.with_nonce(self.get_nonce() - 1)
     }
 
     /// Returns a clone with an increased nonce
+    /// 返回一个clone，但是有着增加的nonce
     pub fn next(&self) -> Self {
         let mut next = self.clone().with_hash(H256::random());
         next.with_nonce(self.get_nonce() + 1)
@@ -279,6 +282,7 @@ impl MockTransaction {
     }
 
     /// Returns a clone with incremented nonce
+    /// 返回一个clone，有着增加的nonce
     pub fn inc_nonce(mut self) -> Self {
         let nonce = self.get_nonce() + 1;
         self.with_nonce(nonce)
@@ -302,6 +306,7 @@ impl MockTransaction {
     }
 
     /// Returns a new transaction with a lower gas price -1
+    /// 返回一个新的transaction，将gas price - 1
     pub fn decr_price(&self) -> Self {
         self.decr_price_by(1)
     }
@@ -647,6 +652,7 @@ impl MockTransactionFactory {
     }
 
     /// Converts the transaction into a validated transaction
+    /// 将transaction转变为validated transaction
     pub fn validated_with_origin(
         &mut self,
         origin: TransactionOrigin,

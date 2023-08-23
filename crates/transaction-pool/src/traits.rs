@@ -391,9 +391,12 @@ impl<T: PoolTransaction> Clone for NewTransactionEvent<T> {
 }
 
 /// Where the transaction originates from.
+/// transaction从何而来
 ///
 /// Depending on where the transaction was picked up, it affects how the transaction is handled
 /// internally, e.g. limits for simultaneous transaction of one sender.
+/// 取决于transaction来自哪里，它会影响transaction在内部如何被处理，
+/// 例如对于一个sender同时的transaction的limit
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionOrigin {
     /// Transaction is coming from a local source.
@@ -402,11 +405,14 @@ pub enum TransactionOrigin {
     ///
     /// This is usually considered an "untrusted" source, for example received from another in the
     /// network.
+    /// 从外部接收的transaction，这通常被认为是不安全的source，例如从network中的其他地方获取
     External,
     /// Transaction is originated locally and is intended to remain private.
+    /// 来自local的transaction并且保持private
     ///
     /// This type of transaction should not be propagated to the network. It's meant for
     /// private usage within the local node only.
+    /// 这种类型的transaction不应该被传播到network，这意味着只在local node被处理
     Private,
 }
 
