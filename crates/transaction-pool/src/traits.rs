@@ -24,10 +24,13 @@ use tokio::sync::mpsc::Receiver;
 use serde::{Deserialize, Serialize};
 
 /// General purpose abstraction of a transaction-pool.
+/// 一个transaction-pool的通用抽象
 ///
 /// This is intended to be used by API-consumers such as RPC that need inject new incoming,
 /// unverified transactions. And by block production that needs to get transactions to execute in a
 /// new block.
+/// 这被API-consumers使用，例如RPC，需要注入新的，未被校验的transactions，以及任何的block
+/// production，需要获取transactions在一个新的block执行
 ///
 /// Note: This requires `Clone` for convenience, since it is assumed that this will be implemented
 /// for a wrapped `Arc` type, see also [`Pool`](crate::Pool).
@@ -38,17 +41,21 @@ pub trait TransactionPool: Send + Sync + Clone {
     type Transaction: PoolTransaction;
 
     /// Returns stats about the pool and all sub-pools.
+    /// 返回pool以及所有的sub-pools的数据
     fn pool_size(&self) -> PoolSize;
 
     /// Returns the block the pool is currently tracking.
+    /// 返回这个pool当前正在追踪的block
     ///
     /// This tracks the block that the pool has last seen.
+    /// 追踪这个pool最近看到的block
     fn block_info(&self) -> BlockInfo;
 
     /// Imports an _external_ transaction.
     ///
     /// This is intended to be used by the network to insert incoming transactions received over the
     /// p2p network.
+    /// 插入从p2p network中获取的tx
     ///
     /// Consumer: P2P
     async fn add_external_transaction(&self, transaction: Self::Transaction) -> PoolResult<TxHash> {
@@ -56,6 +63,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Imports all _external_ transactions
+    /// 导入所有外部的transactions
     ///
     ///
     /// Consumer: Utility
@@ -67,9 +75,11 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Adds an _unvalidated_ transaction into the pool and subscribe to state changes.
+    /// 添加一个_unvalidated_ transaction到pool并且订阅state changes
     ///
     /// This is the same as [TransactionPool::add_transaction] but returns an event stream for the
     /// given transaction.
+    /// 和[TransactionPool::add_transaction]类似，但是返回一个event stream，对于给定的transaction
     ///
     /// Consumer: Custom
     async fn add_transaction_and_subscribe(
@@ -79,6 +89,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> PoolResult<TransactionEvents>;
 
     /// Adds an _unvalidated_ transaction into the pool.
+    /// 添加一个_unvalidated_ tx到pool中
     ///
     /// Consumer: RPC
     async fn add_transaction(
@@ -101,16 +112,20 @@ pub trait TransactionPool: Send + Sync + Clone {
     /// Returns a new transaction change event stream for the given transaction.
     ///
     /// Returns `None` if the transaction is not in the pool.
+    /// 返回`None`如果tx不在pool
     fn transaction_event_listener(&self, tx_hash: TxHash) -> Option<TransactionEvents>;
 
     /// Returns a new transaction change event stream for _all_ transactions in the pool.
+    /// 返回一个新的tx change event stream，对于pool中的所有的txs
     fn all_transactions_event_listener(&self) -> AllTransactionsEvents<Self::Transaction>;
 
     /// Returns a new Stream that yields transactions hashes for new __pending__ transactions
     /// inserted into the pool that are allowed to be propagated.
+    /// 返回一个新的Stream，生成tx hashes，对于新的__pending__ txs插入到pool，允许进行传播
     ///
     /// Note: This is intended for networking and will __only__ yield transactions that are allowed
     /// to be propagated over the network.
+    /// 注意：这用于网络并且只会生成tx，能够在network进行传播
     ///
     /// Consumer: RPC/P2P
     fn pending_transactions_listener(&self) -> Receiver<TxHash> {
@@ -175,6 +190,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn pooled_transactions(&self) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns only the first `max` transactions in the pool.
+    /// 只返回第一个`max` transactions，在pool中
     ///
     /// Consumer: P2P
     fn pooled_transactions_max(
@@ -501,6 +517,7 @@ impl<T> BestTransactions for std::iter::Empty<T> {
 }
 
 /// Trait for transaction types used inside the pool
+/// 在pool中使用的transaction types的trait
 pub trait PoolTransaction:
     fmt::Debug + Send + Sync + FromRecoveredTransaction + IntoRecoveredTransaction
 {

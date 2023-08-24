@@ -608,6 +608,7 @@ impl<T: TransactionOrdering> TxPool<T> {
         let mut removed = Vec::new();
 
         // Helper macro that discards the worst transactions for the pools
+        // Helper宏用于丢弃pools后者那个最差的transactions
         macro_rules! discard_worst {
             ($this:ident, $removed:ident,  [$($limit:ident => $pool:ident),*]  ) => {
                 $ (

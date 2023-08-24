@@ -26,9 +26,13 @@
 //! The transaction pool is responsible for
 //!
 //!    - recording incoming transactions
+//!    - 记录incoming transactions
 //!    - providing existing transactions
+//!    - 提供已经存在的transactions
 //!    - ordering and providing the best transactions for block production
+//!    - 提供对于生成block最好的transactions
 //!    - monitoring memory footprint and enforce pool size limits
+//!    - 监控memory footprint并且强制pool size limits
 //!
 //! ## Assumptions
 //!
@@ -38,15 +42,20 @@
 //! pool ([`PoolTransaction`]), this includes gas price, base fee (EIP-1559 transactions), nonce
 //! etc. It makes no assumptions about the encoding format, but the transaction type must report its
 //! size so pool size limits (memory) can be enforced.
+//! transaction必须报告它的size，这样pool size limits（内存）可以执行
 //!
 //! ### Transaction ordering
 //!
 //! The pending pool contains transactions that can be mined on the current state.
 //! The order in which they're returned are determined by a `Priority` value returned by the
 //! `TransactionOrdering` type this pool is configured with.
+//! pending pool包含transactions，可以在当前的state被mined，
+//! 他们返回的顺序决定于这个pool配置的`TransactionOrdering`返回的`Priority`
 //!
 //! This is only used in the _pending_ pool to yield the best transactions for block production. The
 //! _base pool_ is ordered by base fee, and the _queued pool_ by current distance.
+//! 这只在_pending_ pool中使用来在生成block的时候产生best transactions，_base pool_按照base
+//! fee排序，_queued pool_按照当前的distance排序
 //!
 //! ### Validation
 //!
@@ -56,14 +65,22 @@
 //! the current state or could become valid after certain state changes. transaction that can never
 //! become valid (e.g. nonce lower than current on chain nonce) will never be added to the pool and
 //! instead are discarded right away.
+//! pool从不校验新来的transactions，这是通过`TransactionsValidator`实现的，
+//! 只有validator返回valid的transactions才会被包含在pool中，
+//! 假设pool中的transaction要么在当前的state正确或者在state发生一定的变更之后正确。
+//! 绝无可能正确的transaction用于不会加入pool，反而会被立即丢弃
 //!
 //! ### State Changes
 //!
 //! Once a new block is mined, the pool needs to be updated with a changeset in order to:
+//! 一旦一个新的block被mined，pool需要用一个changeset更新，为了：
 //!
 //!   - remove mined transactions
+//!   - 移除mined transactions
 //!   - update using account changes: balance changes
+//!   - 使用account changes更新：balance changes
 //!   - base fee updates
+//!   - base fee的更新
 //!
 //! ## Implementation details
 //!
@@ -71,24 +88,35 @@
 //! inserting, querying specific transactions by hash or retrieving the best transactions.
 //! In addition, it enables the registration of event listeners that are notified of state changes.
 //! Events are communicated via channels.
+//! `TransactionPool`
+//! trait暴露所有外部使用的pool的功能，例如插入、查询特定的transactions，
+//! 通过hash或者获取最好的transactions，另外它使能event listeners的注册，能够通知state
+//! changes，Events通过channels进行沟通
 //!
 //! ### Architecture
 //!
 //! The final `TransactionPool` is made up of two layers:
+//! 最终的`TransactionPool`由两层组成：
 //!
 //! The lowest layer is the actual pool implementations that manages (validated) transactions:
 //! [`TxPool`](crate::pool::txpool::TxPool). This is contained in a higher level pool type that
 //! guards the low level pool and handles additional listeners or metrics:
 //! [`PoolInner`](crate::pool::PoolInner)
+//! 最底层的layer是真正的pool的实现，管理（校验）transactions：
+//! [`TxPool`](crate::pool::txpool::TxPool)，这被包含在上层的pool类型，
+//! 它管理下层的pool并且处理额外的listeners或者metrics：[`PoolInner`](crate::pool::PoolInner)
 //!
 //! The transaction pool will be used by separate consumers (RPC, P2P), to make sharing easier, the
 //! [`Pool`](crate::Pool) type is just an `Arc` wrapper around `PoolInner`. This is the usable type
 //! that provides the `TransactionPool` interface.
+//! transaction pool会被不同的consumers（RPC, P2P）使用，来让共享更简单， [`Pool`](crate::Pool)
+//! 只是`PoolInner`的一个 `Arc`封装，这是可用的类型，用于提供`TransactionPool`接口
 //!
 //!
 //! ## Examples
 //!
 //! Listen for new transactions and print them:
+//! 监听新的transactions并且打印他们
 //!
 //! ```
 //! use reth_primitives::MAINNET;
@@ -108,11 +136,13 @@
 //!   });
 //!
 //!   // do something useful with the pool, like RPC integration
+//!   // 用Pool做一些有用的事，例如RPC集成
 //!
 //! # }
 //! ```
 //!
 //! Spawn maintenance task to keep the pool updated
+//! 生成maintenance task，来保持pool更新
 //!
 //! ```
 //! use futures_util::Stream;
@@ -131,6 +161,7 @@
 //!     );
 //!
 //!   // spawn a task that listens for new blocks and updates the pool's transactions, mined transactions etc..
+//!   // 生成一个task，监听新的blocks并且更新pool的transactions，挖掘transactions
 //!   tokio::task::spawn(  maintain_transaction_pool_future(client, pool, stream, TokioTaskExecutor::default(), Default::default()));
 //!
 //! # }

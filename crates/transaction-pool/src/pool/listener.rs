@@ -21,6 +21,7 @@ use tokio::sync::mpsc::{
 const TX_POOL_EVENT_CHANNEL_SIZE: usize = 1024;
 
 /// A Stream that receives [TransactionEvent] only for the transaction with the given hash.
+/// 一个Stream，接收[TransactionEvent]，只对于给定的hash的transaction
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled"]
 pub struct TransactionEvents {

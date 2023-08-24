@@ -384,6 +384,7 @@ where
     }
 
     /// Adds all transactions in the iterator to the pool, returning a list of results.
+    /// 添加iterator中所有的transactions到pool，返回一系列的结果
     pub fn add_transactions(
         &self,
         origin: TransactionOrigin,
@@ -393,6 +394,7 @@ where
             transactions.into_iter().map(|tx| self.add_transaction(origin, tx)).collect::<Vec<_>>();
 
         // If at least one transaction was added successfully, then we enforce the pool size limits.
+        // 如果至少一个transaction被成功添加，我们强制实施pool size limits
         let discarded =
             if added.iter().any(Result::is_ok) { self.discard_worst() } else { Default::default() };
 
@@ -401,10 +403,12 @@ where
         }
 
         let mut listener = self.event_listener.write();
+        // 遍历discarded
         discarded.iter().for_each(|tx| listener.discarded(tx));
 
         // It may happen that a newly added transaction is immediately discarded, so we need to
         // adjust the result here
+        // 有可能刚刚加入的transaction立即被丢弃，这样我们需要在这里调整结果
         added
             .into_iter()
             .map(|res| match res {
