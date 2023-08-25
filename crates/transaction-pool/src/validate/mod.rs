@@ -121,16 +121,20 @@ impl<T: PoolTransaction> ValidTransaction<T> {
 }
 
 /// Provides support for validating transaction at any given state of the chain
+/// 提供支持，对于在chain的给定state对transaction进行校验
 #[async_trait::async_trait]
 pub trait TransactionValidator: Send + Sync {
     /// The transaction type to validate.
+    /// 用于校验的tx类型
     type Transaction: PoolTransaction;
 
     /// Validates the transaction and returns a [`TransactionValidationOutcome`] describing the
     /// validity of the given transaction.
+    /// 校验transaction并且返回一个[`TransactionValidationOutcome`]描述给定transaction的validity
     ///
     /// This will be used by the transaction-pool to check whether the transaction should be
     /// inserted into the pool or discarded right away.
+    /// 这会被transaction-pool用于检查是否tx应该被插入到Pool或者立即丢弃
     ///
     /// Implementers of this trait must ensure that the transaction is well-formed, i.e. that it
     /// complies at least all static constraints, which includes checking for:
@@ -149,6 +153,7 @@ pub trait TransactionValidator: Send + Sync {
     /// this transaction is still subject to future (dynamic) changes enforced by the pool, for
     /// example nonce or balance changes. Hence, any validation checks must be applied in this
     /// function.
+    /// 然而这个tx的validity依然服从pool执行的未来的（动态的）变更，例如nonce或者balance的改变
     ///
     /// See [EthTransactionValidator] for a reference implementation.
     async fn validate_transaction(
@@ -243,8 +248,10 @@ impl<T: PoolTransaction> ValidPoolTransaction<T> {
     }
 
     /// Returns the EIP-1559 Max base fee the caller is willing to pay.
+    /// 返回EIP-1559的Max base fee，caller愿意支付
     ///
     /// For legacy transactions this is `gas_price`.
+    /// 对于legacy txs，这个是`gas_price`
     pub fn max_fee_per_gas(&self) -> u128 {
         self.transaction.max_fee_per_gas()
     }

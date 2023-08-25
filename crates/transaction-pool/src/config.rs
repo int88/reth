@@ -1,10 +1,13 @@
 /// Guarantees max transactions for one sender, compatible with geth/erigon
+/// 每个sender保证的最大的txs，和geth/erigon兼容
 pub const TXPOOL_MAX_ACCOUNT_SLOTS_PER_SENDER: usize = 16;
 
 /// The default maximum allowed number of transactions in the given subpool.
+/// 在给定的subpool中默认允许最大的txs数目
 pub const TXPOOL_SUBPOOL_MAX_TXS_DEFAULT: usize = 10_000;
 
 /// The default maximum allowed size of the given subpool.
+/// 给定的subpool允许的最大的size
 pub const TXPOOL_SUBPOOL_MAX_SIZE_MB_DEFAULT: usize = 20;
 
 /// Default price bump (in %) for the transaction pool underpriced check.
@@ -14,6 +17,7 @@ pub const DEFAULT_PRICE_BUMP: u128 = 10;
 pub const REPLACE_BLOB_PRICE_BUMP: u128 = 100;
 
 /// Configuration options for the Transaction pool.
+/// Transaction pool的配置项选项
 #[derive(Debug, Clone)]
 pub struct PoolConfig {
     /// Max number of transaction in the pending sub-pool

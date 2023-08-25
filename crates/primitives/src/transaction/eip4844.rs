@@ -505,6 +505,7 @@ impl BlobTransaction {
 }
 
 /// This represents a set of blobs, and its corresponding commitments and proofs.
+/// 代表一系列的blobs，以及对应的commitments和proofs
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct BlobTransactionSidecar {
     /// The blob data.

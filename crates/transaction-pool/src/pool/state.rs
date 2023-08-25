@@ -75,12 +75,14 @@ pub enum SubPool {
 
 impl SubPool {
     /// Whether this transaction is to be moved to the pending sub-pool.
+    /// 这个tx是否被移到pending sub-pool
     #[inline]
     pub fn is_pending(&self) -> bool {
         matches!(self, SubPool::Pending)
     }
 
     /// Whether this transaction is in the queued pool.
+    /// 这个tx是否在queued pool
     #[inline]
     pub fn is_queued(&self) -> bool {
         matches!(self, SubPool::Queued)
@@ -93,6 +95,7 @@ impl SubPool {
     }
 
     /// Returns whether this is a promotion depending on the current sub-pool location.
+    /// 返回是否是一个promotion，依赖于当前的sub-pool的位置
     #[inline]
     pub fn is_promoted(&self, other: SubPool) -> bool {
         self > &other
@@ -140,6 +143,7 @@ mod tests {
             TxState::NO_NONCE_GAPS |
             TxState::NOT_TOO_MUCH_GAS |
             TxState::ENOUGH_FEE_CAP_BLOCK;
+        // state的状态
         assert_eq!(SubPool::Queued, state.into());
     }
 

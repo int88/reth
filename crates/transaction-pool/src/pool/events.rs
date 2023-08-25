@@ -6,6 +6,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 /// An event that happened to a transaction and contains its full body where possible.
+/// 一个event，发生到一个tx并且包含完整的body，如果可能的话
 #[derive(Debug)]
 pub enum FullTransactionEvent<T: PoolTransaction> {
     /// Transaction has been added to the pending pool.

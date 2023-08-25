@@ -25,19 +25,24 @@ use tokio::sync::broadcast;
 #[derive(Clone)]
 pub(crate) struct PendingPool<T: TransactionOrdering> {
     /// How to order transactions.
+    /// 如何对txs进行排序
     ordering: T,
     /// Keeps track of transactions inserted in the pool.
     ///
     /// This way we can determine when transactions where submitted to the pool.
     submission_id: u64,
     /// _All_ Transactions that are currently inside the pool grouped by their identifier.
+    /// 当前所有在pool中的txs，通过id进行聚合
     by_id: BTreeMap<TransactionId, PendingTransaction<T>>,
     /// _All_ transactions sorted by priority
+    /// 通过Priority排序的所有的txs
     all: BTreeSet<PendingTransaction<T>>,
     /// Independent transactions that can be included directly and don't require other
     /// transactions.
+    /// 独立的txs可以直接被包含并且不需要其他的txs
     ///
     /// Sorted by their scoring value.
+    /// 通过scoring value进行排序
     independent_transactions: BTreeSet<PendingTransaction<T>>,
     /// Keeps track of the size of this pool.
     ///
@@ -45,6 +50,7 @@ pub(crate) struct PendingPool<T: TransactionOrdering> {
     size_of: SizeTracker,
     /// Used to broadcast new transactions that have been added to the PendingPool to existing
     /// snapshots of this pool.
+    /// 用于广播新的tx，已经被加入到PendingPool，到这个pool已经存在的snapshots
     new_transaction_notifier: broadcast::Sender<PendingTransaction<T>>,
 }
 
@@ -66,17 +72,21 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Returns an iterator over all transactions that are _currently_ ready.
+    /// 返回一个iterator，对于所有的tx处于ready状态
     ///
     /// 1. The iterator _always_ returns transaction in order: It never returns a transaction with
     /// an unsatisfied dependency and only returns them if dependency transaction were yielded
     /// previously. In other words: The nonces of transactions with the same sender will _always_
     /// increase by exactly 1.
+    /// 1. iterator总是按顺序返回tx
     ///
     /// The order of transactions which satisfy (1.) is determent by their computed priority: A
     /// transaction with a higher priority is returned before a transaction with a lower priority.
+    /// tx的顺序满足：1.取决于他们算出的优先级：一个tx有着更高的优先级会在有着更低的优先级的时候返回
     ///
     /// If two transactions have the same priority score, then the transactions which spent more
     /// time in pool (were added earlier) are returned first.
+    /// 如果两个tx有着同样的txs，那么在pool中呆更长时间的会首先返回
     ///
     /// NOTE: while this iterator returns transaction that pool considers valid at this point, they
     /// could potentially be become invalid at point of execution. Therefore, this iterator
@@ -199,10 +209,12 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Adds a new transactions to the pending queue.
+    /// 添加一个新的txs到pending queue
     ///
     /// # Panics
     ///
     /// if the transaction is already included
+    /// panic如果tx已经包含了
     pub(crate) fn add_transaction(
         &mut self,
         tx: Arc<ValidPoolTransaction<T::Transaction>>,
@@ -215,6 +227,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
         );
 
         // keep track of size
+        // 追踪size
         self.size_of += tx.size();
 
         let tx_id = *tx.id();
@@ -225,13 +238,16 @@ impl<T: TransactionOrdering> PendingPool<T> {
 
         // If there's __no__ ancestor in the pool, then this transaction is independent, this is
         // guaranteed because this pool is gapless.
+        // 如果pool中没有ancestor，那么这个tx是独立的，这是保证的，因为这个pool是gapless
         if self.ancestor(&tx_id).is_none() {
             self.independent_transactions.insert(tx.clone());
         }
         self.all.insert(tx.clone());
 
         // send the new transaction to any existing pendingpool snapshot iterators
+        // 发送新的tx到任何已经存在的pendingpool snapshot的iterators
         if self.new_transaction_notifier.receiver_count() > 0 {
+            // 从new_transaction_notifier发送
             let _ = self.new_transaction_notifier.send(tx.clone());
         }
 
@@ -273,6 +289,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Removes the worst transaction from this pool.
+    /// 从pool中移除worst tx
     pub(crate) fn pop_worst(&mut self) -> Option<Arc<ValidPoolTransaction<T::Transaction>>> {
         let worst = self.all.iter().next().map(|tx| *tx.transaction.id())?;
         self.remove_transaction(&worst)
@@ -296,10 +313,12 @@ impl<T: TransactionOrdering> PendingPool<T> {
 }
 
 /// A transaction that is ready to be included in a block.
+/// 一个tx，准备好被包含进以个block
 pub(crate) struct PendingTransaction<T: TransactionOrdering> {
-    /// Identifier that tags when transaction was submitted in the pool.
+    /// Identifier that tags when transaction was submitted in the pool.1
     pub(crate) submission_id: u64,
     /// Actual transaction.
+    /// 真正的tx
     pub(crate) transaction: Arc<ValidPoolTransaction<T::Transaction>>,
     /// The priority value assigned by the used `Ordering` function.
     pub(crate) priority: Priority<T::PriorityValue>,
@@ -307,6 +326,7 @@ pub(crate) struct PendingTransaction<T: TransactionOrdering> {
 
 impl<T: TransactionOrdering> PendingTransaction<T> {
     /// The next transaction of the sender: `nonce + 1`
+    /// sender的下一个txs：`nonce + 1`
     pub(crate) fn unlocks(&self) -> TransactionId {
         self.transaction.transaction_id.descendant()
     }
@@ -416,6 +436,7 @@ mod tests {
         let mut f = MockTransactionFactory::default();
         let mut pool = PendingPool::new(MockOrdering::default());
 
+        // 生成tx并且添加
         let t = MockTransaction::eip1559();
         pool.add_transaction(f.validated_arc(t.clone()), 0);
 
@@ -423,6 +444,7 @@ mod tests {
         pool.add_transaction(f.validated_arc(t2), 0);
 
         // First transaction should be evicted.
+        // 第一个tx应该被移除
         assert_eq!(pool.pop_worst().map(|tx| *tx.hash()), Some(*t.hash()));
     }
 }

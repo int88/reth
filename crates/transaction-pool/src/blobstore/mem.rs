@@ -7,6 +7,7 @@ use std::{
 };
 
 /// An in-memory blob store.
+/// 一个内存中的blob store
 #[derive(Clone, Debug, Default)]
 pub struct InMemoryBlobStore {
     inner: Arc<InMemoryBlobStoreInner>,
@@ -15,6 +16,7 @@ pub struct InMemoryBlobStore {
 #[derive(Debug, Default)]
 struct InMemoryBlobStoreInner {
     /// Storage for all blob data.
+    /// 对于所有blob data的存储
     store: RwLock<HashMap<H256, BlobTransactionSidecar>>,
     size: AtomicUsize,
 }

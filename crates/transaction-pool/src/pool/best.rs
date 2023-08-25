@@ -12,10 +12,13 @@ use tracing::debug;
 
 /// An iterator that returns transactions that can be executed on the current state (*best*
 /// transactions).
+/// 一个iterator，返回可以在当前的state运行的txs（即*best* txs）
 ///
 /// This is a wrapper around [`BestTransactions`] that also enforces a specific basefee.
+/// 这是对[`BestTransactions`]的一个wrapper，同时强制执行一个特定的basefee
 ///
 /// This iterator guarantees that all transaction it returns satisfy the base fee.
+/// 这个iterator确保所有返回的txs，满足base fee
 pub(crate) struct BestTransactionsWithBasefee<T: TransactionOrdering> {
     pub(crate) best: BestTransactions<T>,
     pub(crate) base_fee: u64,
@@ -56,22 +59,28 @@ pub(crate) struct BestTransactions<T: TransactionOrdering> {
     /// iterator was created.
     pub(crate) all: BTreeMap<TransactionId, PendingTransaction<T>>,
     /// Transactions that can be executed right away: these have the expected nonce.
+    /// 可以立即被执行的txs：它们有期望的nonce
     ///
     /// Once an `independent` transaction with the nonce `N` is returned, it unlocks `N+1`, which
     /// then can be moved from the `all` set to the `independent` set.
+    /// 一旦`independent` tx，有着nonce `N`的被返回，它会解锁`N +
+    /// 1`，它可以从`all`中移到`independent` set
     pub(crate) independent: BTreeSet<PendingTransaction<T>>,
     /// There might be the case where a yielded transactions is invalid, this will track it.
     pub(crate) invalid: HashSet<TxHash>,
     /// Used to recieve any new pending transactions that have been added to the pool after this
     /// iterator was snapshotted
+    /// 用于接收新的pending txs，它们已经被加入到pool，在iterator被snapshotted之后
     ///
     /// These new pending transactions are inserted into this iterator's pool before yielding the
     /// next value
+    /// 这些pending txs被插入到iterator的pool，在产生下一个value之前
     pub(crate) new_transaction_reciever: Receiver<PendingTransaction<T>>,
 }
 
 impl<T: TransactionOrdering> BestTransactions<T> {
     /// Mark the transaction and it's descendants as invalid.
+    /// 将tx以及它的后代标记为invalid
     pub(crate) fn mark_invalid(&mut self, tx: &Arc<ValidPoolTransaction<T::Transaction>>) {
         self.invalid.insert(*tx.hash());
     }
@@ -135,10 +144,12 @@ impl<T: TransactionOrdering> Iterator for BestTransactions<T> {
         loop {
             self.add_new_transactions();
             // Remove the next independent tx with the highest priority
+            // 移除下一个独立的tx，有着最高的priority
             let best = self.independent.pop_last()?;
             let hash = best.transaction.hash();
 
             // skip transactions that were marked as invalid
+            // 跳过被标记为invalid的tx
             if self.invalid.contains(hash) {
                 debug!(
                     target: "txpool",
@@ -149,6 +160,7 @@ impl<T: TransactionOrdering> Iterator for BestTransactions<T> {
             }
 
             // Insert transactions that just got unlocked.
+            // 插入txs，它们刚刚被unlocked
             if let Some(unlocked) = self.all.get(&best.unlocks()) {
                 self.independent.insert(unlocked.clone());
             }
@@ -173,8 +185,10 @@ mod tests {
 
         let num_tx = 10;
         // insert 10 gapless tx
+        // 插入10个gapless tx
         let tx = MockTransaction::eip1559();
         for nonce in 0..num_tx {
+            // 增加nonce
             let tx = tx.clone().rng_hash().with_nonce(nonce);
             let valid_tx = f.validated(tx);
             pool.add_transaction(Arc::new(valid_tx), 0);
@@ -185,6 +199,7 @@ mod tests {
         assert_eq!(best.independent.len(), 1);
 
         // check tx are returned in order
+        // 检查tx按顺序返回
         for nonce in 0..num_tx {
             assert_eq!(best.independent.len(), 1);
             let tx = best.next().unwrap();
@@ -199,6 +214,7 @@ mod tests {
 
         let num_tx = 10;
         // insert 10 gapless tx
+        // 插入10个gapless tx
         let tx = MockTransaction::eip1559();
         for nonce in 0..num_tx {
             let tx = tx.clone().rng_hash().with_nonce(nonce);
@@ -209,10 +225,12 @@ mod tests {
         let mut best = pool.best();
 
         // mark the first tx as invalid
+        // 将第一个tx标记为invalid
         let invalid = best.independent.iter().next().unwrap();
         best.mark_invalid(&invalid.transaction.clone());
 
         // iterator is empty
+        // iterator变为空
         assert!(best.next().is_none());
     }
 }

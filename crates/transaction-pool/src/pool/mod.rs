@@ -113,8 +113,10 @@ mod update;
 /// Transaction pool的内部实现
 pub struct PoolInner<V: TransactionValidator, T: TransactionOrdering> {
     /// Internal mapping of addresses to plain ints.
+    /// 内部映射，addresses到plain ints
     identifiers: RwLock<SenderIdentifiers>,
     /// Transaction validation.
+    /// Transaction的校验
     validator: V,
     /// The internal pool that manages all transactions.
     /// 内部的Pool，管理所有的transactions

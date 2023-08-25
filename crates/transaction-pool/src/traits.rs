@@ -199,6 +199,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns an iterator that yields transactions that are ready for block production.
+    /// 返回一个iterator，能够产生准备好用于block production的transactions
     ///
     /// Consumer: Block production
     fn best_transactions(
@@ -207,6 +208,7 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns an iterator that yields transactions that are ready for block production with the
     /// given base fee.
+    /// 返回一个iterator，能够产生准备好用于block production的transactions，有着给定的fee
     ///
     /// Consumer: Block production
     fn best_transactions_with_base_fee(
@@ -215,6 +217,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Box<dyn BestTransactions<Item = Arc<ValidPoolTransaction<Self::Transaction>>>>;
 
     /// Returns all transactions that can be included in the next block.
+    /// 返回所有的transactions，可以被包含在下一个block
     ///
     /// This is primarily used for the `txpool_` RPC namespace: <https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool> which distinguishes between `pending` and `queued` transactions, where `pending` are transactions ready for inclusion in the next block and `queued` are transactions that are ready for inclusion in future blocks.
     ///
@@ -222,6 +225,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn pending_transactions(&self) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns all transactions that can be included in _future_ blocks.
+    /// 返回所有的txs，可以被被包含在_future_ blocks
     ///
     /// This and [Self::pending_transactions] are mutually exclusive.
     ///
@@ -230,6 +234,7 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns all transactions that are currently in the pool grouped by whether they are ready
     /// for inclusion in the next block or not.
+    /// 返回pool中当前所有的txs，通过它们是否准备好被包含在下一个block进行分组
     ///
     /// This is primarily used for the `txpool_` namespace: <https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool>
     ///
@@ -237,6 +242,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn all_transactions(&self) -> AllPoolTransactions<Self::Transaction>;
 
     /// Removes all transactions corresponding to the given hashes.
+    /// 根据给定的hash移除所有的txs
     ///
     /// Also removes all _dependent_ transactions.
     ///
@@ -270,17 +276,20 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn get_all(&self, txs: Vec<TxHash>) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Notify the pool about transactions that are propagated to peers.
+    /// 通知pool，关于可以被传播给peers的txs
     ///
     /// Consumer: P2P
     fn on_propagated(&self, txs: PropagatedTransactions);
 
     /// Returns all transactions sent by a given user
+    /// 返回给定user的所有的txs
     fn get_transactions_by_sender(
         &self,
         sender: Address,
     ) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns a set of all senders of transactions in the pool
+    /// 返回pool中txs的所有senders
     fn unique_senders(&self) -> HashSet<Address>;
 }
 

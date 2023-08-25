@@ -48,6 +48,7 @@ impl Stream for TransactionEvents {
 }
 
 /// A Stream that receives [FullTransactionEvent] for _all_ transaction.
+/// 一个Stream接收[FullTransactionEvent]对于所有的tx
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled"]
 pub struct AllTransactionsEvents<T: PoolTransaction> {

@@ -1,4 +1,5 @@
 //! Storage for blob data of EIP4844 transactions.
+//! 存储EIP4844 tx的blob data
 
 use reth_primitives::{BlobTransactionSidecar, H256};
 mod maintain;
@@ -10,11 +11,14 @@ pub use mem::InMemoryBlobStore;
 pub use noop::NoopBlobStore;
 
 /// A blob store that can be used to store blob data of EIP4844 transactions.
+/// 一个blob store，可以用于存储EIP4844 txs的blob data
 ///
 /// This type is responsible for keeping track of blob data until it is no longer needed (after
 /// finalization).
+/// 这个类型负责保存追踪blob data，直到它不再需要
 ///
 /// Note: this is Clone because it is expected to be wrapped in an Arc.
+/// 注意：这是Clone，因为它期望被封装进一个Arc
 pub trait BlobStore: Send + Sync + 'static {
     /// Inserts the blob sidecar into the store
     fn insert(&self, tx: H256, data: BlobTransactionSidecar) -> Result<(), BlobStoreError>;

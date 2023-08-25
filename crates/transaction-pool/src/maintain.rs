@@ -1,4 +1,5 @@
 //! Support for maintaining the state of the transaction pool
+//! 支持维护tx pool的状态
 
 use crate::{
     metrics::MaintainPoolMetrics,
@@ -351,22 +352,27 @@ pub async fn maintain_transaction_pool<Client, P, St, Tasks>(
 
 /// Keeps track of the pool's state, whether the accounts in the pool are in sync with the actual
 /// state.
+/// 追踪pool的state，是否pool中的accounts和真正的state同步
 #[derive(Debug, Eq, PartialEq)]
 enum MaintainedPoolState {
     /// Pool is assumed to be in sync with the current state
+    /// Pool假设和当前的state同步
     InSync,
     /// Pool could be out of sync with the state
+    /// Pool可以和state不同步
     Drifted,
 }
 
 impl MaintainedPoolState {
     /// Returns `true` if the pool is assumed to be out of sync with the current state.
+    /// 返回`true`，如果pool假设已经和当前的state不同步了
     fn is_drifted(&self) -> bool {
         matches!(self, MaintainedPoolState::Drifted)
     }
 }
 
 /// A unique ChangedAccount identified by its address that can be used for deduplication
+/// 一个唯一的ChangedAccount，通过地址进行标识，可以用于去重
 #[derive(Eq)]
 struct ChangedAccountEntry(ChangedAccount);
 
@@ -397,8 +403,10 @@ struct LoadedAccounts {
 }
 
 /// Loads all accounts at the given state
+/// 加载给定的state的所有accounts
 ///
 /// Returns an error with all given addresses if the state is not available.
+/// 返回一个error，用所有给定的address，如果state不可用
 ///
 /// Note: this expects _unique_ addresses
 fn load_accounts<Client, I>(
@@ -431,6 +439,7 @@ where
 }
 
 /// Extracts all changed accounts from the PostState
+/// 从PostState抽取出所有改变的accounts
 fn changed_accounts_iter(state: &PostState) -> impl Iterator<Item = ChangedAccount> + '_ {
     state.accounts().iter().filter_map(|(addr, acc)| acc.map(|acc| (addr, acc))).map(
         |(address, acc)| ChangedAccount {

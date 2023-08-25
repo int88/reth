@@ -7,12 +7,16 @@ use std::{cmp::Ordering, collections::BTreeSet, ops::Deref, sync::Arc};
 /// A pool of transactions that are currently parked and are waiting for external changes (e.g.
 /// basefee, ancestor transactions, balance) that eventually move the transaction into the pending
 /// pool.
+/// 当前处于parked的pool of transactions并且等待外部的改变（例如，basefee, ancesotr
+/// txs，balance）最终被移动到 pending pool
 ///
 /// This pool is a bijection: at all times each set (`best`, `by_id`) contains the same
 /// transactions.
+/// 这个pool是一个双向的：在所有时间，每个set（`best`，`by_id`）包含通用的tx
 ///
 /// Note: This type is generic over [ParkedPool] which enforces that the underlying transaction type
 /// is [ValidPoolTransaction] wrapped in an [Arc].
+/// 注意：这个类型比[ParkedPool]更通用，它强制底层的tx类型是[ValidPoolTransaction]被封装在一个[Arc]
 #[derive(Clone)]
 pub(crate) struct ParkedPool<T: ParkedOrd> {
     /// Keeps track of transactions inserted in the pool.
@@ -20,12 +24,16 @@ pub(crate) struct ParkedPool<T: ParkedOrd> {
     /// This way we can determine when transactions where submitted to the pool.
     submission_id: u64,
     /// _All_ Transactions that are currently inside the pool grouped by their identifier.
+    /// 按照id进行聚合的，pool中所有的txs
     by_id: FnvHashMap<TransactionId, ParkedPoolTransaction<T>>,
     /// All transactions sorted by their order function.
+    /// 通过order函数进行排序的所有的tx
     ///
     /// The higher, the better.
+    /// 越高越好
     best: BTreeSet<ParkedPoolTransaction<T>>,
     /// Keeps track of the size of this pool.
+    /// 追踪这个pool的size
     ///
     /// See also [`PoolTransaction::size`].
     size_of: SizeTracker,
@@ -80,6 +88,7 @@ impl<T: ParkedOrd> ParkedPool<T> {
     }
 
     /// Removes the worst transaction from this pool.
+    /// 从这个pool中移除最差的tx
     pub(crate) fn pop_worst(&mut self) -> Option<Arc<ValidPoolTransaction<T::Transaction>>> {
         let worst = self.best.iter().next().map(|tx| *tx.transaction.id())?;
         self.remove_transaction(&worst)
@@ -126,6 +135,7 @@ impl<T: PoolTransaction> ParkedPool<BasefeeOrd<T>> {
     }
 
     /// Returns all transactions that satisfy the given basefee.
+    /// 返回所有的txs，满足给定的basefee
     fn satisfy_base_fee_ids(&self, basefee: u64) -> Vec<TransactionId> {
         let mut transactions = Vec::new();
         {
@@ -150,8 +160,10 @@ impl<T: PoolTransaction> ParkedPool<BasefeeOrd<T>> {
 
     /// Removes all transactions and their dependent transaction from the subpool that no longer
     /// satisfy the given basefee.
+    /// 移除所有的txs以及它们依赖的tx，从subpool中，不再满足给定的basefee
     ///
     /// Note: the transactions are not returned in a particular order.
+    /// 注意：tx不按照特定的顺序返回
     pub(crate) fn enforce_basefee(&mut self, basefee: u64) -> Vec<Arc<ValidPoolTransaction<T>>> {
         let to_remove = self.satisfy_base_fee_ids(basefee);
 
@@ -176,8 +188,10 @@ impl<T: ParkedOrd> Default for ParkedPool<T> {
 }
 
 /// Represents a transaction in this pool.
+/// 代表这个pool中的一个tx
 struct ParkedPoolTransaction<T: ParkedOrd> {
     /// Identifier that tags when transaction was submitted in the pool.
+    /// id用于标识tx什么时候被提交到pool
     submission_id: u64,
     /// Actual transaction.
     transaction: T,
@@ -345,8 +359,10 @@ mod tests {
         let mut pool = ParkedPool::<BasefeeOrd<_>>::default();
         let t = MockTransaction::eip1559().inc_price_by(10);
         let root_tx = f.validated_arc(t.clone());
+        // 添加tx
         pool.add_transaction(root_tx.clone());
 
+        // 添加后代tx
         let descendant_tx = f.validated_arc(t.inc_nonce().inc_price());
         pool.add_transaction(descendant_tx.clone());
 
@@ -358,6 +374,7 @@ mod tests {
         assert!(removed.is_empty());
 
         // two dependent tx in the pool with decreasing fee
+        // 两个依赖的tx，在pool中，有着降低的fee
 
         {
             let mut pool2 = pool.clone();
@@ -365,11 +382,13 @@ mod tests {
             assert_eq!(removed.len(), 1);
             assert_eq!(pool2.len(), 1);
             // descendant got popped
+            // 后代被popped
             assert!(pool2.by_id.contains_key(root_tx.id()));
             assert!(!pool2.by_id.contains_key(descendant_tx.id()));
         }
 
         // remove root transaction via root tx fee
+        // 用root tx fee移除root tx
         let removed = pool.enforce_basefee(root_tx.max_fee_per_gas() as u64);
         assert_eq!(removed.len(), 2);
         assert!(pool.is_empty());

@@ -67,6 +67,7 @@ use std::{
 /// ```
 pub struct TxPool<T: TransactionOrdering> {
     /// Contains the currently known information about the senders.
+    /// 包含当前已知的关于senders的信息
     sender_info: FnvHashMap<SenderId, SenderInfo>,
     /// pending subpool
     ///
@@ -74,13 +75,17 @@ pub struct TxPool<T: TransactionOrdering> {
     /// 维护已经准备好在当前状态执行的transactions
     pending_pool: PendingPool<T>,
     /// Pool settings to enforce limits etc.
+    /// Pool的设置来执行limits
     config: PoolConfig,
     /// queued subpool
     ///
     /// Holds all parked transactions that depend on external changes from the sender:
+    /// 维护所有parked txs，依赖来自sender的外部变更
     ///
     ///    - blocked by missing ancestor transaction (has nonce gaps)
+    ///    - 被缺失的ancestor txs阻塞（有nonce gap）
     ///    - sender lacks funds to pay for this transaction.
+    ///    - sender缺乏fund来支付tx
     queued_pool: ParkedPool<QueuedOrd<T::Transaction>>,
     /// base fee subpool
     ///

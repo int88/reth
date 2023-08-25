@@ -2,6 +2,7 @@ use crate::blobstore::{BlobStore, BlobStoreError, BlobTransactionSidecar};
 use reth_primitives::H256;
 
 /// A blobstore implementation that does nothing
+/// 一个blobstore的实现，什么都不做
 #[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Default)]
 #[non_exhaustive]
 pub struct NoopBlobStore;

@@ -19,8 +19,10 @@ use std::{marker::PhantomData, sync::Arc};
 use tokio::sync::{oneshot, Mutex};
 
 /// A [TransactionValidator] implementation that validates ethereum transaction.
+/// 一个[TransactionValidator]用于校验ethereum transaction
 ///
 /// This validator is non-blocking, all validation work is done in a separate task.
+/// 这个validator是non-blocking，所有的validation work在另外的task完成
 #[derive(Debug, Clone)]
 pub struct EthTransactionValidator<Client, T> {
     /// The type that performs the actual validation.
@@ -305,11 +307,13 @@ impl EthTransactionValidatorBuilder {
 }
 
 /// A [TransactionValidator] implementation that validates ethereum transaction.
+/// 一个[TransactionValidator]的实现用于校验ethereum transaction
 #[derive(Debug, Clone)]
 struct EthTransactionValidatorInner<Client, T> {
     /// Spec of the chain
     chain_spec: Arc<ChainSpec>,
     /// This type fetches account info from the db
+    /// 这个类型从db中获取account info
     client: Client,
     /// Fork indicator whether we are in the Shanghai stage.
     shanghai: bool,

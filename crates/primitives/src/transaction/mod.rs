@@ -48,6 +48,7 @@ pub(crate) static PARALLEL_SENDER_RECOVERY_THRESHOLD: Lazy<usize> =
     });
 
 /// A raw transaction.
+/// 一个裸的tx
 ///
 /// Transaction types were introduced in [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718).
 #[derive_arbitrary(compact)]

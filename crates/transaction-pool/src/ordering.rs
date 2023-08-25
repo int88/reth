@@ -3,13 +3,17 @@ use reth_primitives::U256;
 use std::{fmt, marker::PhantomData};
 
 /// Priority of the transaction that can be missing.
+/// tx的优先级可以丢失
 ///
 /// Transactions with missing priorities are ranked lower.
+/// 缺失priorities的txs会被标记得更低
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Priority<T: Ord + Clone> {
     /// The value of the priority of the transaction.
+    /// tx的优先级的值
     Value(T),
     /// Missing priority due to ordering internals.
+    /// 因为ordering intervals，缺失优先级
     None,
 }
 
@@ -23,20 +27,25 @@ impl<T: Ord + Clone> From<Option<T>> for Priority<T> {
 }
 
 /// Transaction ordering trait to determine the order of transactions.
+/// tx的排序trait，来决定txs的顺序
 ///
 /// Decides how transactions should be ordered within the pool, depending on a `Priority` value.
+/// 决定txs如何在pool中排序，取决于`Priority`的值
 ///
 /// The returned priority must reflect [total order](https://en.wikipedia.org/wiki/Total_order).
 pub trait TransactionOrdering: Send + Sync + 'static {
     /// Priority of a transaction.
+    /// tx的一个priority
     ///
     /// Higher is better.
     type PriorityValue: Ord + Clone + Default + fmt::Debug + Send + Sync;
 
     /// The transaction type to determine the priority of.
+    /// 决定priority的tx类型
     type Transaction: PoolTransaction;
 
     /// Returns the priority score for the given transaction.
+    /// 返回给定的tx的priority score
     fn priority(
         &self,
         transaction: &Self::Transaction,
@@ -45,9 +54,12 @@ pub trait TransactionOrdering: Send + Sync + 'static {
 }
 
 /// Default ordering for the pool.
+/// pool的默认排序
 ///
 /// The transactions are ordered by their coinbase tip.
+/// txs根据它们的coinbase tip排序
 /// The higher the coinbase tip is, the higher the priority of the transaction.
+/// coinbase tip越高，tx的priority越高
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct CoinbaseTipOrdering<T>(PhantomData<T>);

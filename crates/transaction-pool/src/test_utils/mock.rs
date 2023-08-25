@@ -706,6 +706,7 @@ pub struct MockTransactionDistribution {
 
 impl MockTransactionDistribution {
     /// Creates a new generator distribution.
+    /// 创建一个新的generator distribution
     ///
     /// Expects legacy tx in full pct: `30u32` is `30%`.
     pub fn new(legacy_pct: u32, gas_limit_range: Range<u64>) -> Self {
@@ -719,6 +720,7 @@ impl MockTransactionDistribution {
     }
 
     /// Generates a new transaction
+    /// 生成一个新的tx
     pub fn tx(&self, nonce: u64, rng: &mut impl rand::Rng) -> MockTransaction {
         let tx = if self.legacy_ratio.sample(rng) == 0 {
             MockTransaction::eip1559()

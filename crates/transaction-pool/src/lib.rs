@@ -238,21 +238,25 @@ where
     T: TransactionOrdering<Transaction = <V as TransactionValidator>::Transaction>,
 {
     /// Create a new transaction pool instance.
+    /// 创建一个新的tx pool的实例
     pub fn new(validator: V, ordering: T, config: PoolConfig) -> Self {
         Self { pool: Arc::new(PoolInner::new(validator, ordering, config)) }
     }
 
     /// Returns the wrapped pool.
+    /// 返回封装的pool
     pub(crate) fn inner(&self) -> &PoolInner<V, T> {
         &self.pool
     }
 
     /// Get the config the pool was configured with.
+    /// 获取pool的配置
     pub fn config(&self) -> &PoolConfig {
         self.inner().config()
     }
 
     /// Returns future that validates all transaction in the given iterator.
+    /// 返回future，校验给定的iterator所有的tx
     async fn validate_all(
         &self,
         origin: TransactionOrigin,
@@ -269,6 +273,7 @@ where
     }
 
     /// Validates the given transaction
+    /// 校验给定的tx
     async fn validate(
         &self,
         origin: TransactionOrigin,
@@ -282,11 +287,13 @@ where
     }
 
     /// Number of transactions in the entire pool
+    /// 整个pool中的tx的数目
     pub fn len(&self) -> usize {
         self.pool.len()
     }
 
     /// Whether the pool is empty
+    /// pool是否为空
     pub fn is_empty(&self) -> bool {
         self.pool.is_empty()
     }
@@ -302,6 +309,7 @@ where
 {
     /// Returns a new [Pool] that uses the default [EthTransactionValidator] when validating
     /// [EthPooledTransaction]s and ords via [CoinbaseTipOrdering]
+    /// 返回一个新的[Pool]使用默认的[EthTransactionValidator]当校验[EthPooledTransaction]以及通过[CoinbaseTipOrdering]排序
     ///
     /// # Example
     ///
@@ -326,6 +334,7 @@ where
 }
 
 /// implements the `TransactionPool` interface for various transaction pool API consumers.
+/// 实现`TransactionPool`接口，对于transaction pool的各种API consumers
 #[async_trait::async_trait]
 impl<V, T> TransactionPool for Pool<V, T>
 where

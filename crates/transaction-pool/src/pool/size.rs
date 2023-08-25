@@ -3,6 +3,7 @@
 use std::ops::{AddAssign, SubAssign};
 
 /// Keeps track of accumulated size in bytes.
+/// 追踪字节的累计值
 ///
 /// Note: We do not assume that size tracking is always exact. Depending on the bookkeeping of the
 /// additions and subtractions the total size might be slightly off. Therefore, the underlying value
