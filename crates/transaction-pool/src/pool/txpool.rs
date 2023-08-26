@@ -124,6 +124,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns all senders in the pool
+    /// 返回pool中所有的senders
     pub(crate) fn unique_senders(&self) -> HashSet<Address> {
         self.all_transactions.txs.values().map(|tx| tx.transaction.sender()).collect()
     }
@@ -268,10 +269,12 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns all transactions sent from the given sender.
+    /// 返回给定sender的所有txs
     pub(crate) fn get_transactions_by_sender(
         &self,
         sender: SenderId,
     ) -> Vec<Arc<ValidPoolTransaction<T::Transaction>>> {
+        // 收集senders
         self.all_transactions.txs_iter(sender).map(|(_, tx)| Arc::clone(&tx.transaction)).collect()
     }
 
@@ -687,15 +690,19 @@ impl<T: TransactionOrdering> fmt::Debug for TxPool<T> {
 /// actions总是从这个集合衍生而来，这个类型返回的Updates必须应用到sub-pools
 pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// Minimum base fee required by the protocol.
+    /// 这个pool需要的最小的base fee
     ///
     /// Transactions with a lower base fee will never be included by the chain
+    /// 有着更小的base fee的txs不会被加入到chain中
     minimal_protocol_basefee: u64,
     /// The max gas limit of the block
+    /// block最大的gas limit
     block_gas_limit: u64,
     /// Max number of executable transaction slots guaranteed per account
     /// 每个account保证的最多的可执行的transaction的slots
     max_account_slots: usize,
     /// _All_ transactions identified by their hash.
+    /// 所有通过它们的hash标识的txs
     by_hash: HashMap<TxHash, Arc<ValidPoolTransaction<T>>>,
     /// _All_ transaction in the pool sorted by their sender and nonce pair.
     /// pool中所有的transactions，通过sender以及nonce pair排序
@@ -743,7 +750,9 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Increments the transaction counter for the sender
+    /// 增加sender的tx counter
     pub(crate) fn tx_inc(&mut self, sender: SenderId) {
+        // 添加count
         let count = self.tx_counter.entry(sender).or_default();
         *count += 1;
     }
@@ -945,6 +954,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
 
     /// Returns an iterator over all transactions for the given sender, starting with the lowest
     /// nonce
+    /// 返回一个iterator用于遍历给定sender的所有的txs，从最小的nonce开始
     pub(crate) fn txs_iter(
         &self,
         sender: SenderId,
@@ -1144,18 +1154,21 @@ impl<T: PoolTransaction> AllTransactions<T> {
         match self.txs.entry(*transaction.id()) {
             Entry::Vacant(entry) => {
                 // Insert the transaction in both maps
+                // 同时在两个maps镜像插入
                 self.by_hash.insert(*pool_tx.transaction.hash(), pool_tx.transaction.clone());
                 entry.insert(pool_tx);
             }
             Entry::Occupied(mut entry) => {
                 // Transaction already exists
                 // Ensure the new transaction is not underpriced
+                // tx已经存在，确保新的tx没有underpriced
 
                 if Self::is_underpriced(
                     transaction.as_ref(),
                     entry.get().transaction.as_ref(),
                     PoolConfig::default().price_bump,
                 ) {
+                    // 如果是underpriced，直接返回
                     return Err(InsertErr::Underpriced {
                         transaction: pool_tx.transaction,
                         existing: *entry.get().transaction.hash(),
@@ -1165,8 +1178,10 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 let new_transaction = pool_tx.transaction.clone();
                 let replaced = entry.insert(pool_tx);
                 self.by_hash.remove(replaced.transaction.hash());
+                // 插入新的tx
                 self.by_hash.insert(new_hash, new_transaction);
                 // also remove the hash
+                // 同时移除hahs
                 replaced_tx = Some((replaced.transaction, replaced.subpool));
             }
         }
@@ -1269,11 +1284,13 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Number of transactions in the entire pool
+    /// 整个pool的txs的数目
     pub(crate) fn len(&self) -> usize {
         self.txs.len()
     }
 
     /// Whether the pool is empty
+    /// pool是否为空
     pub(crate) fn is_empty(&self) -> bool {
         self.txs.is_empty()
     }

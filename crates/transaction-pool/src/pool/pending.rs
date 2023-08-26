@@ -14,22 +14,30 @@ use tokio::sync::broadcast;
 
 /// A pool of validated and gapless transactions that are ready to be executed on the current state
 /// and are waiting to be included in a block.
+/// 一个validated以及gapless的txs，准备好在当前state执行，并且准备好包含在一个block内
 ///
 /// This pool distinguishes between `independent` transactions and pending transactions. A
 /// transaction is `independent`, if it is in the pending pool, and it has the current on chain
 /// nonce of the sender. Meaning `independent` transactions can be executed right away, other
 /// pending transactions depend on at least one `independent` transaction.
+/// 这个pool区分`independent` txs以及pending txs，一个tx是`independent`，如果它处于pending
+/// pool，并且它的senderr有着当前的nonce，这意味着`independent` txs可以立即执行，其他的pending
+/// txs至少依赖一个`independent` tx
 ///
 /// Once an `independent` transaction was executed it *unlocks* the next nonce, if this transaction
 /// is also pending, then this will be moved to the `independent` queue.
+/// 一旦一个`independent`
+/// tx被执行，它会*unlocks*下一个nonce，如果这个tx也处于pending，它会被移动到`independent` queue
 #[derive(Clone)]
 pub(crate) struct PendingPool<T: TransactionOrdering> {
     /// How to order transactions.
     /// 如何对txs进行排序
     ordering: T,
     /// Keeps track of transactions inserted in the pool.
+    /// 追踪插入到pool中的txs
     ///
     /// This way we can determine when transactions where submitted to the pool.
+    /// 这样我们可以决定什么时候txs被提交到pool
     submission_id: u64,
     /// _All_ Transactions that are currently inside the pool grouped by their identifier.
     /// 当前所有在pool中的txs，通过id进行聚合
@@ -58,6 +66,7 @@ pub(crate) struct PendingPool<T: TransactionOrdering> {
 
 impl<T: TransactionOrdering> PendingPool<T> {
     /// Create a new pool instance.
+    /// 创建一个新的pool实例
     pub(crate) fn new(ordering: T) -> Self {
         let (new_transaction_notifier, _) = broadcast::channel(200);
         Self {
@@ -103,14 +112,17 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Same as `best` but only returns transactions that satisfy the given basefee.
+    /// 和`best`相同，但是只返回txs，满足给定的basefee
     pub(crate) fn best_with_basefee(&self, base_fee: u64) -> BestTransactionsWithBasefee<T> {
         BestTransactionsWithBasefee { best: self.best(), base_fee }
     }
 
     /// Same as `best` but also includes the given unlocked transactions.
+    /// 和`best`相同，但是同时包含给定的unlocked txs
     ///
     /// This mimics the [Self::add_transaction] method, but does not insert the transactions into
     /// pool but only into the returned iterator.
+    /// 它模拟[Self::add_transaction]方法，但是不插入txs到pool，但是只进入返回的iterator
     ///
     /// Note: this does not insert the unlocked transactions into the pool.
     ///
@@ -140,6 +152,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Returns an iterator over all transactions in the pool
+    /// 返回pool中所有的txs的iterator
     pub(crate) fn all(
         &self,
     ) -> impl Iterator<Item = Arc<ValidPoolTransaction<T::Transaction>>> + '_ {
@@ -149,20 +162,26 @@ impl<T: TransactionOrdering> PendingPool<T> {
     /// Updates the pool with the new base fee. Reorders transactions by new priorities. Removes
     /// from the subpool all transactions and their dependents that no longer satisfy the given
     /// base fee (`tx.fee < base_fee`).
+    /// 用新的base fee更新pool，用新的优先级对txs进行排序，
+    /// 从subpool中移除所有的txs以及他们的dependents，不再满足给定的base fee
     ///
     /// Note: the transactions are not returned in a particular order.
+    /// 注意：txs不再以特定顺序返回
     ///
     /// # Returns
     ///
     /// Removed transactions that no longer satisfy the base fee.
+    /// 移除的txs不再满足base fee
     pub(crate) fn update_base_fee(
         &mut self,
         base_fee: u64,
     ) -> Vec<Arc<ValidPoolTransaction<T::Transaction>>> {
         // Create a collection for txs to remove .
+        // 创建一个集合，对于要移除的txs
         let mut to_remove = Vec::new();
 
         // Iterate over transactions, find the ones we need to remove and update others in place.
+        // 遍历txs，找到我们要移除的，并且就地更新其他的
         {
             let mut iter = self.by_id.iter_mut().peekable();
             while let Some((id, tx)) = iter.next() {
@@ -194,6 +213,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
         }
 
         // Clear ordered lists since the priority would be changed.
+        // 清楚ordered lists，因为priority会改变
         self.independent_transactions.clear();
         self.all.clear();
 
@@ -201,6 +221,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Returns the ancestor the given transaction, the transaction with `nonce - 1`.
+    /// 返回给定的tx的ancestor，tx有着`nonce - 1`
     ///
     /// Note: for a transaction with nonce higher than the current on chain nonce this will always
     /// return an ancestor since all transaction in this pool are gapless.
@@ -255,13 +276,16 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Removes a _mined_ transaction from the pool.
+    /// 移除一个_mined_ tx，从pool中
     ///
     /// If the transaction has a descendant transaction it will advance it to the best queue.
+    /// 如果tx有一个后代tx，它会移动到best queue
     pub(crate) fn prune_transaction(
         &mut self,
         id: &TransactionId,
     ) -> Option<Arc<ValidPoolTransaction<T::Transaction>>> {
         // mark the next as independent if it exists
+        // 将next标记为independent，如果存在的话
         if let Some(unlocked) = self.by_id.get(&id.descendant()) {
             self.independent_transactions.insert(unlocked.clone());
         };
@@ -269,8 +293,10 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Removes the transaction from the pool.
+    /// 从pool中移除tx
     ///
     /// Note: this only removes the given transaction.
+    /// 注意：这只移除给定的tx
     pub(crate) fn remove_transaction(
         &mut self,
         id: &TransactionId,
@@ -296,16 +322,19 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// The reported size of all transactions in this pool.
+    /// 返回这个pool中所有tx的大小
     pub(crate) fn size(&self) -> usize {
         self.size_of.into()
     }
 
     /// Number of transactions in the entire pool
+    /// 整个pool中的txs的数目
     pub(crate) fn len(&self) -> usize {
         self.by_id.len()
     }
 
     /// Whether the pool is empty
+    /// pool是否为空
     #[cfg(test)]
     pub(crate) fn is_empty(&self) -> bool {
         self.by_id.is_empty()
@@ -316,11 +345,13 @@ impl<T: TransactionOrdering> PendingPool<T> {
 /// 一个tx，准备好被包含进以个block
 pub(crate) struct PendingTransaction<T: TransactionOrdering> {
     /// Identifier that tags when transaction was submitted in the pool.1
+    /// 标识符，标记什么时候tx被提交
     pub(crate) submission_id: u64,
     /// Actual transaction.
     /// 真正的tx
     pub(crate) transaction: Arc<ValidPoolTransaction<T::Transaction>>,
     /// The priority value assigned by the used `Ordering` function.
+    /// 使用`Ordering`函数的priority值
     pub(crate) priority: Priority<T::PriorityValue>,
 }
 
@@ -356,11 +387,14 @@ impl<T: TransactionOrdering> PartialOrd<Self> for PendingTransaction<T> {
     }
 }
 
+// PendingTransaction的排序策略
 impl<T: TransactionOrdering> Ord for PendingTransaction<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         // This compares by `priority` and only if two tx have the exact same priority this compares
         // the unique `submission_id`. This ensures that transactions with same priority are not
         // equal, so they're not replaced in the set
+        // 通过`priority`进行排序并且只有两个tx有着相同的priority，才比较唯一的`submission_id`，
+        // 这确保有着相同priority的不会相同 因此它们在集合中不会被替换
         self.priority
             .cmp(&other.priority)
             .then_with(|| other.submission_id.cmp(&self.submission_id))

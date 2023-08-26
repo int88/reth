@@ -21,12 +21,16 @@ pub const REPLACE_BLOB_PRICE_BUMP: u128 = 100;
 #[derive(Debug, Clone)]
 pub struct PoolConfig {
     /// Max number of transaction in the pending sub-pool
+    /// pending sub-pool最大的tx数目
     pub pending_limit: SubPoolLimit,
     /// Max number of transaction in the basefee sub-pool
+    /// basefee sub-pool最大的tx数目
     pub basefee_limit: SubPoolLimit,
     /// Max number of transaction in the queued sub-pool
+    /// queued sub-pool最大的tx数目
     pub queued_limit: SubPoolLimit,
     /// Max number of executable transaction slots guaranteed per account
+    /// 赋值给每个account的最大的tx slots
     pub max_account_slots: usize,
     /// Price bump (in %) for the transaction pool underpriced check.
     pub price_bump: u128,

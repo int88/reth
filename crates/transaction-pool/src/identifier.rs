@@ -58,6 +58,7 @@ pub struct SenderId(u64);
 
 impl SenderId {
     /// Returns a `Bound` for `TransactionId` starting with nonce `0`
+    /// 返回一个`TransactionId`的`Bound`，从nonce `0`开始
     pub(crate) fn start_bound(self) -> std::ops::Bound<TransactionId> {
         std::ops::Bound::Included(TransactionId::new(self, 0))
     }

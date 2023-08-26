@@ -221,7 +221,9 @@ impl<T: ParkedOrd> Ord for ParkedPoolTransaction<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         // This compares by the transactions first, and only if two tx are equal this compares
         // the unique `submission_id`.
+        // 首先比较txs，并且如果两个tx相等，则匹配唯一的`submission_id`
         // "better" transactions are Greater
+        // "better" txs更好
         self.transaction
             .cmp(&other.transaction)
             .then_with(|| other.submission_id.cmp(&self.submission_id))

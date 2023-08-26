@@ -597,6 +597,7 @@ where
     }
 
     /// Returns all transactions of the address
+    /// 返回地址的所有的txs
     pub(crate) fn get_transactions_by_sender(
         &self,
         sender: Address,
