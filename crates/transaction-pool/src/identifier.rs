@@ -79,8 +79,10 @@ impl From<u64> for SenderId {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct TransactionId {
     /// Sender of this transaction
+    /// 这个tx的sender
     pub sender: SenderId,
     /// Nonce of this transaction
+    /// 这个tx的nonce
     pub nonce: u64,
 }
 

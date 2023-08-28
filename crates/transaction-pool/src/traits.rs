@@ -425,6 +425,7 @@ impl<T: PoolTransaction> Clone for NewTransactionEvent<T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionOrigin {
     /// Transaction is coming from a local source.
+    /// 来自一个local source的tx
     Local,
     /// Transaction has been received externally.
     ///
@@ -452,12 +453,15 @@ impl TransactionOrigin {
 
 /// Represents changes after a new canonical block or range of canonical blocks was added to the
 /// chain.
+/// 代表一个新的canonical block或者一系列的canonical blocks被加入到chain之后发生的变更
 ///
 /// It is expected that this is only used if the added blocks are canonical to the pool's last known
 /// block hash. In other words, the first added block of the range must be the child of the last
 /// known block hash.
+/// 第一个加入的block必须是最后一个已知的block hash的child
 ///
 /// This is used to update the pool state accordingly.
+/// 相应地更新pool的状态
 #[derive(Debug, Clone)]
 pub struct CanonicalStateUpdate {
     /// Hash of the tip block.
@@ -467,12 +471,16 @@ pub struct CanonicalStateUpdate {
     /// EIP-1559 Base fee of the _next_ (pending) block
     ///
     /// The base fee of a block depends on the utilization of the last block and its base fee.
+    /// 一个block的base fee取决于最后一个block的使用率以及它的base fee
     pub pending_block_base_fee: u64,
     /// A set of changed accounts across a range of blocks.
+    /// 一系列的blocks之后更新的一系列accounts
     pub changed_accounts: Vec<ChangedAccount>,
     /// All mined transactions in the block range.
+    /// 在block range中所有的mined txs
     pub mined_transactions: Vec<H256>,
     /// Timestamp of the latest chain update
+    /// 最新的chain update的时间戳
     pub timestamp: u64,
 }
 
@@ -765,10 +773,13 @@ pub struct PoolSize {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct BlockInfo {
     /// Hash for the currently tracked block.
+    /// 当前追踪的block的hash
     pub last_seen_block_hash: H256,
     /// Current the currently tracked block.
+    /// 当前追踪的block的number
     pub last_seen_block_number: u64,
     /// Currently enforced base fee: the threshold for the basefee sub-pool.
+    /// 当前执行的base fee：basefee sub-pool的threshold
     ///
     /// Note: this is the derived base fee of the _next_ block that builds on the clock the pool is
     /// currently tracking.

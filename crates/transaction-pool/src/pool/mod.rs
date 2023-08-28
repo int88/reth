@@ -180,6 +180,7 @@ where
 
     /// Converts the changed accounts to a map of sender ids to sender info (internal identifier
     /// used for accounts)
+    /// 将changed accounts变为一个sender ids到sender info（内部的identifier用于accounts）的映射
     fn changed_senders(
         &self,
         accs: impl Iterator<Item = ChangedAccount>,
@@ -261,6 +262,7 @@ where
     }
 
     /// Updates the entire pool after a new block was executed.
+    /// 在一个新的block被执行之后，更新整个pool
     pub(crate) fn on_canonical_state_change(&self, update: CanonicalStateUpdate) {
         trace!(target: "txpool", %update, "updating pool on canonical state change");
 
@@ -280,6 +282,7 @@ where
         };
 
         // update the pool
+        // 更新pool
         let outcome = self.pool.write().on_canonical_state_change(
             block_info,
             mined_transactions,
@@ -287,6 +290,7 @@ where
         );
 
         // notify listeners about updates
+        // 通知listeners，关于更新
         self.notify_on_new_state(outcome);
     }
 

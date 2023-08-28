@@ -35,6 +35,7 @@ pub struct TxPoolMetrics {
     pub(crate) total_transactions: Gauge,
 
     /// How often the pool was updated after the canonical state changed
+    /// 在canonical state改变之后，pool更新的频率
     pub(crate) performed_state_updates: Counter,
 }
 

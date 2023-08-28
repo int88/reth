@@ -10,6 +10,7 @@ use reth_primitives::TxHash;
 #[derive(Debug)]
 pub(crate) struct PoolUpdate {
     /// Internal tx id.
+    /// 内部的tx id
     pub(crate) id: TransactionId,
     /// Hash of the transaction.
     pub(crate) hash: TxHash,
@@ -17,6 +18,7 @@ pub(crate) struct PoolUpdate {
     /// 当前tx所处的subpool
     pub(crate) current: SubPool,
     /// Where to move the transaction to.
+    /// 这个tx被移动到哪里
     pub(crate) destination: Destination,
 }
 

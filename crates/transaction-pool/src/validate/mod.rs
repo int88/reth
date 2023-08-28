@@ -195,14 +195,19 @@ pub struct ValidPoolTransaction<T: PoolTransaction> {
     /// The transaction
     pub transaction: T,
     /// The identifier for this transaction.
+    /// 这个tx的id
     pub transaction_id: TransactionId,
     /// Whether it is allowed to propagate the transaction.
+    /// 是否允许传播这个tx
     pub propagate: bool,
     /// Timestamp when this was added to the pool.
+    /// 加入到tx的timestamp
     pub timestamp: Instant,
     /// Where this transaction originated from.
+    /// 这个tx来自哪里
     pub origin: TransactionOrigin,
     /// The length of the rlp encoded transaction (cached)
+    /// rlp encoded tx的长度
     pub encoded_length: usize,
 }
 
