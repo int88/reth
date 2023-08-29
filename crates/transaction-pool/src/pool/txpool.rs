@@ -362,12 +362,15 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Adds the transaction into the pool.
+    /// 添加tx到pool
     ///
     /// This pool consists of two three-pools: `Queued`, `Pending` and `BaseFee`.
     ///
     /// The `Queued` pool contains transactions with gaps in its dependency tree: It requires
     /// additional transactions that are note yet present in the pool. And transactions that the
     /// sender can not afford with the current balance.
+    /// `Queued` pool包含txs，在dependency
+    /// tree中有gaps，它需要还没在pool中的额外的txs，以及txs，sender不能承担当前的txs
     ///
     /// The `Pending` pool contains all transactions that have no nonce gaps, and can be afforded by
     /// the sender. It only contains transactions that are ready to be included in the pending
@@ -375,12 +378,17 @@ impl<T: TransactionOrdering> TxPool<T> {
     /// necessarily independently. However, this pool never contains transactions with nonce gaps. A
     /// transaction is considered `ready` when it has the lowest nonce of all transactions from the
     /// same sender. Which is equals to the chain nonce of the sender in the pending pool.
+    /// 一个tx被认为是`ready`，当它有来自同一个sender并且有最小的nonce，它和pending
+    /// pool中的sender的chain nonce相等
     ///
     /// The `BaseFee` pool contains transactions that currently can't satisfy the dynamic fee
     /// requirement. With EIP-1559, transactions can become executable or not without any changes to
     /// the sender's balance or nonce and instead their `feeCap` determines whether the
     /// transaction is _currently_ (on the current state) ready or needs to be parked until the
     /// `feeCap` satisfies the block's `baseFee`.
+    /// `BaseFee` pool包含txs，当前不满足dynamic
+    /// fee要求，基于EIP-1559,txs会变成可执行，对于sender的balance或者nonce没有任何改变
+    /// 而是`feeCap`决定是否tx当前准备好或者需要被parked，直到`feeCap`满足block的`baseFee`
     pub(crate) fn add_transaction(
         &mut self,
         tx: ValidPoolTransaction<T::Transaction>,
@@ -504,9 +512,11 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Removes and returns all matching transactions from the pool.
+    /// 移除并且返回所有匹配的txs，从poola
     ///
     /// Note: this does not advance any descendants of the removed transactions and does not apply
     /// any additional updates.
+    /// 注意：这不会移动任何removed txs的descendants并且不会应用任何额外的updates
     pub(crate) fn remove_transactions(
         &mut self,
         hashes: Vec<TxHash>,
@@ -515,8 +525,10 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Remove the transaction from the entire pool.
+    /// 从整个pool移除tx
     ///
     /// This includes the total set of transaction and the subpool it currently resides in.
+    /// 这包含完整的tx集合以及它当前处于的subpool
     fn remove_transaction(
         &mut self,
         id: &TransactionId,
@@ -526,8 +538,10 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Remove the transaction from the entire pool via its hash.
+    /// 通过hash从整个pool移除tx
     ///
     /// This includes the total set of transactions and the subpool it currently resides in.
+    /// 这包含所有的set of txs以及它们当前所处的subpool
     fn remove_transaction_by_hash(
         &mut self,
         tx_hash: &H256,
@@ -555,6 +569,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     /// 从给定pool移除tx
     ///
     /// Caution: this only removes the tx from the sub-pool and not from the pool itself
+    /// 注意：这只从sub-pool中移除tx但是不是pool
     fn remove_from_subpool(
         &mut self,
         pool: SubPool,
@@ -583,8 +598,10 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Removes _only_ the descendants of the given transaction from the entire pool.
+    /// 只从整个pool中移除给定tx的后代
     ///
     /// All removed transactions are added to the `removed` vec.
+    /// 所有被移除的txs都被添加到`removed` vec
     fn remove_descendants(
         &mut self,
         tx: &TransactionId,
@@ -593,10 +610,12 @@ impl<T: TransactionOrdering> TxPool<T> {
         let mut id = *tx;
 
         // this will essentially pop _all_ descendant transactions one by one
+        // 这会本质上弹出所有的后代txs，one by one
         loop {
             let descendant =
                 self.all_transactions.descendant_txs_exclusive(&id).map(|(id, _)| *id).next();
             if let Some(descendant) = descendant {
+                // 移除tx
                 if let Some(tx) = self.remove_transaction(&descendant) {
                     removed.push(tx)
                 }
@@ -628,7 +647,9 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Inserts the transaction into the given sub-pool.
+    /// 插入tx到给定的sub-pool
     /// Optionally, removes the replacement transaction.
+    /// 可选地，移除replacement tx
     fn add_new_transaction(
         &mut self,
         transaction: Arc<ValidPoolTransaction<T::Transaction>>,
@@ -637,9 +658,11 @@ impl<T: TransactionOrdering> TxPool<T> {
     ) {
         if let Some((replaced, replaced_pool)) = replaced {
             // Remove the replaced transaction
+            // 移除replaced tx
             self.remove_from_subpool(replaced_pool, replaced.id());
         }
 
+        // 添加tx到sub pool
         self.add_transaction_to_subpool(pool, transaction)
     }
 
@@ -698,6 +721,7 @@ impl<T: TransactionOrdering> TxPool<T> {
 }
 
 // Additional test impls
+// 额外的test实现
 #[cfg(any(test, feature = "test-utils"))]
 #[allow(missing_docs)]
 impl<T: TransactionOrdering> TxPool<T> {
@@ -767,6 +791,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns an iterator over all _unique_ hashes in the pool
+    /// 返回一个iterator，遍历所有唯一的hashes，在pool中
     #[allow(unused)]
     pub(crate) fn hashes_iter(&self) -> impl Iterator<Item = TxHash> + '_ {
         self.by_hash.keys().copied()
@@ -780,6 +805,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns if the transaction for the given hash is already included in this pool
+    /// 返回tx，对于给定的hash，如果已经在pool中
     pub(crate) fn contains(&self, tx_hash: &TxHash) -> bool {
         self.by_hash.contains_key(tx_hash)
     }
@@ -848,6 +874,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         // 提前申请一些updates
         let mut updates = Vec::with_capacity(64);
 
+        // 遍历txs
         let mut iter = self.txs.iter_mut().peekable();
 
         // Loop over all individual senders and update all affected transactions.
@@ -864,8 +891,10 @@ impl<T: PoolTransaction> AllTransactions<T> {
 
         // The `unique_sender` loop will process the first transaction of all senders, update its
         // state and internally update all consecutive transactions
+        // `unique_sender`循环会处理所有senders的第一个tx，更新它的状态并且内部更新所有连续的txs
         'transactions: while let Some((id, tx)) = iter.next() {
             macro_rules! next_sender {
+                // 切换到下一个sender
                 ($iter:ident) => {
                     'this: while let Some((peek, _)) = iter.peek() {
                         if peek.sender != id.sender {
@@ -876,11 +905,14 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 };
             }
             // tracks the balance if the sender was changed in the block
+            // 追踪balance，如果sender在block中改变
             let mut changed_balance = None;
 
             // check if this is a changed account
+            // 检查是否这是一个changed account
             if let Some(info) = changed_accounts.get(&id.sender) {
                 // discard all transactions with a nonce lower than the current state nonce
+                // 丢弃所有的txs，nonce小于当前的state nonce
                 if id.nonce < info.state_nonce {
                     updates.push(PoolUpdate {
                         id: *tx.transaction.id(),
@@ -893,12 +925,14 @@ impl<T: PoolTransaction> AllTransactions<T> {
 
                 let ancestor = TransactionId::ancestor(id.nonce, info.state_nonce, id.sender);
                 // If there's no ancestor then this is the next transaction.
+                // 如果没有ancestor，则这是下一个tx
                 if ancestor.is_none() {
                     tx.state.insert(TxState::NO_NONCE_GAPS);
                     tx.state.insert(TxState::NO_PARKED_ANCESTORS);
                     tx.cumulative_cost = U256::ZERO;
                     if tx.transaction.cost() > info.balance {
                         // sender lacks sufficient funds to pay for this transaction
+                        // 如果sender缺乏足够的funds来支付这个tx
                         tx.state.remove(TxState::ENOUGH_BALANCE);
                     } else {
                         tx.state.insert(TxState::ENOUGH_BALANCE);
@@ -909,46 +943,59 @@ impl<T: PoolTransaction> AllTransactions<T> {
             }
 
             // If there's a nonce gap, we can shortcircuit, because there's nothing to update yet.
+            // 如果有一个nonce gap，我们可以短路，因为没有什么需要更新了
             if tx.state.has_nonce_gap() {
                 next_sender!(iter);
                 continue 'transactions
             }
 
             // Since this is the first transaction of the sender, it has no parked ancestors
+            // 因为这是这个sender的第一个tx，它没有parked ancestors
             tx.state.insert(TxState::NO_PARKED_ANCESTORS);
 
             // Update the first transaction of this sender.
+            // 更新这个sender的第一个tx
             Self::update_tx_base_fee(self.pending_basefee, tx);
             // Track if the transaction's sub-pool changed.
+            // 追踪这个tx的sub-pool是否改变
             Self::record_subpool_update(&mut updates, tx);
 
             // Track blocking transactions.
+            // 追踪阻塞的txs
             let mut has_parked_ancestor = !tx.state.is_pending();
 
+            // 累计的cost
             let mut cumulative_cost = tx.next_cumulative_cost();
 
             // Update all consecutive transaction of this sender
+            // 更新这个sender所有连续的tx
             while let Some((peek, ref mut tx)) = iter.peek_mut() {
                 if peek.sender != id.sender {
                     // Found the next sender
+                    // 找到下一个sender
                     continue 'transactions
                 }
 
                 // can short circuit
+                // 可以短路
                 if tx.state.has_nonce_gap() {
                     next_sender!(iter);
                     continue 'transactions
                 }
 
                 // update cumulative cost
+                // 更新cumulative cost
                 tx.cumulative_cost = cumulative_cost;
                 // Update for next transaction
+                // 更新下一个tx
                 cumulative_cost = tx.next_cumulative_cost();
 
                 // If the account changed in the block, check the balance.
+                // 如果account在这个block改变了，检查balance
                 if let Some(changed_balance) = changed_balance {
                     if cumulative_cost > changed_balance {
                         // sender lacks sufficient funds to pay for this transaction
+                        // sendr缺乏足够的funds来支付这个tx
                         tx.state.remove(TxState::ENOUGH_BALANCE);
                     } else {
                         tx.state.insert(TxState::ENOUGH_BALANCE);
@@ -956,18 +1003,22 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 }
 
                 // Update ancestor condition.
+                // 更新ancestor的情况
                 if has_parked_ancestor {
                     tx.state.remove(TxState::NO_PARKED_ANCESTORS);
                 } else {
                     tx.state.insert(TxState::NO_PARKED_ANCESTORS);
                 }
+                // 如果tx不是出于pending状态
                 has_parked_ancestor = !tx.state.is_pending();
 
                 // Update and record sub-pool changes.
+                // 更新并且记录sub-pool的改变
                 Self::update_tx_base_fee(self.pending_basefee, tx);
                 Self::record_subpool_update(&mut updates, tx);
 
                 // Advance iterator
+                // 移动iterator
                 iter.next();
             }
         }
@@ -976,9 +1027,12 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// This will update the transaction's `subpool` based on its state.
+    /// 这会更新tx的`subpool`基于它的state
     ///
     /// If the sub-pool derived from the state differs from the current pool, it will record a
     /// `PoolUpdate` for this transaction to move it to the new sub-pool.
+    /// 如果sub-pool衍生自不同于当前的pool的state，它会记录`PoolUpdate`对于这个tx，
+    /// 将它移动到新的sub-pool
     fn record_subpool_update(updates: &mut Vec<PoolUpdate>, tx: &mut PoolInternalTransaction<T>) {
         let current_pool = tx.subpool;
         tx.subpool = tx.state.into();
@@ -993,8 +1047,10 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Rechecks the transaction's dynamic fee condition.
+    /// 重新检查tx的dynamic fee的情况
     fn update_tx_base_fee(pending_block_base_fee: u64, tx: &mut PoolInternalTransaction<T>) {
         // Recheck dynamic fee condition.
+        // 重新检查dynamic fee的情况
         match tx.transaction.max_fee_per_gas().cmp(&(pending_block_base_fee as u128)) {
             Ordering::Greater | Ordering::Equal => {
                 tx.state.insert(TxState::ENOUGH_FEE_CAP_BLOCK);
@@ -1031,8 +1087,10 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns all transactions that _follow_ after the given id but have the same sender.
+    /// 返回所有的txs，在给定的id之后，但是有着同样的sender
     ///
     /// NOTE: The range is _exclusive_
+    /// 注意：这个范围是排他性的
     pub(crate) fn descendant_txs_exclusive<'a, 'b: 'a>(
         &'a self,
         id: &'b TransactionId,
@@ -1081,10 +1139,13 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Removes a transaction from the set.
+    /// 从集合中移除一个tx
     ///
     /// This will _not_ trigger additional updates, because descendants without nonce gaps are
     /// already in the pending pool, and this transaction will be the first transaction of the
     /// sender in this pool.
+    /// 这不会触发额外的updates，因为没有nonce gaps的后来已经处于pending
+    /// pool，并且这个tx回事这个sender在pool 中的第一个tx
     pub(crate) fn remove_transaction(
         &mut self,
         id: &TransactionId,
@@ -1092,6 +1153,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         let internal = self.txs.remove(id)?;
 
         // decrement the counter for the sender.
+        // 降低sender的counter
         self.tx_decr(internal.transaction.sender_id());
 
         self.by_hash.remove(internal.transaction.hash()).map(|tx| (tx, internal.subpool))
@@ -1502,12 +1564,16 @@ impl<T: PoolTransaction> Default for UpdateOutcome<T> {
 }
 
 /// Represents the outcome of a prune
+/// 代表依次Prune的结果
 pub struct PruneResult<T: PoolTransaction> {
     /// A list of added transactions that a pruned marker satisfied
+    /// 一系列添加的txs，被pruned marker满足
     pub promoted: Vec<AddedTransaction<T>>,
     /// all transactions that failed to be promoted and now are discarded
+    /// 所有failed to promoted并且现在被丢弃的txs
     pub failed: Vec<TxHash>,
     /// all transactions that were pruned from the ready pool
+    /// 从ready pool中清理的txs
     pub pruned: Vec<Arc<ValidPoolTransaction<T>>>,
 }
 
@@ -1531,11 +1597,14 @@ impl<T: PoolTransaction> fmt::Debug for PruneResult<T> {
 }
 
 /// Stores relevant context about a sender.
+/// 存储关于一个sender的上下文
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SenderInfo {
     /// current nonce of the sender.
+    /// 当前sender的nonce
     pub(crate) state_nonce: u64,
     /// Balance of the sender at the current point.
+    /// 当前状态sender的balance
     pub(crate) balance: U256,
 }
 
@@ -1543,6 +1612,7 @@ pub(crate) struct SenderInfo {
 
 impl SenderInfo {
     /// Updates the info with the new values.
+    /// 用新的值更新info
     fn update(&mut self, state_nonce: u64, balance: U256) {
         *self = Self { state_nonce, balance };
     }

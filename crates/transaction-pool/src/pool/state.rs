@@ -21,6 +21,7 @@ bitflags::bitflags! {
         /// 覆盖动态的fee requirement
         ///
         /// Set to 1 if `feeCap` of the transaction meets the requirement of the pending block.
+        /// 设置为1，如果tx的`feeCap`满足pending block的情况
         const ENOUGH_FEE_CAP_BLOCK = 0b000010;
 
         const PENDING_POOL_BITS = Self::NO_PARKED_ANCESTORS.bits()| Self::NO_NONCE_GAPS.bits() | Self::ENOUGH_BALANCE.bits() | Self::NOT_TOO_MUCH_GAS.bits() |  Self::ENOUGH_FEE_CAP_BLOCK.bits();
@@ -39,12 +40,17 @@ impl TxState {
     ///   - _No_ parked ancestors
     ///   - enough balance
     ///   - enough fee cap
+    /// 一个tx的state被认为是`pending`，如果tx有：
+    ///   - 没有parked ancestor
+    ///   - 有足够的balance
+    ///   - 有足够的fee cap
     #[inline]
     pub(crate) fn is_pending(&self) -> bool {
         *self >= TxState::PENDING_POOL_BITS
     }
 
     /// Returns `true` if the transaction has a nonce gap.
+    /// 返回`true`，如果tx有一个nonce gap
     #[inline]
     pub(crate) fn has_nonce_gap(&self) -> bool {
         !self.intersects(TxState::NO_NONCE_GAPS)

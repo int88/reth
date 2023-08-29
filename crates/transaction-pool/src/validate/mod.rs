@@ -245,9 +245,12 @@ impl<T: PoolTransaction> ValidPoolTransaction<T> {
     }
 
     /// Returns the cost that this transaction is allowed to consume:
+    /// 返回这个tx允许消费的cost
     ///
     /// For EIP-1559 transactions: `max_fee_per_gas * gas_limit + tx_value`.
+    /// 对于EIP-1559 txs：`max_fee_per_gas *  gas_limit + tx_value`
     /// For legacy transactions: `gas_price * gas_limit + tx_value`.
+    /// 对于legacy txs：`gas_price * gas_limit + tx_value`
     pub fn cost(&self) -> U256 {
         self.transaction.cost()
     }

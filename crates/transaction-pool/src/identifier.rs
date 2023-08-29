@@ -95,9 +95,11 @@ impl TransactionId {
     }
 
     /// Returns the `TransactionId` this transaction depends on.
+    /// 返回这个`TransactionId`依赖的tx
     ///
     /// This returns `transaction_nonce - 1` if `transaction_nonce` is higher than the
     /// `on_chain_none`
+    /// 这返回`transaction_nonce - 1`，如果`transaction_nonce`高于`on_chain_nonce`
     pub fn ancestor(
         transaction_nonce: u64,
         on_chain_nonce: u64,
