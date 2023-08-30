@@ -24,6 +24,7 @@ pub(crate) type MockTxPool = TxPool<MockOrdering>;
 pub type MockValidTx = ValidPoolTransaction<MockTransaction>;
 
 /// Create an empty `TxPool`
+/// 创建一个空的`TxPool`
 pub(crate) fn mock_tx_pool() -> MockTxPool {
     MockTxPool::new(Default::default(), Default::default())
 }
@@ -129,6 +130,7 @@ impl MockTransaction {
     }
 
     /// Returns a new legacy transaction with random address and hash and empty values
+    /// 返回一个新的legacy tx，有着随机的地址，hash以及空的values
     pub fn legacy() -> Self {
         MockTransaction::Legacy {
             hash: H256::random(),
@@ -142,6 +144,7 @@ impl MockTransaction {
     }
 
     /// Returns a new EIP1559 transaction with random address and hash and empty values
+    /// 返回一个新的EIP1559 tx，有着随机的地址和hash以及empty values
     pub fn eip1559() -> Self {
         MockTransaction::Eip1559 {
             hash: H256::random(),
@@ -294,6 +297,7 @@ impl MockTransaction {
     }
 
     /// Returns a new transaction with a higher gas price +1
+    /// 返回一个新的tx，有着更高的gas price + 1
     pub fn inc_price(&self) -> Self {
         self.inc_price_by(1)
     }
@@ -312,6 +316,7 @@ impl MockTransaction {
     }
 
     /// Returns a new transaction with a lower gas price
+    /// 返回一个新的tx，有着更低的gas price
     pub fn decr_price_by(&self, value: u128) -> Self {
         let mut next = self.clone();
         let gas = self.get_gas_price().checked_sub(value).unwrap();
@@ -326,6 +331,7 @@ impl MockTransaction {
     }
 
     /// Returns a new transaction with a higher gas limit
+    /// 返回一个新的tx，有着更高的gas limit
     pub fn inc_limit(&self) -> Self {
         let mut next = self.clone();
         let gas = self.get_gas_limit() + 1;
@@ -697,6 +703,7 @@ impl TransactionOrdering for MockOrdering {
 }
 
 /// A configured distribution that can generate transactions
+/// 一个配置的distribution，可以生成txs
 pub struct MockTransactionDistribution {
     /// legacy to EIP-1559 ration
     legacy_ratio: WeightedIndex<u32>,

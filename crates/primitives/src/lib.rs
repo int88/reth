@@ -106,6 +106,7 @@ pub type BlockNumber = u64;
 /// An Ethereum address.
 pub type Address = H160;
 /// A transaction hash is a kecack hash of an RLP encoded signed transaction.
+/// 一个tx hash是一个kecack hash，对于一个RLP encoded signed tx
 pub type TxHash = H256;
 /// The sequence number of all existing transactions.
 /// 所有已经存在的transactions的序号

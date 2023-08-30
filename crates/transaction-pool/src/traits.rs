@@ -539,9 +539,11 @@ pub trait PoolTransaction:
     fmt::Debug + Send + Sync + FromRecoveredTransaction + IntoRecoveredTransaction
 {
     /// Hash of the transaction.
+    /// 这个tx的Hash
     fn hash(&self) -> &TxHash;
 
     /// The Sender of the transaction.
+    /// 这个tx的Sender
     fn sender(&self) -> Address;
 
     /// Returns the nonce for this transaction.

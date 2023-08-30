@@ -224,9 +224,11 @@ mod traits;
 pub mod test_utils;
 
 /// A shareable, generic, customizable `TransactionPool` implementation.
+/// 一个共享的，通用的，定制化的`TransactionPool`的实现
 #[derive(Debug)]
 pub struct Pool<V: TransactionValidator, T: TransactionOrdering> {
     /// Arc'ed instance of the pool internals
+    /// pool internals的Arc实例
     pool: Arc<PoolInner<V, T>>,
 }
 

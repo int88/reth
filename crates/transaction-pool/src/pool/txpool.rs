@@ -1636,12 +1636,17 @@ mod tests {
         let valid_tx = f.validated(tx);
         let InsertOk { updates, replaced_tx, move_to, state, .. } =
             pool.insert_tx(valid_tx.clone(), on_chain_balance, on_chain_nonce).unwrap();
+        // 没有更新
         assert!(updates.is_empty());
+        // 没有替换任何tx
         assert!(replaced_tx.is_none());
+        // 没有nonce gap
         assert!(state.contains(TxState::NO_NONCE_GAPS));
+        // 有足够的balance
         assert!(state.contains(TxState::ENOUGH_BALANCE));
         assert_eq!(move_to, SubPool::Pending);
 
+        // 根据id获取tx
         let inserted = pool.txs.get(&valid_tx.transaction_id).unwrap();
         assert_eq!(inserted.subpool, SubPool::Pending);
     }
@@ -1659,7 +1664,9 @@ mod tests {
         assert!(updates.is_empty());
         assert!(replaced_tx.is_none());
         assert!(state.contains(TxState::NO_NONCE_GAPS));
+        // 没有足够的balance
         assert!(!state.contains(TxState::ENOUGH_BALANCE));
+        // 移动到了queued subpool
         assert_eq!(move_to, SubPool::Queued);
 
         assert_eq!(pool.len(), 1);
@@ -1674,6 +1681,7 @@ mod tests {
         assert!(res.is_err());
         assert_eq!(pool.len(), 1);
 
+        // tx变为next
         let valid_tx = f.validated(tx.next());
         let InsertOk { updates, replaced_tx, move_to, state, .. } =
             pool.insert_tx(valid_tx.clone(), on_chain_balance, on_chain_nonce).unwrap();
@@ -1682,6 +1690,7 @@ mod tests {
         assert!(replaced_tx.is_none());
         assert!(state.contains(TxState::NO_NONCE_GAPS));
         assert!(!state.contains(TxState::ENOUGH_BALANCE));
+        // 都是位于Queued
         assert_eq!(move_to, SubPool::Queued);
 
         assert!(pool.contains(valid_tx.hash()));
@@ -1698,6 +1707,7 @@ mod tests {
         let mut pool = TxPool::new(MockOrdering::default(), Default::default());
         let tx = MockTransaction::eip1559().inc_price().inc_limit();
         let tx = f.validated(tx);
+        // 添加tx
         pool.add_transaction(tx.clone(), on_chain_balance, on_chain_nonce).unwrap();
         match pool.add_transaction(tx, on_chain_balance, on_chain_nonce).unwrap_err() {
             PoolError::AlreadyImported(_) => {}
@@ -1713,14 +1723,18 @@ mod tests {
         let mut pool = AllTransactions::default();
         let tx = MockTransaction::eip1559().inc_price().inc_limit();
         let first = f.validated(tx.clone());
+        // 第一次插入
         let _res = pool.insert_tx(first.clone(), on_chain_balance, on_chain_nonce);
+        // 提高price
         let replacement = f.validated(tx.rng_hash().inc_price());
+        // 第二次插入
         let InsertOk { updates, replaced_tx, .. } =
             pool.insert_tx(replacement.clone(), on_chain_balance, on_chain_nonce).unwrap();
         assert!(updates.is_empty());
         let replaced = replaced_tx.unwrap();
         assert_eq!(replaced.0.hash(), first.hash());
 
+        // 不包含第一个hash，只包含replacement的hash
         assert!(!pool.contains(first.hash()));
         assert!(pool.contains(replacement.hash()));
         assert_eq!(pool.len(), 1);
@@ -1737,6 +1751,7 @@ mod tests {
         let first = f.validated(tx.clone());
         let _res = pool.insert_tx(first, on_chain_balance, on_chain_nonce);
         let mut replacement = f.validated(tx.rng_hash());
+        // 降低price
         replacement.transaction = replacement.transaction.decr_price();
         let err = pool.insert_tx(replacement, on_chain_balance, on_chain_nonce).unwrap_err();
         assert!(matches!(err, InsertErr::Underpriced { .. }));
@@ -1814,6 +1829,7 @@ mod tests {
 
     #[test]
     fn insert_previous_blocking() {
+        // 现在有更高的on chain balance
         let on_chain_balance = U256::from(1_000);
         let on_chain_nonce = 0;
         let mut f = MockTransactionFactory::default();
@@ -1859,6 +1875,7 @@ mod tests {
         let mut tx = MockTransaction::eip1559();
         for _ in 0..pool.max_account_slots {
             tx = tx.next();
+            // 插入max account slots个txs
             pool.insert_tx(f.validated(tx.clone()), on_chain_balance, on_chain_nonce).unwrap();
         }
 
@@ -1913,6 +1930,7 @@ mod tests {
         let mut f = MockTransactionFactory::default();
         let mut pool = AllTransactions::default();
 
+        // 设置超过gas limit的tx
         let tx = MockTransaction::eip1559().with_gas_limit(30_000_001);
 
         assert!(matches!(

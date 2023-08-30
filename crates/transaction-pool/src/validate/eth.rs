@@ -26,8 +26,10 @@ use tokio::sync::{oneshot, Mutex};
 #[derive(Debug, Clone)]
 pub struct EthTransactionValidator<Client, T> {
     /// The type that performs the actual validation.
+    /// 真正执行校验的类型
     inner: Arc<EthTransactionValidatorInner<Client, T>>,
     /// The sender half to validation tasks that perform the actual validation.
+    /// sender部分，用来校验tasks，执行真正的校验
     to_validation_task: Arc<Mutex<ValidationJobSender>>,
 }
 

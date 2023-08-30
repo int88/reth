@@ -3,14 +3,18 @@ use reth_primitives::Address;
 use std::collections::HashMap;
 
 /// An internal mapping of addresses.
+/// address的一个内部映射
 ///
 /// This assigns a _unique_ `SenderId` for a new `Address`.
+/// 对于一个新的`Address`赋值一个唯一的`SenderId`
 /// It has capacity for 2^64 unique addresses.
 #[derive(Debug, Default)]
 pub(crate) struct SenderIdentifiers {
     /// The identifier to use next.
+    /// 下一个使用的identifier
     id: u64,
     /// Assigned `SenderId` for an `Address`.
+    /// 为`Address`赋予一个`SenderId`
     address_to_id: HashMap<Address, SenderId>,
     /// Reverse mapping of `SenderId` to `Address`.
     sender_to_address: FnvHashMap<SenderId, Address>,
