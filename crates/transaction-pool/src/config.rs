@@ -49,11 +49,14 @@ impl Default for PoolConfig {
 }
 
 /// Size limits for a sub-pool.
+/// 一个sub-pool的Size limits
 #[derive(Debug, Clone)]
 pub struct SubPoolLimit {
     /// Maximum amount of transaction in the pool.
+    /// pool中最大的tx的数目
     pub max_txs: usize,
     /// Maximum combined size (in bytes) of transactions in the pool.
+    /// pool中txs最大的combined size
     pub max_size: usize,
 }
 
@@ -68,6 +71,7 @@ impl SubPoolLimit {
 impl Default for SubPoolLimit {
     fn default() -> Self {
         // either 10k transactions or 20MB
+        // 10k个txs或者20MB
         Self {
             max_txs: TXPOOL_SUBPOOL_MAX_TXS_DEFAULT,
             max_size: TXPOOL_SUBPOOL_MAX_SIZE_MB_DEFAULT * 1024 * 1024,

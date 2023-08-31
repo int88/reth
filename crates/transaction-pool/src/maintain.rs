@@ -24,14 +24,17 @@ use tokio::sync::oneshot;
 use tracing::{debug, trace};
 
 /// Additional settings for maintaining the transaction pool
+/// 对于维护tx pool额外的配置
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MaintainPoolConfig {
     /// Maximum (reorg) depth we handle when updating the transaction pool: `new.number -
     /// last_seen.number`
+    /// 我们可以处理的最大的(reorg) depth，当更新tx pool时：`new.number - last_seen.number`
     ///
     /// Default: 64 (2 epochs)
     pub max_update_depth: u64,
     /// Maximum number of accounts to reload from state at once when updating the transaction pool.
+    /// 从state重载的最大的accounts的数目，当更新tx pool时
     ///
     /// Default: 250
     pub max_reload_accounts: usize,
@@ -44,6 +47,7 @@ impl Default for MaintainPoolConfig {
 }
 
 /// Returns a spawnable future for maintaining the state of the transaction pool.
+/// 返回一个可以生成的future，用于维护ts pool的状态
 pub fn maintain_transaction_pool_future<Client, P, St, Tasks>(
     client: Client,
     pool: P,
@@ -64,8 +68,10 @@ where
 }
 
 /// Maintains the state of the transaction pool by handling new blocks and reorgs.
+/// 维护tx pool的状态，通过处理新的blocks和reorgs
 ///
 /// This listens for any new blocks and reorgs and updates the transaction pool's state accordingly
+/// 它监听任何新的blocks以及reorgs，并且相应地更新tx pool的state
 pub async fn maintain_transaction_pool<Client, P, St, Tasks>(
     client: Client,
     pool: P,
@@ -81,6 +87,7 @@ pub async fn maintain_transaction_pool<Client, P, St, Tasks>(
     let metrics = MaintainPoolMetrics::default();
     let MaintainPoolConfig { max_update_depth, max_reload_accounts } = config;
     // ensure the pool points to latest state
+    // 确保pool执行最新的state
     if let Ok(Some(latest)) = client.block_by_number_or_tag(BlockNumberOrTag::Latest) {
         let latest = latest.seal_slow();
         let chain_spec = client.chain_spec();

@@ -532,6 +532,7 @@ impl<'de> Deserialize<'de> for BlockId {
 }
 
 /// A block Number (or tag - "latest", "earliest", "pending")
+/// 一个block number（或者tag - "latest", "earliste"或者"pending"）
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub enum BlockNumberOrTag {
     /// Latest block

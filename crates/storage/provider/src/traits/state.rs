@@ -73,6 +73,7 @@ pub trait StateProvider: BlockHashReader + AccountReader + StateRootProvider + S
 
 /// Light wrapper that returns `StateProvider` implementations that correspond to the given
 /// `BlockNumber`, the latest state, or the pending state.
+/// 返回`StateProvider`的轻量封装，对应给定的`BlockNumber`，最新的state或者pending state
 ///
 /// This type differentiates states into `historical`, `latest` and `pending`, where the `latest`
 /// block determines what is historical or pending: `[historical..latest..pending]`.

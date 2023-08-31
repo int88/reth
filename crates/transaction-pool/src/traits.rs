@@ -134,15 +134,19 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns a new Stream that yields transactions hashes for new __pending__ transactions
     /// inserted into the pool depending on the given [PendingTransactionListenerKind] argument.
+    /// 返回一个新的Streawm，对于新的__pending__ txs产生txs
+    /// hashes，插入到pool，基于给定的[PendingTransactionListenerKind]参数
     fn pending_transactions_listener_for(
         &self,
         kind: PendingTransactionListenerKind,
     ) -> Receiver<TxHash>;
 
     /// Returns a new stream that yields new valid transactions added to the pool.
+    /// 返回一个新的stream，当新的txs加入pool的时候有产出
     fn new_transactions_listener(&self) -> Receiver<NewTransactionEvent<Self::Transaction>>;
 
     /// Returns a new Stream that yields new transactions added to the pending sub-pool.
+    /// 返回一个新的Stream，当一个新的txs被加入到pending sub-pool时发声
     ///
     /// This is a convenience wrapper around [Self::new_transactions_listener] that filters for
     /// [SubPool::Pending](crate::SubPool).
@@ -171,6 +175,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Returns the _hashes_ of all transactions in the pool.
+    /// 返回pool中所有txs的_hashes_
     ///
     /// Note: This returns a `Vec` but should guarantee that all hashes are unique.
     ///
@@ -253,8 +258,10 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Retains only those hashes that are unknown to the pool.
+    /// 只返回对pool是unknown的hashes
     /// In other words, removes all transactions from the given set that are currently present in
     /// the pool.
+    /// 换句话说，移除所有txs，从给定的set，当前存在于pool中
     ///
     /// Consumer: P2P
     fn retain_unknown(&self, hashes: &mut Vec<TxHash>);
@@ -265,9 +272,11 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Returns the transaction for the given hash.
+    /// 返回给定hash的tx
     fn get(&self, tx_hash: &TxHash) -> Option<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns all transactions objects for the given hashes.
+    /// 返回给定hashes所有的txs对象
     ///
     /// TODO(mattsse): this will no longer be accurate and we need a new function specifically for
     /// pooled txs This adheres to the expected behavior of [`GetPooledTransactions`](https://github.com/ethereum/devp2p/blob/master/caps/eth.md#getpooledtransactions-0x09):
@@ -294,31 +303,38 @@ pub trait TransactionPool: Send + Sync + Clone {
 }
 
 /// Extension for [TransactionPool] trait that allows to set the current block info.
+/// 对于[TransactionPool]的扩展trait，允许设置当前的block info
 #[auto_impl::auto_impl(Arc)]
 pub trait TransactionPoolExt: TransactionPool {
     /// Sets the current block info for the pool.
     fn set_block_info(&self, info: BlockInfo);
 
     /// Event listener for when the pool needs to be updated
+    /// Event listener，当pool需要被更新时
     ///
     /// Implementers need to update the pool accordingly.
+    /// Implementers需要相应地更新pool
     /// For example the base fee of the pending block is determined after a block is mined which
     /// affects the dynamic fee requirement of pending transactions in the pool.
     fn on_canonical_state_change(&self, update: CanonicalStateUpdate);
 
     /// Updates the accounts in the pool
+    /// 更新pool中的accounts
     fn update_accounts(&self, accounts: Vec<ChangedAccount>);
 }
 
 /// Determines what kind of new pending transactions should be emitted by a stream of pending
 /// transactions.
+/// 决定哪种新的pending txs应该被发射，通过一个stream，对于pending txs
 ///
 /// This gives control whether to include transactions that are allowed to be propagated.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PendingTransactionListenerKind {
     /// Any new pending transactions
+    /// 所有的pending txs
     All,
     /// Only transactions that are allowed to be propagated.
+    /// 只有允许传播的txs
     ///
     /// See also [ValidPoolTransaction]
     PropagateOnly,
@@ -326,6 +342,7 @@ pub enum PendingTransactionListenerKind {
 
 impl PendingTransactionListenerKind {
     /// Returns true if we're only interested in transactions that are allowed to be propagated.
+    /// 返回true，如果我们只对能够propagated txs有兴趣
     #[inline]
     pub fn is_propagate_only(&self) -> bool {
         matches!(self, Self::PropagateOnly)
@@ -333,6 +350,7 @@ impl PendingTransactionListenerKind {
 }
 
 /// A Helper type that bundles all transactions in the pool.
+/// 一个Hepler类型，将pool中的所有txs打包
 #[derive(Debug, Clone)]
 pub struct AllPoolTransactions<T: PoolTransaction> {
     /// Transactions that are ready for inclusion in the next block.
@@ -364,6 +382,7 @@ impl<T: PoolTransaction> Default for AllPoolTransactions<T> {
 }
 
 /// Represents a transaction that was propagated over the network.
+/// 代表一个已经被传播到network中的tx
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct PropagatedTransactions(pub HashMap<TxHash, Vec<PropagateKind>>);
 
@@ -372,10 +391,13 @@ pub struct PropagatedTransactions(pub HashMap<TxHash, Vec<PropagateKind>>);
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PropagateKind {
     /// The full transaction object was sent to the peer.
+    /// 完整的tx对象被发送到peer
     ///
     /// This is equivalent to the `Transaction` message
+    /// 这和`Transaction` message等价
     Full(PeerId),
     /// Only the Hash was propagated to the peer.
+    /// 只有Hash被传播到peer
     Hash(PeerId),
 }
 
@@ -401,11 +423,14 @@ impl From<PropagateKind> for PeerId {
 }
 
 /// Represents a new transaction
+/// 代表一个新的tx
 #[derive(Debug)]
 pub struct NewTransactionEvent<T: PoolTransaction> {
     /// The pool which the transaction was moved to.
+    /// tx被移动到的pool
     pub subpool: SubPool,
     /// Actual transaction
+    /// 真正的tx
     pub transaction: Arc<ValidPoolTransaction<T>>,
 }
 
@@ -492,6 +517,7 @@ impl fmt::Display for CanonicalStateUpdate {
 }
 
 /// Represents a changed account
+/// 代表一个changed account
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct ChangedAccount {
     /// The address of the account.
@@ -512,23 +538,30 @@ impl ChangedAccount {
 }
 
 /// An `Iterator` that only returns transactions that are ready to be executed.
+/// 一个`Iterator`，只返回准备好执行的txs
 ///
 /// This makes no assumptions about the order of the transactions, but expects that _all_
 /// transactions are valid (no nonce gaps.) for the tracked state of the pool.
+/// 这不假设txs的顺序，但是期望所有的txs是合法的（没有nonce gap）对于追踪的pool的state
 ///
 /// Note: this iterator will always return the best transaction that it currently knows.
 /// There is no guarantee transactions will be returned sequentially in decreasing
 /// priority order.
+/// 不保证以优先级下降顺序返回
 pub trait BestTransactions: Iterator + Send {
     /// Mark the transaction as invalid.
+    /// 将tx标记为invalid
     ///
     /// Implementers must ensure all subsequent transaction _don't_ depend on this transaction.
     /// In other words, this must remove the given transaction _and_ drain all transaction that
     /// depend on it.
+    /// Implementers必须确保所有后续的tx不会依赖这个tx，换句话说，
+    /// 这必须移除给定的tx并且排干所有依赖它的tx
     fn mark_invalid(&mut self, transaction: &Self::Item);
 }
 
 /// A no-op implementation that yields no transactions.
+/// 一个no-op实现，不会产生任何txs
 impl<T> BestTransactions for std::iter::Empty<T> {
     fn mark_invalid(&mut self, _tx: &T) {}
 }
@@ -608,9 +641,12 @@ pub trait PoolTransaction:
 }
 
 /// The default [PoolTransaction] for the [Pool](crate::Pool) for Ethereum.
+/// 默认的[PoolTransaction]对于[Pool](crate::Pool)，对于Ethereum
 ///
 /// This type is essentially a wrapper around [TransactionSignedEcRecovered] with additional fields
 /// derived from the transaction that are frequently used by the pools for ordering.
+/// 这个类型主要是一个wrapper，封装[TransactionSignedEcRecovered]，有着额外的字段，衍生自tx，
+/// 频繁被pools使用用于排序
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EthPooledTransaction {
     /// EcRecovered transaction info
@@ -624,6 +660,7 @@ pub struct EthPooledTransaction {
 
 impl EthPooledTransaction {
     /// Create new instance of [Self].
+    /// 创建一个[Self]的新实例
     pub fn new(transaction: TransactionSignedEcRecovered) -> Self {
         let gas_cost = match &transaction.transaction {
             Transaction::Legacy(t) => U256::from(t.gas_price) * U256::from(t.gas_limit),
@@ -637,6 +674,7 @@ impl EthPooledTransaction {
     }
 
     /// Return the reference to the underlying transaction.
+    /// 返回对于底层的tx的引用
     pub fn transaction(&self) -> &TransactionSignedEcRecovered {
         &self.transaction
     }
@@ -800,6 +838,7 @@ pub struct NewSubpoolTransactionStream<Tx: PoolTransaction> {
 
 impl<Tx: PoolTransaction> NewSubpoolTransactionStream<Tx> {
     /// Create a new stream that yields full transactions from the subpool
+    /// 创建一个新的stream，等待从subpool中full transactions的流量
     pub fn new(st: Receiver<NewTransactionEvent<Tx>>, subpool: SubPool) -> Self {
         Self { st, subpool }
     }

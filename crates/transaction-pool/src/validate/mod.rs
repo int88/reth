@@ -1,4 +1,5 @@
 //! Transaction validation abstractions.
+//! tx的校验的抽象
 
 use crate::{
     error::InvalidPoolTransactionError,
@@ -16,9 +17,11 @@ mod eth;
 mod task;
 
 /// A `TransactionValidator` implementation that validates ethereum transaction.
+/// 一个`TransactionValidator`实现，校验ethereum tx
 pub use eth::{EthTransactionValidator, EthTransactionValidatorBuilder};
 
 /// A spawnable task that performs transaction validation.
+/// 一个可生成的task，执行tx validation
 pub use task::ValidationTask;
 
 /// Validation constants.
@@ -63,25 +66,32 @@ impl<T: PoolTransaction> TransactionValidationOutcome<T> {
 
 /// A wrapper type for a transaction that is valid and has an optional extracted EIP-4844 blob
 /// transaction sidecar.
+/// 对于一个tx的封装类型，合法的并且有一个可选的。抽取EIP-4844的blob tx sidecar
 ///
 /// If this is provided, then the sidecar will be temporarily stored in the blob store until the
 /// transaction is finalized.
+/// 如果提供了，sidecar会被临时存储在blob store，直到tx被finalized
 ///
 /// Note: Since blob transactions can be re-injected without their sidecar (after reorg), the
 /// validator can omit the sidecar if it is still in the blob store and return a
-/// [ValidTransaction::Valid] instead.
+/// 注意：因为blob txs可以被重新注入，而没有sidecar（在reorg之后），validator可以忽略sidecar，
+/// 如果它依然在blob store，返回一个[ValidTransaction::Valid] [ValidTransaction::Valid] instead.
 #[derive(Debug)]
 pub enum ValidTransaction<T> {
     /// A valid transaction without a sidecar.
     Valid(T),
     /// A valid transaction for which a sidecar should be stored.
+    /// 一个valid tx，有一个sidecar应该被存储
     ///
     /// Caution: The [TransactionValidator] must ensure that this is only returned for EIP-4844
     /// transactions.
+    /// 注意：[TransactionValidator]必须确保这只对EIP-4844的txs返回
     ValidWithSidecar {
         /// The valid EIP-4844 transaction.
+        /// 合法的EIP-4844 tx
         transaction: T,
         /// The extracted sidecar of that transaction
+        /// tx抽取出的sidecar
         sidecar: BlobTransactionSidecar,
     },
 }
@@ -163,7 +173,9 @@ pub trait TransactionValidator: Send + Sync {
     ) -> TransactionValidationOutcome<Self::Transaction>;
 
     /// Ensure that the code size is not greater than `max_init_code_size`.
+    /// 确保code size不会超过`max_init_code_size`
     /// `max_init_code_size` should be configurable so this will take it as an argument.
+    /// `max_init_code_size`应该是可配置的，因此将它作为一个参数
     fn ensure_max_init_code_size(
         &self,
         transaction: &Self::Transaction,

@@ -108,6 +108,7 @@ pub trait BlockReader:
 }
 
 /// Trait extension for `BlockReader`, for types that implement `BlockId` conversion.
+/// 对于`BlockReader`的Trait extension，对于实现`BlockId`转换的类型
 ///
 /// The `BlockReader` trait should be implemented on types that can retrieve a block from either
 /// a block number or hash. However, it might be desirable to fetch a block from a `BlockId` type,
@@ -120,8 +121,10 @@ pub trait BlockReader:
 #[auto_impl::auto_impl(&, Arc)]
 pub trait BlockReaderIdExt: BlockReader + BlockIdReader + ReceiptProviderIdExt {
     /// Returns the block with matching tag from the database
+    /// 从db返回block，用匹配的tag
     ///
     /// Returns `None` if block is not found.
+    /// 返回`None`，如果block没有找到
     fn block_by_number_or_tag(&self, id: BlockNumberOrTag) -> Result<Option<Block>> {
         self.convert_block_number(id)?.map_or_else(|| Ok(None), |num| self.block(num.into()))
     }

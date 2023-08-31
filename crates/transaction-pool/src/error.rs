@@ -18,6 +18,7 @@ pub trait PoolTransactionError: std::error::Error + Send + Sync {
 }
 
 /// All errors the Transaction pool can throw.
+/// tx pool能丢出的所有的error
 #[derive(Debug, thiserror::Error)]
 pub enum PoolError {
     /// Same transaction already imported
@@ -25,23 +26,29 @@ pub enum PoolError {
     #[error("[{0:?}] Already imported")]
     AlreadyImported(TxHash),
     /// Thrown if a replacement transaction's gas price is below the already imported transaction
+    /// 被丢出，如果一个replacement tx的gas price小于已经导入的tx
     #[error("[{0:?}]: insufficient gas price to replace existing transaction.")]
     ReplacementUnderpriced(TxHash),
     /// The fee cap of the transaction is below the minimum fee cap determined by the protocol
+    /// tx的fee cap小于protocol要求的最小的fee cap
     #[error("[{0:?}] Transaction feeCap {1} below chain minimum.")]
     FeeCapBelowMinimumProtocolFeeCap(TxHash, u128),
     /// Thrown when the number of unique transactions of a sender exceeded the slot capacity.
+    /// 被抛出，如果一个sender的unique txs的数目超出了slot capacity
     #[error("{0:?} identified as spammer. Transaction {1:?} rejected.")]
     SpammerExceededCapacity(Address, TxHash),
     /// Thrown when a new transaction is added to the pool, but then immediately discarded to
     /// respect the size limits of the pool.
+    /// 当一个新的tx被插入到pool，但是立即被丢弃，因为pool的size limits的限制
     #[error("[{0:?}] Transaction discarded outright due to pool size constraints.")]
     DiscardedOnInsert(TxHash),
     /// Thrown when the transaction is considered invalid.
+    /// 当tx被认为是非法的时候被丢出
     #[error("[{0:?}] {1:?}")]
     InvalidTransaction(TxHash, InvalidPoolTransactionError),
     /// Any other error that occurred while inserting/validating a transaction. e.g. IO database
     /// error
+    /// 任何其他在插入、校验一个tx时产生的error，例如，IO database error
     #[error("[{0:?}] {1:?}")]
     Other(TxHash, Box<dyn std::error::Error + Send + Sync>),
 }
@@ -116,11 +123,13 @@ impl PoolError {
 }
 
 /// Represents errors that can happen when validating transactions for the pool
+/// 代表pool在校验这个tx时产生的errors
 ///
 /// See [TransactionValidator](crate::TransactionValidator).
 #[derive(Debug, thiserror::Error)]
 pub enum InvalidPoolTransactionError {
     /// Hard consensus errors
+    /// 协议的errors
     #[error(transparent)]
     Consensus(#[from] InvalidTransactionError),
     /// Thrown when a new transaction is added to the pool, but then immediately discarded to
@@ -134,9 +143,12 @@ pub enum InvalidPoolTransactionError {
     /// Thrown if the input data of a transaction is greater
     /// than some meaningful limit a user might use. This is not a consensus error
     /// making the transaction invalid, rather a DOS protection.
+    /// 如果一个tx输入的data大于一个用户可能使用的有意义的大小，这不是一个consensus
+    /// error让tx变得非法 而是一种DOS保护
     #[error("Input data too large")]
     OversizedData(usize, usize),
     /// Thrown if the transaction's fee is below the minimum fee
+    /// 如果tx的fee小于minimum fee时被抛出
     #[error("transaction underpriced")]
     Underpriced,
     /// Any other error that occurred while inserting/validating that is transaction specific
@@ -149,6 +161,7 @@ pub enum InvalidPoolTransactionError {
 impl InvalidPoolTransactionError {
     /// Returns `true` if the error was caused by a transaction that is considered bad in the
     /// context of the transaction pool and warrants peer penalization.
+    /// 返回`true`，如果error被一个tx导致，在当前的tx pool的上下文被认为是bad并且保证peer的惩罚
     ///
     /// See [PoolError::is_bad_transaction].
     #[inline]

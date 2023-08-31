@@ -1,7 +1,9 @@
 //! A transaction pool implementation that does nothing.
+//! 一个tx pool的实现，什么都不走
 //!
 //! This is useful for wiring components together that don't require an actual pool but still need
 //! to be generic over it.
+//! 这用于连接组件，不需要真正的pool，但是仍需要一个通用的
 
 use crate::{
     error::PoolError, traits::PendingTransactionListenerKind, validate::ValidTransaction,
@@ -15,9 +17,12 @@ use std::{collections::HashSet, marker::PhantomData, sync::Arc};
 use tokio::sync::{mpsc, mpsc::Receiver};
 
 /// A [`TransactionPool`] implementation that does nothing.
+/// 一个什么都不做的[`TransactionPool`]
 ///
 /// All transactions are rejected and no events are emitted.
+/// 所有的txs都被拒绝并且没有events被发射
 /// This type will never hold any transactions and is only useful for wiring components together.
+/// 这个类型不会维护任何的txs并且只用于将组件连接在一起
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive]
 pub struct NoopTransactionPool;
@@ -165,6 +170,7 @@ impl TransactionPool for NoopTransactionPool {
 }
 
 /// A [`TransactionValidator`] that does nothing.
+/// 一个[`TransactionValidator`]什么都不做
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct MockTransactionValidator<T> {
@@ -197,6 +203,7 @@ impl<T: PoolTransaction> TransactionValidator for MockTransactionValidator<T> {
 impl<T> MockTransactionValidator<T> {
     /// Creates a new [`MockTransactionValidator`] that does not allow local transactions to be
     /// propagated.
+    /// 创建一个新的[`MockTransactionValidator`]，不允许任何的txs被传播
     pub fn no_propagate_local() -> Self {
         Self { propagate_local: false, _marker: Default::default() }
     }
@@ -209,6 +216,7 @@ impl<T> Default for MockTransactionValidator<T> {
 }
 
 /// An error that contains the transaction that failed to be inserted into the noop pool.
+/// 一个error，包含tx插入noop pool失败
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("Can't insert transaction into the noop pool that does nothing.")]
 pub struct NoopInsertError {
