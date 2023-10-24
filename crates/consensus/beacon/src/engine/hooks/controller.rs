@@ -16,10 +16,12 @@ pub(crate) struct PolledHook {
 }
 
 /// Manages hooks under the control of the engine.
+/// 管理hooks，在engine的控制下
 ///
 /// This type polls the initialized hooks one by one, respecting the DB access level
 /// (i.e. [crate::hooks::EngineHookDBAccessLevel::ReadWrite] that enforces running at most one such
 /// hook).
+/// 这个类型一个个轮询初始化的hooks，尊重DB的access level
 pub(crate) struct EngineHooksController {
     /// Collection of hooks.
     ///

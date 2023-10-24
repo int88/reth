@@ -196,12 +196,15 @@ impl From<&RangeInclusive<BlockNumber>> for CheckpointBlockRange {
 }
 
 /// Saves the progress of a stage.
+/// 保存一个stage的进度
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct StageCheckpoint {
     /// The maximum block processed by the stage.
+    /// stage处理的最大的block
     pub block_number: BlockNumber,
     /// Stage-specific checkpoint. None if stage uses only block-based checkpoints.
+    /// Stage特定的checkpoint，为None如果stage使用基于block的checkpoints
     pub stage_checkpoint: Option<StageUnitCheckpoint>,
 }
 

@@ -2,16 +2,21 @@ use reth_primitives::H256;
 use reth_rpc_types::engine::{ForkchoiceState, PayloadStatusEnum};
 
 /// The struct that keeps track of the received forkchoice state and their status.
+/// 这个结构追踪接收到的forkchoice state以及它们的状态
 #[derive(Debug, Clone, Default)]
 pub(crate) struct ForkchoiceStateTracker {
     /// The latest forkchoice state that we received.
+    /// 最新接收到的forkchoice state
     ///
     /// Caution: this can be invalid.
+    /// 注意：可能是非法的
     latest: Option<ReceivedForkchoiceState>,
 
     /// Tracks the latest forkchoice state that we received to which we need to sync.
+    /// 追踪最新的forkchoice state，我们接收到的，我们需要同步
     last_syncing: Option<ForkchoiceState>,
     /// The latest valid forkchoice state that we received and processed as valid.
+    /// 最新的合法的forkchoice state，我们接收到并且被处理为valid
     last_valid: Option<ForkchoiceState>,
 }
 

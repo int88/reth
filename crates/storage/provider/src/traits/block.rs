@@ -44,9 +44,11 @@ impl BlockSource {
 }
 
 /// Api trait for fetching `Block` related data.
+/// Api trait用于获取`Block`相关的数据
 ///
 /// If not requested otherwise, implementers of this trait should prioritize fetching blocks from
 /// the database.
+/// 如果没有被请求，trait的实现者应该优先从database获取blocks
 #[auto_impl::auto_impl(&, Arc)]
 pub trait BlockReader:
     BlockNumReader

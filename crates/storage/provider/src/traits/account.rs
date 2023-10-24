@@ -11,6 +11,7 @@ use std::{
 #[auto_impl(&, Arc, Box)]
 pub trait AccountReader: Send + Sync {
     /// Get basic account information.
+    /// 获取基本的account信息
     ///
     /// Returns `None` if the account doesn't exist.
     fn basic_account(&self, address: Address) -> RethResult<Option<Account>>;

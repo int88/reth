@@ -19,14 +19,18 @@ pub const INVALID_PAYLOAD_ATTRIBUTES_ERROR_MSG: &str = "Invalid payload attribut
 pub type ForkChoiceUpdateResult = Result<ForkchoiceUpdated, ForkchoiceUpdateError>;
 
 /// This structure encapsulates the fork choice state
+/// 这个结构封装了fork choice state
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ForkchoiceState {
     /// Hash of the head block.
+    /// head block的hash
     pub head_block_hash: H256,
     /// Hash of the safe block.
+    /// safe block的hash
     pub safe_block_hash: H256,
     /// Hash of finalized block.
+    /// finalized block的hash
     pub finalized_block_hash: H256,
 }
 

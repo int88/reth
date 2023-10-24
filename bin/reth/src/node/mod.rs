@@ -552,10 +552,12 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
         info!(target: "reth::cli", "Engine API handler initialized");
 
         // extract the jwt secret from the args if possible
+        // 从args抽取出jwt secret，如果可能的话
         let default_jwt_path = data_dir.jwt_path();
         let jwt_secret = self.rpc.jwt_secret(default_jwt_path)?;
 
         // adjust rpc port numbers based on instance number
+        // 基于instance number调整rpc port numbers
         self.adjust_instance_ports();
 
         // Start RPC servers

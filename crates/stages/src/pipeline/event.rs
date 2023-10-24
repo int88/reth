@@ -61,11 +61,14 @@ pub enum PipelineEvent {
         stage_id: StageId,
     },
     /// Emitted when a stage was skipped due to it's run conditions not being met:
-    /// 当
+    /// 当一个stage被跳过的时候被发射，可能是他的运行条件没被满足
     ///
     /// - The stage might have progressed beyond the point of our target block
+    /// - stage可能可能已经处理超过了我们的target block
     /// - The stage might not need to be unwound since it has not progressed past the unwind target
+    /// - stage可能不需要unwind，因为它还没超过unwind target
     /// - The stage requires that the pipeline has reached the tip, but it has not done so yet
+    /// - stage需要pipeline运行到tip，但是他还没有完成
     Skipped {
         /// The stage that was skipped.
         stage_id: StageId,

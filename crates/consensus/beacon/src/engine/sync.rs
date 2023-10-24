@@ -21,22 +21,30 @@ use tokio::sync::oneshot;
 use tracing::trace;
 
 /// Manages syncing under the control of the engine.
+/// 管理在engine控制下的同步
 ///
 /// This type controls the [Pipeline] and supports (single) full block downloads.
+/// 这个类型控制[Pipeline]并且支持（单个）完整的block下载
 ///
 /// Caution: If the pipeline is running, this type will not emit blocks downloaded from the network
 /// [EngineSyncEvent::FetchedFullBlock] until the pipeline is idle to prevent commits to the
 /// database while the pipeline is still active.
+/// 注意：如果pipeline在运行，这个类型不会发出block，
+/// 来自network的[EngineSyncEvent::FetchedFullBlock]，直到pipeline处于idle，来防止提交到db，
+/// 当pipeline依然active的时候
 pub(crate) struct EngineSyncController<DB, Client>
 where
     DB: Database,
     Client: HeadersClient + BodiesClient,
 {
     /// A downloader that can download full blocks from the network.
+    /// 一个downloader可以下载完成的full block，从network
     full_block_client: FullBlockClient<Client>,
     /// The type that can spawn the pipeline task.
+    /// 这个类型可以生成pipeline task
     pipeline_task_spawner: Box<dyn TaskSpawner>,
     /// The current state of the pipeline.
+    /// pipeline的当前状态
     /// The pipeline is used for large ranges.
     pipeline_state: PipelineState<DB>,
     /// Pending target block for the pipeline to sync
@@ -342,27 +350,38 @@ impl Ord for OrderedSealedBlock {
 }
 
 /// The event type emitted by the [EngineSyncController].
+/// [EngineSyncControoler]发射的event类型
 #[derive(Debug)]
 pub(crate) enum EngineSyncEvent {
     /// A full block has been downloaded from the network.
+    /// 一个完整的block已经从network下载
     FetchedFullBlock(SealedBlock),
     /// Pipeline started syncing
+    /// Pipeline开始同步
     ///
     /// This is none if the pipeline is triggered without a specific target.
+    /// 这是none，如果pipeline已经触发，没有一个特定的target
     PipelineStarted(Option<H256>),
     /// Pipeline finished
+    /// Pipeline结束了
     ///
     /// If this is returned, the pipeline is idle.
+    /// 如果这返回了，pipeline处于idle状态
     PipelineFinished {
         /// Final result of the pipeline run.
+        /// pipeline运行的最后结果
         result: Result<ControlFlow, PipelineError>,
         /// Whether the pipeline reached the configured `max_block`.
+        /// 是否pipeline到达了配置的`max_block`
         ///
         /// Note: this is only relevant in debugging scenarios.
+        /// 注意：这只和debugging场景相关
         reached_max_block: bool,
     },
     /// Pipeline task was dropped after it was started, unable to receive it because channel
     /// closed. This would indicate a panicked pipeline task
+    /// Pipeline task从它开始之后被丢弃，不能接收，因为channel被关闭，这会表明一个panicked pipeline
+    /// task
     PipelineTaskDropped,
 }
 

@@ -23,6 +23,7 @@ use std::{
 use tracing::debug;
 
 /// A Client that can fetch full blocks from the network.
+/// 一个Client，可以从network拉取full blocks
 #[derive(Debug, Clone)]
 pub struct FullBlockClient<Client> {
     client: Client,

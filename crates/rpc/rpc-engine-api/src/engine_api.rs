@@ -31,28 +31,36 @@ const MAX_PAYLOAD_BODIES_LIMIT: u64 = 1024;
 
 /// The Engine API implementation that grants the Consensus layer access to data and
 /// functions in the Execution layer that are crucial for the consensus process.
+/// Engine API的实现，保证Consensus layer能访问Execution layer的数据和功能，这对consensu很重要
 pub struct EngineApi<Provider> {
     inner: Arc<EngineApiInner<Provider>>,
 }
 
 struct EngineApiInner<Provider> {
     /// The provider to interact with the chain.
+    /// 用于和chain交互的provider
     provider: Provider,
     /// Consensus configuration
+    /// Consensus的配置
     chain_spec: Arc<ChainSpec>,
     /// The channel to send messages to the beacon consensus engine.
+    /// 用于发送messages到beacon consensus engine的channel
     beacon_consensus: BeaconConsensusEngineHandle,
     /// The type that can communicate with the payload service to retrieve payloads.
+    /// 可以和payload service进行交互来获取payloads
     payload_store: PayloadStore,
     /// For spawning and executing async tasks
+    /// 用于生成以及执行async tasks
     task_spawner: Box<dyn TaskSpawner>,
 }
 
 impl<Provider> EngineApi<Provider>
 where
+    // provider用于提供header, block以及state，EvmEnv信息
     Provider: HeaderProvider + BlockReader + StateProviderFactory + EvmEnvProvider + 'static,
 {
     /// Create new instance of [EngineApi].
+    /// 创建[EngineApi]的新实例
     pub fn new(
         provider: Provider,
         chain_spec: Arc<ChainSpec>,

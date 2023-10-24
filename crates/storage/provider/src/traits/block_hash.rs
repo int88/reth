@@ -3,6 +3,7 @@ use reth_interfaces::RethResult;
 use reth_primitives::{BlockHashOrNumber, BlockNumber, H256};
 
 /// Client trait for fetching block hashes by number.
+/// Client trait通过number获取block hashes
 #[auto_impl(&, Arc, Box)]
 pub trait BlockHashReader: Send + Sync {
     /// Get the hash of the block with the given number. Returns `None` if no block with this number

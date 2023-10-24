@@ -211,37 +211,52 @@ where
         + StageCheckpointReader,
 {
     /// Controls syncing triggered by engine updates.
+    /// 控制由engine updates触发的同步
     sync: EngineSyncController<DB, Client>,
     /// The type we can use to query both the database and the blockchain tree.
+    /// 我们用于访问db和blockchain tree的类型
     blockchain: BT,
     /// Used for emitting updates about whether the engine is syncing or not.
+    /// 用于发射updates，关于engine是否在同步
     sync_state_updater: Box<dyn NetworkSyncUpdater>,
     /// The Engine API message receiver.
+    /// Engine API的message receiver
     engine_message_rx: UnboundedReceiverStream<BeaconEngineMessage>,
     /// A clone of the handle
     handle: BeaconConsensusEngineHandle,
     /// Tracks the received forkchoice state updates received by the CL.
+    /// 追踪CL接收到的forkchoice state updates
     forkchoice_state_tracker: ForkchoiceStateTracker,
     /// The payload store.
+    /// payload存储的地方
     payload_builder: PayloadBuilderHandle,
     /// Listeners for engine events.
+    /// engine events的Listeners
     listeners: EventListeners<BeaconConsensusEngineEvent>,
     /// Tracks the header of invalid payloads that were rejected by the engine because they're
     /// invalid.
+    /// 追踪非法的payloads的header，他们被engine拒绝，因为他们是非法的
     invalid_headers: InvalidHeaderCache,
     /// Consensus engine metrics.
     metrics: EngineMetrics,
     /// After downloading a block corresponding to a recent forkchoice update, the engine will
     /// check whether or not we can connect the block to the current canonical chain. If we can't,
     /// we need to download and execute the missing parents of that block.
+    /// 在下载了一个block，根据最近的forkchoice
+    /// update之后，engine会检查是否我们可以连接block到当前的canonical
+    /// chain，如果不能，我们需要下载并且执行这个block缺失的parents
     ///
     /// When the block can't be connected, its block number will be compared to the canonical head,
     /// resulting in a heuristic for the number of missing blocks, or the size of the gap between
     /// the new block and the canonical head.
+    /// 当block不能连接时，它的block number会和canonical
+    /// head相比较，导致对于缺失的blocks数目的预测，或者新的block和canonical head之间的gap
     ///
     /// If the gap is larger than this threshold, the engine will download and execute the missing
     /// blocks using the pipeline. Otherwise, the engine, sync controller, and blockchain tree will
     /// be used to download and execute the missing blocks.
+    /// 如果gap大于threshold，engine会下载并且执行丢失的blocks，用pipeline，否则，engine，sync
+    /// controller以及blockchain tree会用于下载并且执行缺失的blocks
     pipeline_run_threshold: u64,
     hooks: EngineHooksController,
 }
@@ -259,6 +274,7 @@ where
     Client: HeadersClient + BodiesClient + Clone + Unpin + 'static,
 {
     /// Create a new instance of the [BeaconConsensusEngine].
+    /// 创建[BeaconConsensusEngine]的一个新实例
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         client: Client,
@@ -293,14 +309,22 @@ where
 
     /// Create a new instance of the [BeaconConsensusEngine] using the given channel to configure
     /// the [BeaconEngineMessage] communication channel.
+    /// 创建一个新的[BeaconConsensusEngine]实例，
+    /// 使用给定的channel来配置[BeaconEngineMessage]的communication channel
     ///
     /// By default the engine is started with idle pipeline.
+    /// 默认情况下，engine以idle pipeline启动
     /// The pipeline can be launched immediately in one of the following ways descending in
     /// priority:
+    /// pipeline可以立即启动，按照以下几种方式，优先级下降
     /// - Explicit [Option::Some] target block hash provided via a constructor argument.
+    /// - 显式的[Option::Some] target block，由constructor argument提供
     /// - The process was previously interrupted amidst the pipeline run. This is checked by
     ///   comparing the checkpoints of the first ([StageId::Headers]) and last ([StageId::Finish])
     ///   stages. In this case, the latest available header in the database is used as the target.
+    /// - pipeline运行过程中被打断，
+    ///   这由通过比较第一个[StageId::Headers]的checkpoint和上一个[StageId::Finish]，这种情况下，
+    ///   db中的latest available header作为target
     ///
     /// Propagates any database related error.
     #[allow(clippy::too_many_arguments)]
@@ -350,6 +374,7 @@ where
         };
 
         if let Some(target) = maybe_pipeline_target {
+            // 设置pipeline target
             this.sync.set_pipeline_sync_target(target);
         }
 
@@ -1605,8 +1630,10 @@ where
     }
 
     /// Event handler for events emitted by the [EngineSyncController].
+    /// Event handler，对于[EngineSyncController]发射的events
     ///
     /// This returns a result to indicate whether the engine future should resolve (fatal error).
+    /// 这返回一个result，表明是否engine future应该解决
     fn on_sync_event(
         &mut self,
         event: EngineSyncEvent,
@@ -1806,11 +1833,17 @@ where
 
 /// On initialization, the consensus engine will poll the message receiver and return
 /// [Poll::Pending] until the first forkchoice update message is received.
+/// 在初始化的时候，conensensus engine会轮询message
+/// receiver并且返回[Poll::Pending]，直到第一个forkchoice update message被接收到
 ///
 /// As soon as the consensus engine receives the first forkchoice updated message and updates the
 /// local forkchoice state, it will launch the pipeline to sync to the head hash.
-/// While the pipeline is syncing, the consensus engine will keep processing messages from the
-/// receiver and forwarding them to the blockchain tree.
+/// 一旦consensus engine接收到第一个forkchoice updated message并且更新local forkchoice
+/// state，它会启动pipeline同步到head hash
+///  While the pipeline is syncing, the consensus engine will
+/// keep processing messages from the receiver and forwarding them to the blockchain tree.
+/// 当pipeline在同步的时候，consensus
+/// engine会保持处理来自receiver的message，并且转发他们到blockchain tree
 impl<DB, BT, Client> Future for BeaconConsensusEngine<DB, BT, Client>
 where
     DB: Database + Unpin + 'static,
@@ -1830,9 +1863,12 @@ where
         let this = self.get_mut();
 
         // Control loop that advances the state
+        // Control loop推进state
         'main: loop {
             // Poll a running hook with db write access first, as we will not be able to process
             // any engine messages until it's finished.
+            // 首先轮询一个running hook，有着db的写权限，我们不能够处理任何的engine
+            // messages，直到它完成
             if let Poll::Ready(result) = this.hooks.poll_running_hook_with_db_write(
                 cx,
                 EngineContext { tip_block_number: this.blockchain.canonical_tip().number },
@@ -1843,6 +1879,8 @@ where
             // Process all incoming messages from the CL, these can affect the state of the
             // SyncController, hence they are polled first, and they're also time sensitive, hence
             // they're always drained first.
+            // 处理来自CL的所有的messages，这可以影响SyncController的state，因此他们首先被轮询，
+            // 同时他们也是时间敏感的，因此他们总是第一个被排干
             while let Poll::Ready(Some(msg)) = this.engine_message_rx.poll_next_unpin(cx) {
                 match msg {
                     BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, tx } => {
@@ -1873,6 +1911,7 @@ where
             }
 
             // process sync events if any
+            // 处理sync events，如果有的话
             match this.sync.poll(cx) {
                 Poll::Ready(sync_event) => {
                     if let Some(res) = this.on_sync_event(sync_event) {
@@ -1884,14 +1923,19 @@ where
                 }
                 Poll::Pending => {
                     // no more sync events to process
+                    // 没有更多的sync events需要处理
                 }
             }
 
             // at this point, all engine messages and sync events are fully drained
+            // 到这里，所有的engine message和sync events都已经被完全排干了
 
             // Poll next hook if all conditions are met:
+            // 轮询下一个hook，如果所有条件都满足
             // 1. Engine and sync messages are fully drained (both pending)
+            // 1. Engine以及sync messages都被完全排干（都是pending）
             // 2. Latest FCU status is not INVALID
+            // 2. 最新的FCU status不是INVALID
             if !this.forkchoice_state_tracker.is_latest_invalid() {
                 if let Poll::Ready(result) = this.hooks.poll_next_hook(
                     cx,

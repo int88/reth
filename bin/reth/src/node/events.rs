@@ -25,16 +25,21 @@ use tracing::{info, warn};
 const INFO_MESSAGE_INTERVAL: Duration = Duration::from_secs(25);
 
 /// The current high-level state of the node.
+/// node当前的high-level状态
 struct NodeState {
     /// Connection to the network.
+    /// 连接到network
     network: Option<NetworkHandle>,
     /// The stage currently being executed.
+    /// 当前正在执行的stage
     current_stage: Option<StageId>,
     /// The ETA for the current stage.
     eta: Eta,
     /// The current checkpoint of the executing stage.
+    /// 当前执行的stage的checkpoint
     current_checkpoint: StageCheckpoint,
     /// The latest canonical block added in the consensus engine.
+    /// 最近的添加到consensus engine中的canonical block
     latest_canonical_engine_block: Option<BlockNumber>,
 }
 
@@ -216,6 +221,7 @@ impl From<PrunerEvent> for NodeEvent {
 
 /// Displays relevant information to the user from components of the node, and periodically
 /// displays the high-level status of the node.
+/// 展示相关信息给用户，来自node的components，并且阶段性地展示高级的node的状态
 pub async fn handle_events<E>(
     network: Option<NetworkHandle>,
     latest_block_number: Option<BlockNumber>,
@@ -298,8 +304,10 @@ where
 
 /// A container calculating the estimated time that a stage will complete in, based on stage
 /// checkpoints reported by the pipeline.
+/// 一个容器用于计算一个stage完成大概的时间，基于pipeline汇报的checkpoints
 ///
 /// One `Eta` is only valid for a single stage.
+/// 一个`Eta`只对单个的stage有效
 #[derive(Default)]
 struct Eta {
     /// The last stage checkpoint

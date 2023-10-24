@@ -11,9 +11,11 @@ use reth_primitives::{
 pub type StateProviderBox<'a> = Box<dyn StateProvider + 'a>;
 
 /// An abstraction for a type that provides state data.
+/// 对于一个能提供state data的类型的抽象
 #[auto_impl(&, Arc, Box)]
 pub trait StateProvider: BlockHashReader + AccountReader + StateRootProvider + Send + Sync {
     /// Get storage of given account.
+    /// 获取给定的accout的storage
     fn storage(
         &self,
         account: Address,
@@ -21,6 +23,7 @@ pub trait StateProvider: BlockHashReader + AccountReader + StateRootProvider + S
     ) -> RethResult<Option<StorageValue>>;
 
     /// Get account code by its hash
+    /// 通过hash获取account code
     fn bytecode_by_hash(&self, code_hash: H256) -> RethResult<Option<Bytecode>>;
 
     /// Get account and storage proofs.
@@ -66,8 +69,10 @@ pub trait StateProvider: BlockHashReader + AccountReader + StateRootProvider + S
     }
 
     /// Get account nonce by its address.
+    /// 通过地址获取account nonce
     ///
     /// Returns `None` if the account doesn't exist
+    /// 返回`None`如果account不存在
     fn account_nonce(&self, addr: Address) -> RethResult<Option<u64>> {
         // Get basic account information
         // Returns None if acc doesn't exist
@@ -80,23 +85,32 @@ pub trait StateProvider: BlockHashReader + AccountReader + StateRootProvider + S
 
 /// Light wrapper that returns `StateProvider` implementations that correspond to the given
 /// `BlockNumber`, the latest state, or the pending state.
+/// Light wrapper，返回`StateProvider`的实现，对应给定的`BlockNumber`，最新的state或者pending state
 ///
 /// This type differentiates states into `historical`, `latest` and `pending`, where the `latest`
 /// block determines what is historical or pending: `[historical..latest..pending]`.
+/// 这个类型区分`historical`, `latest`以及`pending`，其中`latest` block决定是historical还是pending
 ///
 /// The `latest` state represents the state after the most recent block has been committed to the
 /// database, `historical` states are states that have been committed to the database before the
 /// `latest` state, and `pending` states are states that have not yet been committed to the
 /// database which may or may not become the `latest` state, depending on consensus.
+/// `latest` state代表最近的block被提交到数据库之后的state，`historical`
+/// state代表已经被提交到db，但是在`latest` state之前的state，而`pending`
+/// states是还没有提交到db的states，他们可能或者不可能成为`latest` state，取决于consensus
 ///
 /// Note: the `pending` block is considered the block that extends the canonical chain but one and
 /// has the `latest` block as its parent.
+/// 注意：`pending` block被认为是扩展了canonical chain，但是有`latest` block作为它的parent
 ///
 /// All states are _inclusive_, meaning they include _all_ all changes made (executed transactions)
 /// in their respective blocks. For example [StateProviderFactory::history_by_block_number] for
 /// block number `n` will return the state after block `n` was executed (transactions, withdrawals).
 /// In other words, all states point to the end of the state's respective block, which is equivalent
 /// to state at the beginning of the child block.
+/// 所有states都是_inclusive_，这意味着他们包含对应block所有的changes（执行txs），例如，
+/// [StateProviderFactory::history_by_block_number]对于block number `n`，会返回block
+/// `n`（txs，withdrawals）被执行之后的state，换句话说所有的state指向state对应的block的end
 ///
 /// This affects tracing, or replaying blocks, which will need to be executed on top of the state of
 /// the parent block. For example, in order to trace block `n`, the state after block `n - 1` needs
@@ -106,8 +120,10 @@ pub trait StateProviderFactory: BlockIdReader + Send + Sync {
     fn latest(&self) -> RethResult<StateProviderBox<'_>>;
 
     /// Returns a [StateProvider] indexed by the given [BlockId].
+    /// 返回一个[StateProvider]，根据给定的BlockId
     ///
     /// Note: if a number or hash is provided this will only look at historical(canonical) state.
+    /// 注意：如果一个number或者hash被提供，这只会查看historical(canonical)state
     fn state_by_block_id(&self, block_id: BlockId) -> RethResult<StateProviderBox<'_>> {
         match block_id {
             BlockId::Number(block_number) => self.state_by_block_number_or_tag(block_number),
@@ -231,6 +247,7 @@ pub trait BundleStateDataProvider: Send + Sync {
 }
 
 /// A type that can compute the state root of a given post state.
+/// 一个类型可以计算state root，对于给定的post state
 #[auto_impl[Box,&, Arc]]
 pub trait StateRootProvider: Send + Sync {
     /// Returns the state root of the BundleState on top of the current state.

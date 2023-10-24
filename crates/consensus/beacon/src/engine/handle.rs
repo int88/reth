@@ -15,6 +15,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 
 /// A _shareable_ beacon consensus frontend type. Used to interact with the spawned beacon consensus
 /// engine task.
+/// 用于和生成的beacon consensus engine task进行交互
 ///
 /// See also [`BeaconConsensusEngine`](crate::engine::BeaconConsensusEngine).
 #[derive(Clone, Debug)]
@@ -60,6 +61,7 @@ impl BeaconConsensusEngineHandle {
 
     /// Sends a forkchoice update message to the beacon consensus engine and returns the receiver to
     /// wait for a response.
+    /// 发送一个forkchoice update message到beacon consensus engine并且返回receiver，等待一个response
     fn send_fork_choice_updated(
         &self,
         state: ForkchoiceState,
@@ -75,6 +77,7 @@ impl BeaconConsensusEngineHandle {
     }
 
     /// Sends a transition configuration exchagne message to the beacon consensus engine.
+    /// 发送一个transition配置交换的mesage到beacon consensus engine
     ///
     /// See also <https://github.com/ethereum/execution-apis/blob/3d627c95a4d3510a8187dd02e0250ecb4331d27e/src/engine/paris.md#engine_exchangetransitionconfigurationv1>
     pub async fn transition_configuration_exchanged(&self) {
@@ -82,6 +85,7 @@ impl BeaconConsensusEngineHandle {
     }
 
     /// Creates a new [`BeaconConsensusEngineEvent`] listener stream.
+    /// 创建一个新的[`BeaconConsensusEngineEvent`]的listener stream
     pub fn event_listener(&self) -> UnboundedReceiverStream<BeaconConsensusEngineEvent> {
         let (tx, rx) = mpsc::unbounded_channel();
         let _ = self.to_engine.send(BeaconEngineMessage::EventListener(tx));

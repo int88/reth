@@ -139,29 +139,40 @@ impl Future for PendingPayloadId {
 
 /// A message for the beacon engine from other components of the node (engine RPC API invoked by the
 /// consensus layer).
+/// 对于beacon engine的message，从node的其他components（consensus layer调用的RPC API）
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum BeaconEngineMessage {
     /// Message with new payload.
+    /// 有新的payload的message
     NewPayload {
         /// The execution payload received by Engine API.
+        /// Engine API接收到的execution payload
         payload: ExecutionPayload,
         /// The cancun-related newPayload fields, if any.
+        /// cancun相关的newPayload字段，如果有的话
         cancun_fields: Option<CancunPayloadFields>,
         /// The sender for returning payload status result.
+        /// 用于返回payload status result的sender
         tx: oneshot::Sender<Result<PayloadStatus, BeaconOnNewPayloadError>>,
     },
     /// Message with updated forkchoice state.
+    /// 有着updated forkchoice state的message
     ForkchoiceUpdated {
         /// The updated forkchoice state.
+        /// 更新的forkchoice state
         state: ForkchoiceState,
         /// The payload attributes for block building.
+        /// payload attributes用于构建block
         payload_attrs: Option<PayloadAttributes>,
         /// The sender for returning forkchoice updated result.
+        /// 用于返回forkchoice updated result的sender
         tx: oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
     },
     /// Message with exchanged transition configuration.
+    /// 有着exchanged transition配置的message
     TransitionConfigurationExchanged,
     /// Add a new listener for [`BeaconEngineMessage`].
+    /// 添加一个新的listener，对于[`BeaconEngineMessage`]
     EventListener(UnboundedSender<BeaconConsensusEngineEvent>),
 }

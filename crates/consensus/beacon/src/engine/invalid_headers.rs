@@ -8,12 +8,14 @@ use std::sync::Arc;
 use tracing::warn;
 
 /// The max hit counter for invalid headers in the cache before it is forcefully evicted.
+/// 对于invalid headers的max hit counter，在它被强制驱逐之前
 ///
 /// In other words, if a header is referenced more than this number of times, it will be evicted to
 /// allow for reprocessing.
 const INVALID_HEADER_HIT_EVICTION_THRESHOLD: u8 = 128;
 
 /// Keeps track of invalid headers.
+/// 追踪非法的headers
 pub(crate) struct InvalidHeaderCache {
     /// This maps a header hash to a reference to its invalid ancestor.
     headers: LruMap<H256, HeaderEntry>,

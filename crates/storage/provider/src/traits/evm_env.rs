@@ -4,8 +4,10 @@ use reth_revm_primitives::primitives::{BlockEnv, CfgEnv};
 
 /// A provider type that knows chain specific information required to configure an
 /// [Env](reth_revm_primitives::primitives::Env)
+/// 一个provider类型，知道chain相关的信息，需要配置一个[Env](reth_revm_primitives::primitives::Env)
 ///
 /// This type is mainly used to provide required data to configure the EVM environment.
+/// 这个类型主要用于提供需要的信息，用于配置EVM环境
 #[auto_impl::auto_impl(&, Arc)]
 pub trait EvmEnvProvider: Send + Sync {
     /// Fills the [CfgEnv] and [BlockEnv] fields with values specific to the given
