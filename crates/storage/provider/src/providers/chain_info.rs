@@ -9,6 +9,7 @@ use std::{
 };
 
 /// Tracks the chain info: canonical head, safe block, finalized block.
+/// 追踪chain info：canonical head，safe block以及finalized block
 #[derive(Debug, Clone)]
 pub(crate) struct ChainInfoTracker {
     inner: Arc<ChainInfoInner>,

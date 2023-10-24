@@ -68,8 +68,10 @@ where
     }
 
     /// Builds the final [`Pipeline`] using the given database.
+    /// 使用给定db，构建final [`Pipeline`]
     ///
     /// Note: it's expected that this is either an [Arc] or an Arc wrapper type.
+    /// 注意：期望这是一个[Arc]或者一个Arc wrapper类型
     pub fn build(self, db: DB, chain_spec: Arc<ChainSpec>) -> Pipeline<DB> {
         let Self { stages, max_block, tip_tx, metrics_tx } = self;
         Pipeline {

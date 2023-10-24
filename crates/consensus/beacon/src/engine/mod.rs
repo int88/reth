@@ -88,15 +88,21 @@ const MAX_INVALID_HEADERS: u32 = 512u32;
 
 /// The largest gap for which the tree will be used for sync. See docs for `pipeline_run_threshold`
 /// for more information.
+/// 最大的gap，tree会用于sync，看`pipeline_run_threshold`获取更多的信息
 ///
 /// This is the default threshold, the distance to the head that the tree will be used for sync.
+/// 这是默认的threshold，到head到距离，tree会被用于sync
 /// If the distance exceeds this threshold, the pipeline will be used for sync.
+/// 如果distance超过了这个threshold，pipeline会用于同步
 pub const MIN_BLOCKS_FOR_PIPELINE_RUN: u64 = EPOCH_SLOTS;
 
 /// The beacon consensus engine is the driver that switches between historical and live sync.
+/// beacon consensus engine是一个driver，用于在historial和live sync之间进行切换
 ///
 /// The beacon consensus engine is itself driven by messages from the Consensus Layer, which are
 /// received by Engine API (JSON-RPC).
+/// beacon conesensus engine本身是被来自Consensus Layer的messages驱动，通过Engine
+/// API接收（JSON-RPC）
 ///
 /// The consensus engine is idle until it receives the first
 /// [BeaconEngineMessage::ForkchoiceUpdated] message from the CL which would initiate the sync. At
@@ -105,6 +111,11 @@ pub const MIN_BLOCKS_FOR_PIPELINE_RUN: u64 = EPOCH_SLOTS;
 /// that are currently available. In case the restoration is successful, the consensus engine would
 /// run in a live sync mode, populating the [`BlockchainTreeEngine`] with new blocks as they arrive
 /// via engine API and downloading any missing blocks from the network to fill potential gaps.
+/// consensus engine一直是idle，直到它接收到第一个[BeaconEngineMessage::ForkchoiceUpdated]，从CL，
+/// 它初始化的同步，一开始consensus engine会运行[Pipeline]直到最新已知的block
+/// hash，之后它会试着创建/恢复[`BlockchainTreeEngine`] 从当前可用的blocks，如果restoration成功，
+/// consensus engine会以live sync模式运行，用新的blocks填充[`BlockchainTreeEngine`]，它们通过engine
+/// API以及下载来自网络的blocks来填充潜在的gaps
 ///
 /// The consensus engine has two data input sources:
 ///
@@ -112,53 +123,81 @@ pub const MIN_BLOCKS_FOR_PIPELINE_RUN: u64 = EPOCH_SLOTS;
 ///
 /// The engine receives new payloads from the CL. If the payload is connected to the canonical
 /// chain, it will be fully validated added to a chain in the [BlockchainTreeEngine]: `VALID`
+/// engine从CL接收到新的payloads，如果payload连接到canonical
+/// chain，他会被完整校验后添加到chain，在[BlockchainTreeEngine]: `VALID`
 ///
 /// If the payload's chain is disconnected (at least 1 block is missing) then it will be buffered:
 /// `SYNCING` ([BlockStatus::Disconnected]).
+/// 如果payload到chain是disconnected（至少缺失1个block）那么它会被缓存为：
+/// `SYNCING`（[BlockStatus::Disconnected]）
 ///
 /// ## Forkchoice Update (FCU) (`engine_forkchoiceUpdatedV{}`)
 ///
 /// This contains the latest forkchoice state and the payload attributes. The engine will attempt to
 /// make a new canonical chain based on the `head_hash` of the update and trigger payload building
 /// if the `payload_attrs` are present and the FCU is `VALID`.
+/// 这包含最新的forkchoice state以及payload attributes，engine会试着构建一个新的canonical
+/// chain，基于update里的`head_hash`，并且出发payload
+/// building，如果存在`payload_attrs`并且FCU是合法的
+///
 ///
 /// The `head_hash` forms a chain by walking backwards from the `head_hash` towards the canonical
 /// blocks of the chain.
+/// `head_hash`组成了一个chain，通过从`head_hash`往前走到chain的canonical blocks
 ///
 /// Making a new canonical chain can result in the following relevant outcomes:
+/// 构建一个新的canonical chain可用导致以下相关的结果
 ///
 /// ### The chain is connected
+/// ### chain是connected
 ///
 /// All blocks of the `head_hash`'s chain are present in the [BlockchainTreeEngine] and are
 /// committed to the canonical chain. This also includes reorgs.
+/// `head_hash`的chain的blocks都已经存在于[BlockchainTreeEngine]并且提交到了canoical
+/// chain，这也包含reorg
 ///
 /// ### The chain is disconnected
+/// ### chain是disconnected
 ///
 /// In this case the [BlockchainTreeEngine] doesn't know how the new chain connects to the existing
 /// canonical chain. It could be a simple commit (new blocks extend the current head) or a re-org
 /// that requires unwinding the canonical chain.
+/// 万一[BlockchainTreeEngine]不知道新的chain如何连接到已经存在的chain，
+/// 这可以是一个简单的commit（新的blocks扩展当前的head）或者是一个reorg，需要对canonical
+/// chain进行unwind
 ///
 /// This further distinguishes between two variants:
+/// 这进一步划分为两种情况
 ///
 /// #### `head_hash`'s block exists
+/// ### `head_hash`的block存在
 ///
 /// The `head_hash`'s block was already received/downloaded, but at least one block is missing to
 /// form a _connected_ chain. The engine will attempt to download the missing blocks from the
 /// network by walking backwards (`parent_hash`), and then try to make the block canonical as soon
 /// as the chain becomes connected.
+/// `head_hash`的block已经被接收/下载，但是至少缺失一个block来构成_connected_
+/// chain，engine会试着从网络下载缺失的blocks通过walking
+/// backwards（`parent_hash`），之后试着让block变为canonical，一旦chain变为connecte
 ///
 /// However, it still can be the case that the chain and the FCU is `INVALID`.
+/// 然而，chain和FCU依然可能是`INVALID`
 ///
 /// #### `head_hash` block is missing
+/// ### `head_hash` block缺失
 ///
 /// This is similar to the previous case, but the `head_hash`'s block is missing. At which point the
 /// engine doesn't know where the new head will point to: new chain could be a re-org or a simple
 /// commit. The engine will download the missing head first and then proceed as in the previous
 /// case.
+/// 这和之前的情况很像，但是`head_hash`
+/// block是丢失的，这时候engine不知道新的head指向谁：新的chain可以被re-org或者是一个简单的commit，
+/// engine会首先下载缺失的head然后按照前一个例子执行
 ///
 /// # Panics
 ///
 /// If the future is polled more than once. Leads to undefined state.
+/// 如果future被polled超过一次，导致undefined state
 #[must_use = "Future does nothing unless polled"]
 #[allow(missing_debug_implementations)]
 pub struct BeaconConsensusEngine<DB, BT, Client>

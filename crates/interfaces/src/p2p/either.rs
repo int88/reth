@@ -9,11 +9,14 @@ use reth_primitives::H256;
 
 /// A downloader that combines two different downloaders/client implementations that have the same
 /// associated types.
+/// 一个downloader，组合了两个不同的downloaders/client实现，有着同样的associate types
 #[derive(Debug, Clone)]
 pub enum EitherDownloader<A, B> {
     /// The first downloader variant
+    /// 第一个downaloader变种
     Left(A),
     /// The second downloader variant
+    /// 第二个downloader变种
     Right(B),
 }
 

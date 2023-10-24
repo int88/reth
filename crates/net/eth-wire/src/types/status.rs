@@ -12,9 +12,11 @@ use serde::{Deserialize, Serialize};
 
 /// The status message is used in the eth protocol handshake to ensure that peers are on the same
 /// network and are following the same fork.
+/// status message在eth协议握手的时候使用来确保peers在同一个network并且在同样的fork
 ///
 /// When performing a handshake, the total difficulty is not guaranteed to correspond to the block
 /// hash. This information should be treated as untrusted.
+/// 当执行一个handshake，td不保证对应于block hash，这个信息应该认为是不可信的
 #[derive_arbitrary(rlp)]
 #[derive(Copy, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

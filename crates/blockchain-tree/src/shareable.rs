@@ -25,6 +25,7 @@ use std::{
 use tracing::trace;
 
 /// Shareable blockchain tree that is behind tokio::RwLock
+/// Shareable blockchain tree在tokio::RwLock之下
 #[derive(Clone, Debug)]
 pub struct ShareableBlockchainTree<DB: Database, C: Consensus, EF: ExecutorFactory> {
     /// BlockchainTree

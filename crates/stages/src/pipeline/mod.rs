@@ -39,14 +39,19 @@ pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineErr
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// A staged sync pipeline.
+/// 一个staged sync pipeline
 ///
 /// The pipeline executes queued [stages][Stage] serially. An external component determines the tip
 /// of the chain and the pipeline then executes each stage in order from the current local chain tip
 /// and the external chain tip. When a stage is executed, it will run until it reaches the chain
 /// tip.
+/// pipeline顺序执行队列中的[stages][Stage]，一个外部的组件决定tip of the
+/// chain，之后pipeline执行每个stage，为了从当前的local chain top 到external chain
+/// tip，当一个stage被执行，它会运行直到它到达chain tip
 ///
 /// After the entire pipeline has been run, it will run again unless asked to stop (see
 /// [Pipeline::set_max_block]).
+/// 在整个pipeline运行之后，它会再次运行，除非被要求停止（查看[Pipeline::set_max_block]）
 ///
 /// ```mermaid
 /// graph TB
@@ -87,24 +92,33 @@ pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineErr
 /// In case of a validation error (as determined by the consensus engine) in one of the stages, the
 /// pipeline will unwind the stages in reverse order of execution. It is also possible to
 /// request an unwind manually (see [Pipeline::unwind]).
+/// 万一在其中一个stages发生一个validation error（由consensus
+/// engine决定），pipeline会按照执行的相反顺序unwind
+/// stages，也可能请求一个手动的unwind（查看[Pipeline::unwind]）
 ///
 /// # Defaults
 ///
 /// The [DefaultStages](crate::sets::DefaultStages) are used to fully sync reth.
+/// [DefaultStages](crate::sets::DefaultStages)用于完全同步reth
 pub struct Pipeline<DB: Database> {
     /// The Database
     db: DB,
     /// Chain spec
     chain_spec: Arc<ChainSpec>,
     /// All configured stages in the order they will be executed.
+    /// 所有配置的stages，按照他们执行的顺序
     stages: Vec<BoxedStage<DB>>,
     /// The maximum block number to sync to.
+    /// 最大的同步的block number
     max_block: Option<BlockNumber>,
     /// All listeners for events the pipeline emits.
+    /// 所有的listeners，对于这个pipeline发射的events
     listeners: EventListeners<PipelineEvent>,
     /// Keeps track of the progress of the pipeline.
+    /// 追踪pipeline的执行过程
     progress: PipelineProgress,
     /// A receiver for the current chain tip to sync to.
+    /// 一个receiver，对于要同步的当前chain的tip
     tip_tx: Option<watch::Sender<H256>>,
     metrics_tx: Option<MetricEventsSender>,
 }
@@ -114,6 +128,7 @@ where
     DB: Database + 'static,
 {
     /// Construct a pipeline using a [`PipelineBuilder`].
+    /// 使用[PipelineBuilder]构建一个pipeline
     pub fn builder() -> PipelineBuilder<DB> {
         PipelineBuilder::default()
     }
@@ -133,6 +148,7 @@ where
     }
 
     /// Listen for events on the pipeline.
+    /// 对pipeline的events进行监听
     pub fn events(&mut self) -> UnboundedReceiverStream<PipelineEvent> {
         self.listeners.new_listener()
     }

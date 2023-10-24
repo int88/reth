@@ -45,17 +45,23 @@ use reth_interfaces::blockchain_tree::{
 };
 
 /// The main type for interacting with the blockchain.
+/// 和blockchain交互的主要类型
 ///
 /// This type serves as the main entry point for interacting with the blockchain and provides data
 /// from database storage and from the blockchain tree (pending state etc.) It is a simple wrapper
 /// type that holds an instance of the database and the blockchain tree.
+/// 这个类型用于和blockchain进行交互的主要入口并且提供从db存储以及blockchain
+/// tree（例如处于pending的state）的数据 这是一个简单的wrapper类型，维护db以及blockchain tree的实例
 #[derive(Clone, Debug)]
 pub struct BlockchainProvider<DB, Tree> {
     /// Provider type used to access the database.
+    /// Provider类型用于访问db
     database: ProviderFactory<DB>,
     /// The blockchain tree instance.
+    /// blockchain tree的实例
     tree: Tree,
     /// Tracks the chain info wrt forkchoice updates
+    /// 追踪chain info，例如forkchoice updates
     chain_info: ChainInfoTracker,
 }
 
@@ -73,6 +79,7 @@ where
 {
     /// Create a new provider using only the database and the tree, fetching the latest header from
     /// the database to initialize the provider.
+    /// 创建一个新的provider，只使用db和tree，从db中抓取最新的header来初始化provider
     pub fn new(database: ProviderFactory<DB>, tree: Tree) -> RethResult<Self> {
         let provider = database.provider()?;
         let best: ChainInfo = provider.chain_info()?;

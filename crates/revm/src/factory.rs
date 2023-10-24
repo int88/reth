@@ -8,6 +8,7 @@ use reth_provider::{ExecutorFactory, PrunableBlockExecutor, StateProvider};
 use std::sync::Arc;
 
 /// Factory that spawn Executor.
+/// 生成executor的factory
 #[derive(Clone, Debug)]
 pub struct Factory {
     chain_spec: Arc<ChainSpec>,
@@ -16,17 +17,20 @@ pub struct Factory {
 
 impl Factory {
     /// Create new factory
+    /// 创建新的factory
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { chain_spec, stack: None }
     }
 
     /// Sets the inspector stack for all generated executors.
+    /// 设置inspector，对于所有生成的executors
     pub fn with_stack(mut self, stack: InspectorStack) -> Self {
         self.stack = Some(stack);
         self
     }
 
     /// Sets the inspector stack for all generated executors using the provided config.
+    /// 设置inspector stack，对于所有生成的executors，使用提供的config
     pub fn with_stack_config(mut self, config: InspectorStackConfig) -> Self {
         self.stack = Some(InspectorStack::new(config));
         self

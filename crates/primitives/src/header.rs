@@ -16,24 +16,32 @@ use std::{
 };
 
 /// Describes the current head block.
+/// 描述当前的head block
 ///
 /// The head block is the highest fully synced block.
+/// head block是最高的完全同步的block
 ///
 /// Note: This is a slimmed down version of [Header], primarily for communicating the highest block
 /// with the P2P network and the RPC.
+/// 注意：这是[Header]的裁剪版本，主要用于P2P network和RPC的交互
 #[derive(
     Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
 )]
 pub struct Head {
     /// The number of the head block.
+    /// head block的number
     pub number: BlockNumber,
     /// The hash of the head block.
+    /// head block的hash
     pub hash: H256,
     /// The difficulty of the head block.
+    /// head block的difficulty
     pub difficulty: U256,
     /// The total difficulty at the head block.
+    /// head block的td
     pub total_difficulty: U256,
     /// The timestamp of the head block.
+    /// head block的时间戳
     pub timestamp: u64,
 }
 

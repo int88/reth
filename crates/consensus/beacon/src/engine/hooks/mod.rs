@@ -37,12 +37,16 @@ impl EngineHooks {
 
 /// Hook that will be run during the main loop of
 /// [consensus engine][`crate::engine::BeaconConsensusEngine`].
+/// 会在main loop的[consensus engine][`crate::engine::BeaconConsensusEngine`]运行的hook
 pub trait EngineHook: Send + Sync + 'static {
     /// Returns a human-readable name for the hook.
+    /// 返回一个human-readable的名字，对于这个hook
     fn name(&self) -> &'static str;
 
     /// Advances the hook execution, emitting an [event][`EngineHookEvent`] and an optional
-    /// [action][`EngineHookAction`].
+    /// [action][`EngineHookAction`]
+    /// 推动hook execution，
+    /// 发射一个[event][`EngineHookEvent`]以及一个可选的[action][`EngineHookAction`]
     fn poll(
         &mut self,
         cx: &mut Context<'_>,
@@ -50,6 +54,7 @@ pub trait EngineHook: Send + Sync + 'static {
     ) -> Poll<(EngineHookEvent, Option<EngineHookAction>)>;
 
     /// Returns [db access level][`EngineHookDBAccessLevel`] the hook needs.
+    /// 返回[db access level][`EngineHookDBAccessLevel`]需要的hook
     fn db_access_level(&self) -> EngineHookDBAccessLevel;
 }
 

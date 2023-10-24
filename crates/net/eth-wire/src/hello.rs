@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 // TODO: determine if we should allow for the extra fields at the end like EIP-706 suggests
 /// Message used in the `p2p` handshake, containing information about the supported RLPx protocol
 /// version and capabilities.
+/// 用于`p2p`握手的message，包含信息关于支持的RLPx协议版本以及capabilities
 #[derive_arbitrary(rlp)]
 #[derive(Clone, Debug, PartialEq, Eq, RlpEncodable, RlpDecodable)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

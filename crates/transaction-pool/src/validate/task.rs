@@ -72,13 +72,17 @@ impl ValidationJobSender {
 }
 
 /// A [TransactionValidator] implementation that validates ethereum transaction.
+/// 一个[TramsactionValidator]的实现来校验ethereum transaction
 ///
 /// This validator is non-blocking, all validation work is done in a separate task.
+/// 这个validator是非阻塞的，所有的validation work在一个单独的task完成
 #[derive(Debug, Clone)]
 pub struct TransactionValidationTaskExecutor<V> {
     /// The validator that will validate transactions on a separate task.
+    /// 这个validator会在一个单独的task校验transactions
     pub validator: V,
     /// The sender half to validation tasks that perform the actual validation.
+    /// validation tasks的sender half，执行真正的校验
     pub to_validation_task: Arc<sync::Mutex<ValidationJobSender>>,
 }
 

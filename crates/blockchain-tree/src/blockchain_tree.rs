@@ -68,30 +68,44 @@ use tracing::{debug, error, info, instrument, trace, warn};
 /// main functions:
 /// * [BlockchainTree::insert_block]: Connect block to chain, execute it and if valid insert block
 ///   inside tree.
+/// * [BlockchainTree::insert_block]：连接block到chain，执行它并且如果合法的话，插入block到tree
 /// * [BlockchainTree::finalize_block]: Remove chains that join to now finalized block, as chain
 ///   becomes invalid.
+/// * [BlockchainTree::finalize_block]: 移除连接到finalized block的chains，因为chain已经变得非法
 /// * [BlockchainTree::make_canonical]: Check if we have the hash of block that we want to finalize
 ///   and commit it to db. If we don't have the block, pipeline syncing should start to fetch the
 ///   blocks from p2p. Do reorg in tables if canonical chain if needed.
+/// * [BlockchainTree::make_canonical]：检查是否我们有hash of
+///   block，我们想要finalize并且提交到db，如果我们没有这个block pipeline
+///   syncing应该启动来从p2p中获取blocks，进入tables的reorg，如果canonical chain需要的话
 #[derive(Debug)]
 pub struct BlockchainTree<DB: Database, C: Consensus, EF: ExecutorFactory> {
     /// The tracked chains and their current data.
+    /// 追踪的chains以及它们当前的数据
     chains: HashMap<BlockChainId, AppendableChain>,
     /// Unconnected block buffer.
+    /// 未连接的block buffer
     buffered_blocks: BlockBuffer,
     /// Static blockchain ID generator
+    /// 静态的blockchain ID generator
     block_chain_id_generator: u64,
     /// Indices to block and their connection to the canonical chain.
+    /// block的索引以及它们到canoncial chain的连接
     block_indices: BlockIndices,
     /// External components (the database, consensus engine etc.)
+    /// 外部的组件（db, consensus engine等等）
     externals: TreeExternals<DB, C, EF>,
     /// Tree configuration
+    /// Tree的配置
     config: BlockchainTreeConfig,
     /// Broadcast channel for canon state changes notifications.
+    /// 广播的channle，用于canon state变更的通知
     canon_state_notification_sender: CanonStateNotificationSender,
     /// Metrics for the blockchain tree.
+    /// blockchain tree的metrics
     metrics: TreeMetrics,
     /// Metrics for sync stages.
+    /// 对于sync stages的metrics
     sync_metrics_tx: Option<MetricEventsSender>,
     prune_modes: Option<PruneModes>,
 }

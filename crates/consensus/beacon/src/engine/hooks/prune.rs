@@ -20,12 +20,16 @@ use std::{
 use tokio::sync::oneshot;
 
 /// Manages pruning under the control of the engine.
+/// 在引擎的控制下管理pruning
 ///
 /// This type controls the [Pruner].
+/// 这个类型控制[Pruner]
 pub struct PruneHook<DB> {
     /// The current state of the pruner.
+    /// pruner当前的状态
     pruner_state: PrunerState<DB>,
     /// The type that can spawn the pruner task.
+    /// 创建pruner task的类型
     pruner_task_spawner: Box<dyn TaskSpawner>,
     metrics: Metrics,
 }

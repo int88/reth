@@ -27,32 +27,44 @@ pub fn rng_secret_key() -> SecretKey {
 }
 
 /// All network related initialization settings.
+/// 所有网络相关的初始化设置
 #[derive(Debug)]
 pub struct NetworkConfig<C> {
     /// The client type that can interact with the chain.
+    /// 可以和chain交互的client类型
     ///
     /// This type is used to fetch the block number after we established a session and received the
     /// [Status] block hash.
+    /// 这个类型用于拉取block number，在我们建立了一个session并且接收到[Status] block hash之后
     pub client: C,
     /// The node's secret key, from which the node's identity is derived.
+    /// node的secret key，从那以后node的identity被派生
     pub secret_key: SecretKey,
     /// All boot nodes to start network discovery with.
+    /// 所有的boot nodes用于启动network discovery
     pub boot_nodes: HashSet<NodeRecord>,
     /// How to set up discovery over DNS.
+    /// 如何通过DNS设置discovery
     pub dns_discovery_config: Option<DnsDiscoveryConfig>,
     /// How to set up discovery.
+    /// 如何设置discovery
     pub discovery_v4_config: Option<Discv4Config>,
     /// Address to use for discovery
+    /// 用于discovery的地址
     pub discovery_addr: SocketAddr,
     /// Address to listen for incoming connections
+    /// 用于监听incoming connections的地址
     pub listener_addr: SocketAddr,
     /// How to instantiate peer manager.
+    /// 如何实例化peer manager
     pub peers_config: PeersConfig,
     /// How to configure the [SessionManager](crate::session::SessionManager).
+    /// 如何配置[SessionManager]
     pub sessions_config: SessionsConfig,
     /// The chain spec
     pub chain_spec: Arc<ChainSpec>,
     /// The [`ForkFilter`] to use at launch for authenticating sessions.
+    /// [`ForkFilter`]在启动authenticating sessions的时候使用
     ///
     /// See also <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2124.md#stale-software-examples>
     ///
@@ -62,12 +74,16 @@ pub struct NetworkConfig<C> {
     /// The block importer type.
     pub block_import: Box<dyn BlockImport>,
     /// The default mode of the network.
+    /// netork的模式
     pub network_mode: NetworkMode,
     /// The executor to use for spawning tasks.
+    /// 用于生成tasks的executor
     pub executor: Box<dyn TaskSpawner>,
     /// The `Status` message to send to peers at the beginning.
+    /// 在开始的是发送给peers的`Status` message
     pub status: Status,
     /// Sets the hello message for the p2p handshake in RLPx
+    /// 设置hello message，对于p2p handshake，在RLPx中
     pub hello_message: HelloMessage,
 }
 

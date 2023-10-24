@@ -257,12 +257,17 @@ impl BaseFeeParams {
 }
 
 /// An Ethereum chain specification.
+/// 一个Ethereum chain的定义
 ///
 /// A chain specification describes:
+/// 一个chain specification描述
 ///
 /// - Meta-information about the chain (the chain ID)
+/// - 关于chain的元数据（chain ID）
 /// - The genesis block of the chain ([`Genesis`])
+/// - 这个chain的genesis block
 /// - What hardforks are activated, and under which conditions
+/// - 那个hardforks在activated并且处于什么情况下
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChainSpec {
     /// The chain ID
@@ -1008,6 +1013,7 @@ impl Display for DisplayFork {
 }
 
 /// A container for pretty-printing a list of hardforks.
+/// 一个container用于更好地打印一系列的hardforks
 ///
 /// # Example
 ///

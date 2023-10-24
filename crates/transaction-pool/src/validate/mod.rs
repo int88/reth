@@ -63,9 +63,11 @@ impl<T: PoolTransaction> TransactionValidationOutcome<T> {
 
 /// A wrapper type for a transaction that is valid and has an optional extracted EIP-4844 blob
 /// transaction sidecar.
+/// 对于一个tx的wrapper类型，它是合法的并且有额外的，抽取出的EIP-4844 blob transaction sidecar
 ///
 /// If this is provided, then the sidecar will be temporarily stored in the blob store until the
 /// transaction is finalized.
+/// 如果提供了，sidecar会被临时存放在blob store，直到tx被finalized
 ///
 /// Note: Since blob transactions can be re-injected without their sidecar (after reorg), the
 /// validator can omit the sidecar if it is still in the blob store and return a
@@ -132,19 +134,24 @@ impl<T: PoolTransaction> ValidTransaction<T> {
 }
 
 /// Provides support for validating transaction at any given state of the chain
+/// 对于在任何给定的chain的state校验transaction提供支持
 #[async_trait::async_trait]
 pub trait TransactionValidator: Send + Sync {
     /// The transaction type to validate.
+    /// 去校验的transaction类型
     type Transaction: PoolTransaction;
 
     /// Validates the transaction and returns a [`TransactionValidationOutcome`] describing the
     /// validity of the given transaction.
+    /// 校验transaction并且返回一个[`TransactionValidationOutcome`]描述给定的transaction的合法性
     ///
     /// This will be used by the transaction-pool to check whether the transaction should be
     /// inserted into the pool or discarded right away.
+    /// 这会被transaction-pool校验是否transaction应该被加入到pool或者立刻丢弃
     ///
     /// Implementers of this trait must ensure that the transaction is well-formed, i.e. that it
     /// complies at least all static constraints, which includes checking for:
+    /// 这个trait的实现者必须确保transaction是well-formed
     ///
     ///    * chain id
     ///    * gas limit
@@ -160,6 +167,10 @@ pub trait TransactionValidator: Send + Sync {
     /// this transaction is still subject to future (dynamic) changes enforced by the pool, for
     /// example nonce or balance changes. Hence, any validation checks must be applied in this
     /// function.
+    /// tx pool对于tx的正确性不做假设，在这个函数被调用的时候，在将它插入到pool之前，
+    /// 然而tx的合法性依旧遵循pool后续的变更，例如nonce或者balance的改变，因此任何validation
+    /// checks必须在这个函数应用
+    ///
     ///
     /// See [TransactionValidationTaskExecutor] for a reference implementation.
     async fn validate_transaction(
@@ -169,12 +180,16 @@ pub trait TransactionValidator: Send + Sync {
     ) -> TransactionValidationOutcome<Self::Transaction>;
 
     /// Invoked when the head block changes.
+    /// 当head block变更的时候被调用
     ///
     /// This can be used to update fork specific values (timestamp).
+    /// 这个可以用于更新fork相关的值
     fn on_new_head_block(&self, _new_tip_block: &SealedBlock) {}
 
     /// Ensure that the code size is not greater than `max_init_code_size`.
     /// `max_init_code_size` should be configurable so this will take it as an argument.
+    /// 确保code size不会超过`max_init_code_size`，`max_init_code_size`应该可配置，
+    /// 这样可以作为一个参数
     fn ensure_max_init_code_size(
         &self,
         transaction: &Self::Transaction,

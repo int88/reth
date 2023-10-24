@@ -7,21 +7,28 @@ use std::{
 };
 
 /// Combines multiple [`Stage`]s into a single unit.
+/// 组合多个[`Stage`]为单个unit
 ///
 /// A [`StageSet`] is a logical chunk of stages that depend on each other. It is up to the
 /// individual stage sets to determine what kind of configuration they expose.
+/// 一个[`StageSet`]是一个逻辑的chunk of stages，互相依赖，这取决于单个的stage
+/// sets，来决定他们暴露什么配置
 ///
 /// Individual stages in the set can be added, removed and overridden using [`StageSetBuilder`].
+/// 单个的stage可以被添加，移除或者覆盖，使用[`StageSetBuilder`]
 pub trait StageSet<DB: Database>: Sized {
     /// Configures the stages in the set.
+    /// 配置set中的stages
     fn builder(self) -> StageSetBuilder<DB>;
 
     /// Overrides the given [`Stage`], if it is in this set.
+    /// 覆盖给定的[`Stage`]，如果它在这个set中
     ///
     /// # Panics
     ///
     /// Panics if the [`Stage`] is not in this set.
     fn set<S: Stage<DB> + 'static>(self, stage: S) -> StageSetBuilder<DB> {
+        // 获取builder
         self.builder().set(stage)
     }
 }

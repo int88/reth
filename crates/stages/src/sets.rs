@@ -53,6 +53,7 @@ use reth_provider::ExecutorFactory;
 use std::sync::Arc;
 
 /// A set containing all stages to run a fully syncing instance of reth.
+/// 一个集合，包含所有的stages，来运行完整的reth的syncing实例
 ///
 /// A combination of (in order)
 ///
@@ -77,13 +78,16 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct DefaultStages<H, B, EF> {
     /// Configuration for the online stages
+    /// 对于Online stages的配置
     online: OnlineStages<H, B>,
     /// Executor factory needs for execution stage
+    /// 需要execution stage的Executor factory
     executor_factory: EF,
 }
 
 impl<H, B, EF> DefaultStages<H, B, EF> {
     /// Create a new set of default stages with default values.
+    /// 创建一个新的默认stages的集合，有着默认的值
     pub fn new(
         header_mode: HeaderSyncMode,
         consensus: Arc<dyn Consensus>,
@@ -127,18 +131,24 @@ where
 }
 
 /// A set containing all stages that require network access by default.
+/// 一个包含默认需要访问network的所有stages
 ///
 /// These stages *can* be run without network access if the specified downloaders are
 /// themselves offline.
+/// 这些stages可以没有network access运行，如果指定的downloaders自己也是offline的
 #[derive(Debug)]
 pub struct OnlineStages<H, B> {
     /// The sync mode for the headers stage.
+    /// 对于headers stage的sync mode
     header_mode: HeaderSyncMode,
     /// The consensus engine used to validate incoming data.
+    /// 用于校验incoming data的consensus engine
     consensus: Arc<dyn Consensus>,
     /// The block header downloader
+    /// block header的downloader
     header_downloader: H,
     /// The block body downloader
+    /// block body的downloader
     body_downloader: B,
 }
 

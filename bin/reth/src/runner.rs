@@ -1,4 +1,5 @@
 //! Entrypoint for running commands.
+//! 运行命令的Entrypoint
 
 use futures::pin_mut;
 use reth_tasks::{TaskExecutor, TaskManager};
@@ -15,6 +16,8 @@ pub struct CliRunner;
 impl CliRunner {
     /// Executes the given _async_ command on the tokio runtime until the command future resolves or
     /// until the process receives a `SIGINT` or `SIGTERM` signal.
+    /// 执行给定的_async_ command，在tokio runtime之上，直到command
+    /// future解决或者直到process接收到一个`SIGINT`或者`SIGTERM`信号
     ///
     /// Tasks spawned by the command via the [TaskExecutor] are shut down and an attempt is made to
     /// drive their shutdown to completion after the command has finished.
@@ -97,6 +100,7 @@ struct AsyncCliRunner {
 impl AsyncCliRunner {
     /// Attempts to create a tokio Runtime and additional context required to execute commands
     /// asynchronously.
+    /// 试着创建一个tokio Runtime以及额外所需的context，用于异步执行命令
     fn new() -> Result<Self, std::io::Error> {
         let tokio_runtime = tokio_runtime()?;
         let task_manager = TaskManager::new(tokio_runtime.handle().clone());

@@ -1,16 +1,25 @@
 //! Reth's transaction pool implementation.
+//! Reth的tx pool实现
 //!
 //! This crate provides a generic transaction pool implementation.
+//! 这个crate提供了一个通用的tx pool的实现
 //!
 //! ## Functionality
+//! ## 功能
 //!
 //! The transaction pool is responsible for
+//! tx pool负责实现：
 //!
 //!    - recording incoming transactions
+//!    - 记录incoming txs
 //!    - providing existing transactions
+//!    - 提供已经存在的txs
 //!    - ordering and providing the best transactions for block production
+//!    - 排序并且提供最好的txs用于block production
 //!    - monitoring memory footprint and enforce pool size limits
+//!    - 监控memory footprint并且执行pool size limits
 //!    - storing blob data for transactions in a separate blobstore on insertion
+//!    - 存储blob data用于txs，在一个独立的blobstore，在插入时
 //!
 //! ## Assumptions
 //!
@@ -20,15 +29,22 @@
 //! pool ([`PoolTransaction`]), this includes gas price, base fee (EIP-1559 transactions), nonce
 //! etc. It makes no assumptions about the encoding format, but the transaction type must report its
 //! size so pool size limits (memory) can be enforced.
+//! pool期望从通用的tx type `PoolTranasctin`获取ethereum相关的信息，包括gas price，base
+//! feee（EIP-1559 txs），nonce等，它不假设encoding format，但是txs type必须报告它的size，这样pool
+//! size limits可以被执行
+//!
 //!
 //! ### Transaction ordering
 //!
 //! The pending pool contains transactions that can be mined on the current state.
 //! The order in which they're returned are determined by a `Priority` value returned by the
 //! `TransactionOrdering` type this pool is configured with.
+//! txs的顺序由返回的`Priority`值决定，这个pool的`TransationOrdering`值会配置
 //!
 //! This is only used in the _pending_ pool to yield the best transactions for block production. The
 //! _base pool_ is ordered by base fee, and the _queued pool_ by current distance.
+//! 这只用于_pending_ pool产生用于block production的best transactions，_base pool_由base
+//! fee排序，_queued pool_由当前的distance排序
 //!
 //! ### Validation
 //!
@@ -38,14 +54,24 @@
 //! the current state or could become valid after certain state changes. transaction that can never
 //! become valid (e.g. nonce lower than current on chain nonce) will never be added to the pool and
 //! instead are discarded right away.
+//! pool自身并不校验incoming
+//! transactions，这应该由实现`TransactionsValidator`提供，
+//! 只有validator返回的合法的txs被包含进pool，
+//! 这假设pool中的tx要么在当前状态是合法的或者在特定的state
+//! changes之后可以变得合法，不可能变得合法的tx（例如nonce小于当前的chain
+//! nonce）不会被加入到pool并且应该立刻被丢弃
 //!
 //! ### State Changes
 //!
 //! Once a new block is mined, the pool needs to be updated with a changeset in order to:
+//! 一旦一个新的block被mined，pool应该用一个changeset更新，为了：
 //!
 //!   - remove mined transactions
+//!   - 移除mined txs
 //!   - update using account changes: balance changes
+//!   - 使用account changes: balance changes更新
 //!   - base fee updates
+//!   - base fee的更新
 //!
 //! ## Implementation details
 //!
@@ -53,25 +79,32 @@
 //! inserting, querying specific transactions by hash or retrieving the best transactions.
 //! In addition, it enables the registration of event listeners that are notified of state changes.
 //! Events are communicated via channels.
+//! 另外，它允许event listeners的注册，能够被通知state changes，Events通过channels交互
 //!
 //! ### Architecture
 //!
 //! The final `TransactionPool` is made up of two layers:
+//! 最终的`TransactionPool`由两层组成：
 //!
 //! The lowest layer is the actual pool implementations that manages (validated) transactions:
+//! 最底层是真正pool的实现，用于管理（合法的）txs：[`TxPool`](crate::pool::txpool::TxPool)
 //! [`TxPool`](crate::pool::txpool::TxPool). This is contained in a higher level pool type that
 //! guards the low level pool and handles additional listeners or metrics: [`PoolInner`].
+//! 这被包含在高一级的pool，看守额外的listeners或者metrics: [`PoolInner`]
 //!
 //! The transaction pool will be used by separate consumers (RPC, P2P), to make sharing easier, the
 //! [`Pool`] type is just an `Arc` wrapper around `PoolInner`. This is the usable type that provides
 //! the `TransactionPool` interface.
+//! tx pool会被分开的consumers（RPC, P2P）使用，来让共享更轻松，`Pool`只是`PoolInner`的一个`Arc`
+//! wrapper，这是usable type用于提供`TransactionPool`接口
 //!
 //!
 //! ## Blob Transactions
 //!
 //! Blob transaction can be quite large hence they are stored in a separate blobstore. The pool is
 //! responsible for inserting blob data for new transactions into the blobstore.
-//! See also [ValidTransaction](validate::ValidTransaction)
+//! Blob tx可以非常大，因此它们被存储在另外的blobstore，这个pool负责插入新的tx的blob
+//! data到blobstore中 See also [ValidTransaction](validate::ValidTransaction)
 //!
 //!
 //! ## Examples

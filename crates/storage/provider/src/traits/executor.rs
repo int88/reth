@@ -7,16 +7,20 @@ use std::time::Duration;
 use tracing::debug;
 
 /// Executor factory that would create the EVM with particular state provider.
+/// Executor factory会用特定的state provider创建EVM
 ///
 /// It can be used to mock executor.
+/// 它可以用于模拟executor
 pub trait ExecutorFactory: Send + Sync + 'static {
     /// Executor with [`StateProvider`]
+    /// 有着[`StateProvider`]的Executor
     fn with_state<'a, SP: StateProvider + 'a>(
         &'a self,
         _sp: SP,
     ) -> Box<dyn PrunableBlockExecutor + 'a>;
 
     /// Return internal chainspec
+    /// 返回内部的chainspec
     fn chain_spec(&self) -> &ChainSpec;
 }
 

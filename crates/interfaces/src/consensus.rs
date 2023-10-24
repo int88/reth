@@ -8,23 +8,30 @@ use std::fmt::Debug;
 pub use reth_rpc_types::engine::ForkchoiceState;
 
 /// Consensus is a protocol that chooses canonical chain.
+/// Consensus是用于选取canonical chain的协议
 #[async_trait]
 #[auto_impl::auto_impl(&, Arc)]
 pub trait Consensus: Debug + Send + Sync {
     /// Validate if header is correct and follows consensus specification.
+    /// 校验header是否正确并且遵守consensus specification
     ///
     /// This is called on standalone header to check if all hashes are correct.
+    /// 这在单个header上被调用来检查是否所有的hashes都正确
     fn validate_header(&self, header: &SealedHeader) -> Result<(), ConsensusError>;
 
     /// Validate that the header information regarding parent are correct.
+    /// 校验关于parent的header信息是正确的
     /// This checks the block number, timestamp, basefee and gas limit increment.
+    /// 这检查block number,时间戳，basefee以及gas limit的增加
     ///
     /// This is called before properties that are not in the header itself (like total difficulty)
     /// have been computed.
+    /// 这在不属于header自己的properties计算之前被调用
     ///
     /// **This should not be called for the genesis block**.
     ///
     /// Note: Validating header against its parent does not include other Consensus validations.
+    /// 注意：针对parent校验header不包括其他的consensus validation
     fn validate_header_against_parent(
         &self,
         header: &SealedHeader,
@@ -32,11 +39,14 @@ pub trait Consensus: Debug + Send + Sync {
     ) -> Result<(), ConsensusError>;
 
     /// Validates the given headers
+    /// 校验给定的headers
     ///
     /// This ensures that the first header is valid on its own and all subsequent headers are valid
     /// on its own and valid against its parent.
+    /// 这确保第一个header是合法的并且所有后续的headers自己是合法的并且对于它们的parent是合法的
     ///
     /// Note: this expects that the headers are in natural order (ascending block number)
+    /// 注意：这期望headers是正确的顺序（block number的升序）
     fn validate_header_range(&self, headers: &[SealedHeader]) -> Result<(), ConsensusError> {
         if headers.is_empty() {
             return Ok(())
@@ -45,7 +55,9 @@ pub trait Consensus: Debug + Send + Sync {
         self.validate_header(first)?;
         let mut parent = first;
         for child in headers.iter().skip(1) {
+            // 首先校验header自己
             self.validate_header(child)?;
+            // 再针对parent进行校验
             self.validate_header_against_parent(child, parent)?;
             parent = child;
         }
@@ -55,10 +67,13 @@ pub trait Consensus: Debug + Send + Sync {
 
     /// Validate if the header is correct and follows the consensus specification, including
     /// computed properties (like total difficulty).
+    /// 校验header是合法的并且跟随consensus specification，包括计算properties
     ///
     /// Some consensus engines may want to do additional checks here.
+    /// 有的consensus engines可能想要额外的检查
     ///
     /// Note: validating headers with TD does not include other Consensus validation.
+    /// 注意：用TD校验headers不包含其他的Consensus validation
     fn validate_header_with_total_difficulty(
         &self,
         header: &Header,
@@ -67,6 +82,7 @@ pub trait Consensus: Debug + Send + Sync {
 
     /// Validate a block disregarding world state, i.e. things that can be checked before sender
     /// recovery and execution.
+    /// 校验一个block，不管world state，可以在sender recovery和execution之前被校验
     ///
     /// See the Yellow Paper sections 4.3.2 "Holistic Validity", 4.3.4 "Block Header Validity", and
     /// 11.1 "Ommer Validation".

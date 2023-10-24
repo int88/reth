@@ -120,6 +120,7 @@ pub fn run() -> eyre::Result<()> {
 }
 
 /// Commands to be executed
+/// 被执行的命令
 #[derive(Debug, Subcommand)]
 pub enum Commands<Ext: RethCliExt = ()> {
     /// Start the node

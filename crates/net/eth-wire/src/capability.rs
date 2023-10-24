@@ -38,6 +38,7 @@ pub enum CapabilityMessage {
 }
 
 /// A message indicating a supported capability and capability version.
+/// 一个message表明一个支持的capability以及capability的版本
 #[add_arbitrary_tests(rlp)]
 #[derive(Clone, Debug, PartialEq, Eq, RlpEncodable, RlpDecodable, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

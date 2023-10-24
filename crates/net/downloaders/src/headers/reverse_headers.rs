@@ -1074,15 +1074,20 @@ impl SyncTargetBlock {
 
 /// The builder for [ReverseHeadersDownloader] with
 /// some default settings
+/// [ReverseHeaderDownloader]的builder，有着默认的配置
 #[derive(Debug)]
 pub struct ReverseHeadersDownloaderBuilder {
     /// The batch size per one request
+    /// 每个request的
     request_limit: u64,
     /// Batch size for headers
+    /// headers的Batch size
     stream_batch_size: usize,
     /// Batch size for headers
+    /// 最小并行的requests
     min_concurrent_requests: usize,
     /// Batch size for headers
+    /// 最大并行的headers的size
     max_concurrent_requests: usize,
     /// How many responses to buffer
     max_buffered_responses: usize,

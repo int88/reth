@@ -179,24 +179,34 @@ pub struct UnwindOutput {
 }
 
 /// A stage is a segmented part of the syncing process of the node.
+/// 一个stage是node的syncing process的segmented part
 ///
 /// Each stage takes care of a well-defined task, such as downloading headers or executing
 /// transactions, and persist their results to a database.
+/// 每个stage负责一个well-defined
+/// task，例如下载headers或者执行transactions，以及持久化他们的结果到db中
 ///
 /// Stages must have a unique [ID][StageId] and implement a way to "roll forwards"
 /// ([Stage::execute]) and a way to "roll back" ([Stage::unwind]).
+/// Stages必须有一个唯一的[ID][StageId]并且实现一种方式来“roll
+/// forwards”([Stage::execute])以及一种方式来“roll back”([Stage::unwind])
 ///
 /// Stages are executed as part of a pipeline where they are executed serially.
+/// Stages作为一个pipeline执行的一部分，他们在其中顺序执行
 ///
 /// Stages receive [`DatabaseProviderRW`].
+/// Stages接受[`DatabaseProviderRW`]
 #[async_trait]
 pub trait Stage<DB: Database>: Send + Sync {
     /// Get the ID of the stage.
+    /// 获取stage的ID
     ///
     /// Stage IDs must be unique.
+    /// Stage IDs必须是唯一的
     fn id(&self) -> StageId;
 
     /// Execute the stage.
+    /// 执行stage
     async fn execute(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,

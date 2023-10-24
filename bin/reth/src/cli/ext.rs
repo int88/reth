@@ -66,9 +66,11 @@ pub trait RethNodeCommandConfig: fmt::Debug {
 
     /// Configures the [PayloadBuilderService] for the node, spawns it and returns the
     /// [PayloadBuilderHandle].
+    /// 配置node的[PayloadBuilderService]，生成它并且返回[PayloadBuilderHandle]
     ///
     /// By default this spawns a [BasicPayloadJobGenerator] with the default configuration
     /// [BasicPayloadJobGeneratorConfig].
+    /// 默认情况下它生成[BasicPayloadJobGenerator]，用默认的配置[BasicPayloadJobGeneratorConfig]
     fn spawn_payload_builder_service<Conf, Provider, Pool, Tasks>(
         &mut self,
         conf: &Conf,

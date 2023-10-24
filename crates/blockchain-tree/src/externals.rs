@@ -6,23 +6,32 @@ use reth_provider::ProviderFactory;
 use std::sync::Arc;
 
 /// A container for external components.
+/// 用于外部的components的容器
 ///
 /// This is a simple container for external components used throughout the blockchain tree
 /// implementation:
+/// 这是一个简单的container用于访问外部组件，在blockchain tree的实现中：
 ///
 /// - A handle to the database
+/// - 对于db的一个handle
 /// - A handle to the consensus engine
+/// - 对于consensus engine的一个handle
 /// - The executor factory to execute blocks with
+/// - 用于执行blocks的executor factory
 /// - The chain spec
+/// - chain spec
 #[derive(Debug)]
 pub struct TreeExternals<DB, C, EF> {
     /// The database, used to commit the canonical chain, or unwind it.
+    /// db，用于提交canonical chain或者unwind
     pub(crate) db: DB,
     /// The consensus engine.
     pub(crate) consensus: C,
     /// The executor factory to execute blocks with.
+    /// 用于执行blocks的executor factory
     pub(crate) executor_factory: EF,
     /// The chain spec.
+    /// chain spec
     pub(crate) chain_spec: Arc<ChainSpec>,
 }
 
