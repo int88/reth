@@ -673,6 +673,7 @@ impl From<AllGenesisFormats> for ChainSpec {
 }
 
 /// A helper to build custom chain specs
+/// 一个helper用于构建custom chain specs
 #[derive(Debug, Default, Clone)]
 pub struct ChainSpecBuilder {
     chain: Option<Chain>,
@@ -691,12 +692,14 @@ impl ChainSpecBuilder {
     }
 
     /// Set the chain ID
+    /// 设置chain ID
     pub fn chain(mut self, chain: Chain) -> Self {
         self.chain = Some(chain);
         self
     }
 
     /// Set the genesis block.
+    /// 设置genesis block
     pub fn genesis(mut self, genesis: Genesis) -> Self {
         self.genesis = Some(genesis);
         self
@@ -781,6 +784,7 @@ impl ChainSpecBuilder {
     }
 
     /// Enable Paris at genesis.
+    /// 在genesis使能Paris
     pub fn paris_activated(mut self) -> Self {
         self = self.london_activated();
         self.hardforks.insert(
@@ -805,11 +809,13 @@ impl ChainSpecBuilder {
     }
 
     /// Build the resulting [`ChainSpec`].
+    /// 构建一个[`ChainSPec`]
     ///
     /// # Panics
     ///
     /// This function panics if the chain ID and genesis is not set ([`Self::chain`] and
     /// [`Self::genesis`])
+    /// 这个函数panics，如果chain ID和genesis没有设置[`Self::chain`]和[`Self::genesis`]
     pub fn build(self) -> ChainSpec {
         ChainSpec {
             chain: self.chain.expect("The chain is required"),

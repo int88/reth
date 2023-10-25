@@ -4,6 +4,7 @@ use crate::{ChainSpec, ForkCondition, ForkFilter, ForkId};
 use std::{fmt::Display, str::FromStr};
 
 /// The name of an Ethereum hardfork.
+/// Ethereum hardfork的名字
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum Hardfork {

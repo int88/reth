@@ -1,4 +1,5 @@
 //! `BeaconConsensusEngine` external API
+//`BeaconConsensusEngine`的外部API
 
 use crate::{
     engine::message::OnForkChoiceUpdated, BeaconConsensusEngineEvent, BeaconEngineMessage,
@@ -32,6 +33,7 @@ impl BeaconConsensusEngineHandle {
     }
 
     /// Sends a new payload message to the beacon consensus engine and waits for a response.
+    /// 发送一个新的payload message到beacon consensus engine并且等待一个response
     ///
     /// See also <https://github.com/ethereum/execution-apis/blob/3d627c95a4d3510a8187dd02e0250ecb4331d27e/src/engine/shanghai.md#engine_newpayloadv2>
     pub async fn new_payload(
@@ -45,6 +47,7 @@ impl BeaconConsensusEngineHandle {
     }
 
     /// Sends a forkchoice update message to the beacon consensus engine and waits for a response.
+    /// 发送一个forkchoice update message到beacon consensus engine并且等待一个response
     ///
     /// See also <https://github.com/ethereum/execution-apis/blob/3d627c95a4d3510a8187dd02e0250ecb4331d27e/src/engine/shanghai.md#engine_forkchoiceupdatedv2>
     pub async fn fork_choice_updated(

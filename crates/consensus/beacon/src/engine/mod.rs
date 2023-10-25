@@ -369,6 +369,7 @@ where
 
         let maybe_pipeline_target = match target {
             // Provided target always takes precedence.
+            // 提供的target总是有优先级
             target @ Some(_) => target,
             None => this.check_pipeline_consistency()?,
         };

@@ -48,20 +48,27 @@ where
     /// The pipeline is used for large ranges.
     pipeline_state: PipelineState<DB>,
     /// Pending target block for the pipeline to sync
+    /// 等待pipeline去同步的target block
     pending_pipeline_target: Option<H256>,
     /// In-flight full block requests in progress.
+    /// 正在处理的full block requests
     inflight_full_block_requests: Vec<FetchFullBlockFuture<Client>>,
     /// In-flight full block _range_ requests in progress.
     inflight_block_range_requests: Vec<FetchFullBlockRangeFuture<Client>>,
     /// Buffered blocks from downloads - this is a min-heap of blocks, using the block number for
     /// ordering. This means the blocks will be popped from the heap with ascending block numbers.
+    /// 下载来的缓存的blocks - 这是一个blocks的min-heap，使用block
+    /// number排序，这意味着blocks会按照升序被popped
     range_buffered_blocks: BinaryHeap<Reverse<OrderedSealedBlock>>,
     /// If enabled, the pipeline will be triggered continuously, as soon as it becomes idle
+    /// 如果为enabled，pipeline会持续出发，一旦它变为idle
     run_pipeline_continuously: bool,
     /// Max block after which the consensus engine would terminate the sync. Used for debugging
     /// purposes.
+    /// Max block，之后consensus engine就会终止sync，用于debugging的目的
     max_block: Option<BlockNumber>,
     /// Engine sync metrics.
+    /// // Engine Sync相关的metrics
     metrics: EngineSyncMetrics,
 }
 
@@ -553,8 +560,10 @@ mod tests {
         let client = TestFullBlockClient::default();
         let mut header = SealedHeader::default();
         let body = BlockBody::default();
+        // 构建client，插入header和block
         client.insert(header.clone(), body.clone());
         for _ in 0..10 {
+            // 插入10个header和block
             header.parent_hash = header.hash_slow();
             header.number += 1;
             header = header.header.seal_slow();
@@ -562,6 +571,7 @@ mod tests {
         }
 
         // force the pipeline to be "done" after 5 blocks
+        // 强制pipeline在5个blocks之后完成
         let pipeline = TestPipelineBuilder::new()
             .with_pipeline_exec_outputs(VecDeque::from([Ok(ExecOutput {
                 checkpoint: StageCheckpoint::new(5),
@@ -569,11 +579,13 @@ mod tests {
             })]))
             .build(chain_spec.clone());
 
+        // 构建sync controller
         let mut sync_controller = TestSyncControllerBuilder::new()
             .with_client(client.clone())
             .build(pipeline, chain_spec);
 
         let tip = client.highest_block().expect("there should be blocks here");
+        // 设置pipeline sync target
         sync_controller.set_pipeline_sync_target(tip.hash);
 
         let sync_future = poll_fn(|cx| sync_controller.poll(cx));
