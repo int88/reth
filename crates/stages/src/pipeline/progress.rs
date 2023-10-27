@@ -20,6 +20,7 @@ impl PipelineProgress {
     }
 
     /// Get next control flow step
+    /// 获取下一个control flow step
     pub(crate) fn next_ctrl(&self) -> ControlFlow {
         match self.block_number {
             Some(block_number) => ControlFlow::Continue { block_number },

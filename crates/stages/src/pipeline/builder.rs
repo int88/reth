@@ -12,10 +12,13 @@ where
     DB: Database,
 {
     /// All configured stages in the order they will be executed.
+    /// 所有配置的stages，按照它们被执行的顺序
     stages: Vec<BoxedStage<DB>>,
     /// The maximum block number to sync to.
+    /// 同步的最大的block number
     max_block: Option<BlockNumber>,
     /// A receiver for the current chain tip to sync to.
+    /// 一个receiver，用于当前要同步到的chain tip
     tip_tx: Option<watch::Sender<H256>>,
     metrics_tx: Option<MetricEventsSender>,
 }
@@ -25,6 +28,7 @@ where
     DB: Database,
 {
     /// Add a stage to the pipeline.
+    /// 添加一个stage到pipeline
     pub fn add_stage<S>(mut self, stage: S) -> Self
     where
         S: Stage<DB> + 'static,
@@ -34,8 +38,10 @@ where
     }
 
     /// Add a set of stages to the pipeline.
+    /// 添加一系列的stages到pipeline
     ///
     /// Stages can be grouped into a set by using a [`StageSet`].
+    /// Stages可以归类到一个集合，通过使用[`StageSet`]
     ///
     /// To customize the stages in the set (reorder, disable, insert a stage) call
     /// [`builder`][StageSet::builder] on the set which will convert it to a
@@ -48,14 +54,17 @@ where
     }
 
     /// Set the target block.
+    /// 设置target block
     ///
     /// Once this block is reached, the pipeline will stop.
+    /// 一旦到达这个block，pipeline就会停止
     pub fn with_max_block(mut self, block: BlockNumber) -> Self {
         self.max_block = Some(block);
         self
     }
 
     /// Set the tip sender.
+    /// 设置tip sender
     pub fn with_tip_sender(mut self, tip_tx: watch::Sender<H256>) -> Self {
         self.tip_tx = Some(tip_tx);
         self

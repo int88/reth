@@ -30,8 +30,10 @@ use reth_interfaces::db::LogLevel;
 #[derive(Debug)]
 pub struct ProviderFactory<DB> {
     /// Database
+    /// DB
     db: DB,
     /// Chain spec
+    /// Chain的spec
     chain_spec: Arc<ChainSpec>,
 }
 
@@ -39,6 +41,8 @@ impl<DB: Database> ProviderFactory<DB> {
     /// Returns a provider with a created `DbTx` inside, which allows fetching data from the
     /// database using different types of providers. Example: [`HeaderProvider`]
     /// [`BlockHashReader`]. This may fail if the inner read database transaction fails to open.
+    /// 返回一个provider，有着创建的`DbTx`，这允许从db中获取数据，用不同的providers类型，例如：
+    /// [`HeaderProvider`]和[`BlockHashReader`]，这可能会失败，如果内部的read db的tx打开失败
     pub fn provider(&self) -> RethResult<DatabaseProviderRO<'_, DB>> {
         Ok(DatabaseProvider::new(self.db.tx()?, self.chain_spec.clone()))
     }
@@ -54,6 +58,7 @@ impl<DB: Database> ProviderFactory<DB> {
 
 impl<DB> ProviderFactory<DB> {
     /// create new database provider
+    /// 创建新的database provider
     pub fn new(db: DB, chain_spec: Arc<ChainSpec>) -> Self {
         Self { db, chain_spec }
     }

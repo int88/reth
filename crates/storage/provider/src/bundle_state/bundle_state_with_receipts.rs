@@ -22,17 +22,22 @@ pub use reth_revm_primitives::db::states::OriginalValuesKnown;
 use crate::{StateChanges, StateReverts};
 
 /// Bundle state of post execution changes and reverts
+/// 在execution changes和reverts之后的Bundle state
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct BundleStateWithReceipts {
     /// Bundle state with reverts.
+    /// reverts之后的Bundle state
     bundle: BundleState,
     /// The collection of receipts.
+    /// receipts的一系列结果
     /// Outer vector stores receipts for each block sequentially.
     /// The inner vector stores receipts ordered by transaction number.
     ///
     /// If receipt is None it means it is pruned.  
+    /// 如果receipt为None，则意味着被pruned
     receipts: Vec<Vec<Option<Receipt>>>,
     /// First block of bundle state.
+    /// bundle state的第一个block
     first_block: BlockNumber,
 }
 

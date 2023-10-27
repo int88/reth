@@ -28,13 +28,16 @@ use progress::*;
 pub use set::*;
 
 /// A container for a queued stage.
+/// 一个容器，用于一个queued stage
 pub(crate) type BoxedStage<DB> = Box<dyn Stage<DB>>;
 
 /// The future that returns the owned pipeline and the result of the pipeline run. See
 /// [Pipeline::run_as_fut].
+/// 返回owned pipeline的future以及pipeline运行的结果
 pub type PipelineFut<DB> = Pin<Box<dyn Future<Output = PipelineWithResult<DB>> + Send>>;
 
 /// The pipeline type itself with the result of [Pipeline::run_as_fut]
+/// pipeline类型自己以及[Pipeline::run_as_fut]的结果
 pub type PipelineWithResult<DB> = (Pipeline<DB>, Result<ControlFlow, PipelineError>);
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
@@ -172,6 +175,8 @@ where
 
     /// Consume the pipeline and run it until it reaches the provided tip, if set. Return the
     /// pipeline and its result as a future.
+    /// 消费pipeline并且运行它直到到达提供的tip，如果设置的话，
+    /// 返回pipeline以及它的结果作为一个future
     #[track_caller]
     pub fn run_as_fut(mut self, tip: Option<H256>) -> PipelineFut<DB> {
         // TODO: fix this in a follow up PR. ideally, consensus engine would be responsible for
@@ -179,7 +184,9 @@ where
         let _ = self.register_metrics(); // ignore error
         Box::pin(async move {
             // NOTE: the tip should only be None if we are in continuous sync mode.
+            // 注意：只有我们处于continuous sync mode的时候tip才会设置为None
             if let Some(tip) = tip {
+                // 设置tip
                 self.set_tip(tip);
             }
             let result = self.run_loop().await;
@@ -190,6 +197,7 @@ where
 
     /// Run the pipeline in an infinite loop. Will terminate early if the user has specified
     /// a `max_block` in the pipeline.
+    /// 在一个无线循环运行pipeline，会尽早结束，如果用户指定了pipeline的`max_block`
     pub async fn run(&mut self) -> Result<(), PipelineError> {
         let _ = self.register_metrics(); // ignore error
 
@@ -198,6 +206,7 @@ where
 
             // Terminate the loop early if it's reached the maximum user
             // configured block.
+            // 尽早结束Loop，如果它到达了用户指定的block
             if next_action.should_continue() &&
                 self.progress
                     .minimum_block_number
@@ -218,23 +227,31 @@ where
 
     /// Performs one pass of the pipeline across all stages. After successful
     /// execution of each stage, it proceeds to commit it to the database.
+    /// 执行一轮pipeline，跨越所有的stages，在成功执行每个stage之后，它继续提交到db
     ///
     /// If any stage is unsuccessful at execution, we proceed to
     /// unwind. This will undo the progress across the entire pipeline
     /// up to the block that caused the error.
+    /// 如何任何的stage在执行的时候没有成功，我们继续unwind，这会undo整个pipeline，
+    /// 直到产生问题的block
     ///
     /// Returns the control flow after it ran the pipeline.
+    /// 返回control flow，在它运行pipeline之后
     /// This will be [ControlFlow::Continue] or [ControlFlow::NoProgress] of the _last_ stage in the
     /// pipeline (for example the `Finish` stage). Or [ControlFlow::Unwind] of the stage that caused
     /// the unwind.
+    /// 这会是[ControlFlow::Continue]或者[ControlFlow::NoProgress]对于pipeline中的最后一个stage，
+    /// 或者[ControlFlow::Unwind]对于导致unwind的stage
     pub async fn run_loop(&mut self) -> Result<ControlFlow, PipelineError> {
         let mut previous_stage = None;
         for stage_index in 0..self.stages.len() {
+            // 获取stage
             let stage = &self.stages[stage_index];
             let stage_id = stage.id();
 
             trace!(target: "sync::pipeline", stage = %stage_id, "Executing stage");
             let next = self
+                // 执行stage到完成
                 .execute_stage_to_completion(previous_stage, stage_index)
                 .instrument(info_span!("execute", stage = %stage_id))
                 .await?;

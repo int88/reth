@@ -51,13 +51,17 @@ impl HeadersClient for NoopFullBlockClient {
 
 /// A headers+bodies client that stores the headers and bodies in memory, with an artificial soft
 /// bodies response limit that is set to 20 by default.
+/// 一个headers+bodies的client，在内存中存储headers和bodies，有一个人工的soft bodies response
+/// limit，默认为20
 ///
 /// This full block client can be [Clone]d and shared between multiple tasks.
+/// 这个full blockc client可以被Cloned并且在多个tasks之间共享
 #[derive(Clone, Debug)]
 pub struct TestFullBlockClient {
     headers: Arc<Mutex<HashMap<H256, Header>>>,
     bodies: Arc<Mutex<HashMap<H256, BlockBody>>>,
     // soft response limit, max number of bodies to respond with
+    // soft response limit，最大的响应的bodies的数目
     soft_limit: usize,
 }
 
@@ -73,6 +77,7 @@ impl Default for TestFullBlockClient {
 
 impl TestFullBlockClient {
     /// Insert a header and body into the client maps.
+    /// 插入一个header和body到client map
     pub fn insert(&self, header: SealedHeader, body: BlockBody) {
         let hash = header.hash();
         let header = header.unseal();

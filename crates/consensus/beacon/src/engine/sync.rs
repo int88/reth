@@ -78,6 +78,7 @@ where
     Client: HeadersClient + BodiesClient + Clone + Unpin + 'static,
 {
     /// Create a new instance
+    /// 创建一个新实例
     pub(crate) fn new(
         pipeline: Pipeline<DB>,
         client: Client,
@@ -116,6 +117,7 @@ where
     }
 
     /// Cancels all download requests that are in progress and buffered blocks.
+    /// 清理任何download requests，当前正在进行以及缓存的blocks
     pub(crate) fn clear_block_download_requests(&mut self) {
         self.inflight_full_block_requests.clear();
         self.inflight_block_range_requests.clear();
@@ -200,6 +202,7 @@ where
     }
 
     /// Sets a new target to sync the pipeline to.
+    /// 设置一个新的target，pipeline需要同步到
     pub(crate) fn set_pipeline_sync_target(&mut self, target: H256) {
         self.pending_pipeline_target = Some(target);
     }
@@ -222,10 +225,13 @@ where
     }
 
     /// Advances the pipeline state.
+    /// 推进pipeline的状态
     ///
     /// This checks for the result in the channel, or returns pending if the pipeline is idle.
+    /// 这检查channel的结果，或者返回pending，如果pipeline处于idle
     fn poll_pipeline(&mut self, cx: &mut Context<'_>) -> Poll<EngineSyncEvent> {
         let res = match self.pipeline_state {
+            // 返回poll的结果
             PipelineState::Idle(_) => return Poll::Pending,
             PipelineState::Running(ref mut fut) => {
                 ready!(fut.poll_unpin(cx))
@@ -249,6 +255,7 @@ where
 
     /// This will spawn the pipeline if it is idle and a target is set or if the pipeline is set to
     /// run continuously.
+    /// 这会试着生成pipeline，如果它是idle并且一个target被设置，或者pipeline被设置为持续运行
     fn try_spawn_pipeline(&mut self) -> Option<EngineSyncEvent> {
         match &mut self.pipeline_state {
             PipelineState::Idle(pipeline) => {
@@ -256,6 +263,7 @@ where
 
                 if target.is_none() && !self.run_pipeline_continuously {
                     // nothing to sync
+                    // 没有什么需要同步
                     return None
                 }
 
@@ -266,13 +274,17 @@ where
                     "pipeline task",
                     Box::pin(async move {
                         let result = pipeline.run_as_fut(target).await;
+                        // 发送result
                         let _ = tx.send(result);
                     }),
                 );
+                // 设置pipeline state为running
                 self.pipeline_state = PipelineState::Running(rx);
 
                 // we also clear any pending full block requests because we expect them to be
                 // outdated (included in the range the pipeline is syncing anyway)
+                // 我们同时清理任何的pending full block
+                // requests，因为我们期望他们outdated（包含pipeline以及syncing away的pipeline）
                 self.clear_block_download_requests();
 
                 Some(EngineSyncEvent::PipelineStarted(target))
@@ -282,21 +294,26 @@ where
     }
 
     /// Advances the sync process.
+    /// 推进sync的进程
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<EngineSyncEvent> {
         // try to spawn a pipeline if a target is set
+        // 试着生成一个pipeline，如果设置了一个target
         if let Some(event) = self.try_spawn_pipeline() {
             return Poll::Ready(event)
         }
 
         // make sure we poll the pipeline if it's active, and return any ready pipeline events
+        // 确保我们poll the pipeline，如果它是active的话，并且返回任何ready的pipeline events
         if !self.is_pipeline_idle() {
             // advance the pipeline
+            // 推动pipeline
             if let Poll::Ready(event) = self.poll_pipeline(cx) {
                 return Poll::Ready(event)
             }
         }
 
         // advance all full block requests
+        // 推动所有的full block requests
         for idx in (0..self.inflight_full_block_requests.len()).rev() {
             let mut request = self.inflight_full_block_requests.swap_remove(idx);
             if let Poll::Ready(block) = request.poll_unpin(cx) {
@@ -309,6 +326,7 @@ where
         }
 
         // advance all full block range requests
+        // 推动所有的full block range requests
         for idx in (0..self.inflight_block_range_requests.len()).rev() {
             let mut request = self.inflight_block_range_requests.swap_remove(idx);
             if let Poll::Ready(blocks) = request.poll_unpin(cx) {
@@ -321,9 +339,11 @@ where
             }
         }
 
+        // 更新block download metrics
         self.update_block_download_metrics();
 
         // drain an element of the block buffer if there are any
+        // 从block buffer排干一个element，如果有的话
         if let Some(block) = self.range_buffered_blocks.pop() {
             // peek ahead and pop duplicates
             while let Some(peek) = self.range_buffered_blocks.peek_mut() {
@@ -393,18 +413,25 @@ pub(crate) enum EngineSyncEvent {
 }
 
 /// The possible pipeline states within the sync controller.
+/// 在sync controller内pipeline states可能的状态
 ///
 /// [PipelineState::Idle] means that the pipeline is currently idle.
+/// [PipelineState::Idle]意味着pipeline当前处于idle状态
 /// [PipelineState::Running] means that the pipeline is currently running.
+/// [PipelineState::Running]意味着pipeline当前处于运行状态
 ///
 /// NOTE: The differentiation between these two states is important, because when the pipeline is
 /// running, it acquires the write lock over the database. This means that we cannot forward to the
 /// blockchain tree any messages that would result in database writes, since it would result in a
 /// deadlock.
+/// 注意：这两个states之间的不同非常重要，因为pipeline在运行时，它需要db的write
+/// lock，这意味着我们不能转发任何message给blockchain tree，这会导致db写，所以这会导致deadlock
 enum PipelineState<DB: Database> {
     /// Pipeline is idle.
+    /// Pipeline处于idle
     Idle(Option<Pipeline<DB>>),
     /// Pipeline is running and waiting for a response
+    /// Pipeline正在running并且等待一个response
     Running(oneshot::Receiver<PipelineWithResult<DB>>),
 }
 
@@ -436,13 +463,17 @@ mod tests {
     use tokio::sync::watch;
 
     struct TestPipelineBuilder {
+        // pipeline exec的outputs
         pipeline_exec_outputs: VecDeque<Result<ExecOutput, StageError>>,
+        // executor的结果
         executor_results: Vec<BundleStateWithReceipts>,
+        // 最大的block
         max_block: Option<BlockNumber>,
     }
 
     impl TestPipelineBuilder {
         /// Create a new [TestPipelineBuilder].
+        /// 创建一个新的[TestPipelineBuilder]
         fn new() -> Self {
             Self {
                 pipeline_exec_outputs: VecDeque::new(),
@@ -475,23 +506,29 @@ mod tests {
         }
 
         /// Builds the pipeline.
+        /// 构建pipeline
         fn build(self, chain_spec: Arc<ChainSpec>) -> Pipeline<Arc<Env<WriteMap>>> {
             reth_tracing::init_test_tracing();
             let db = create_test_rw_db();
 
+            // 构建executor factory
             let executor_factory = TestExecutorFactory::new(chain_spec.clone());
             executor_factory.extend(self.executor_results);
 
             // Setup pipeline
+            // 设置pipeline
             let (tip_tx, _tip_rx) = watch::channel(H256::default());
             let mut pipeline = Pipeline::builder()
+                // 添加stages
                 .add_stages(TestStages::new(self.pipeline_exec_outputs, Default::default()))
                 .with_tip_sender(tip_tx);
 
             if let Some(max_block) = self.max_block {
+                // 设置max block
                 pipeline = pipeline.with_max_block(max_block);
             }
 
+            // 构建pipeline
             pipeline.build(db, chain_spec)
         }
     }
@@ -515,12 +552,14 @@ mod tests {
         }
 
         /// Sets the client to use for network operations.
+        /// 设置client用于网络操作
         fn with_client(mut self, client: Client) -> Self {
             self.client = Some(client);
             self
         }
 
         /// Builds the sync controller.
+        /// 构建sync controller
         fn build<DB>(
             self,
             pipeline: Pipeline<DB>,
@@ -530,6 +569,7 @@ mod tests {
             DB: Database + 'static,
             Client: HeadersClient + BodiesClient + Clone + Unpin + 'static,
         {
+            // 配置client
             let client = self
                 .client
                 .map(EitherDownloader::Left)
@@ -540,6 +580,7 @@ mod tests {
                 client,
                 Box::<TokioTaskExecutor>::default(),
                 // run_pipeline_continuously: false here until we want to test this
+                // run_pipeline_continuously: 这里为false，直到我们想要测试它
                 false,
                 self.max_block,
                 chain_spec,
@@ -593,16 +634,20 @@ mod tests {
 
         // can assert that the first event here is PipelineStarted because we set the sync target,
         // and we should get Ready because the pipeline should be spawned immediately
+        // 可以assert，第一个event是PipelineStarted，因为我们设置了sync
+        // target并且我们应该获得Ready，因为pipeline应该立刻生成
         assert_matches!(next_event, Poll::Ready(EngineSyncEvent::PipelineStarted(Some(target))) => {
             assert_eq!(target, tip.hash);
         });
 
         // the next event should be the pipeline finishing in a good state
+        // 下一个event应该是pipeline结束在一个good state
         let sync_future = poll_fn(|cx| sync_controller.poll(cx));
         let next_ready = sync_future.await;
         assert_matches!(next_ready, EngineSyncEvent::PipelineFinished { result, reached_max_block } => {
             assert_matches!(result, Ok(control_flow) => assert_eq!(control_flow, ControlFlow::Continue { block_number: 5 }));
             // no max block configured
+            // 没有配置mac block
             assert!(!reached_max_block);
         });
     }
@@ -634,6 +679,7 @@ mod tests {
         }
 
         // set up a pipeline
+        // 设置一个pipeline
         let pipeline = TestPipelineBuilder::new().build(chain_spec.clone());
 
         let mut sync_controller = TestSyncControllerBuilder::new()
@@ -643,17 +689,21 @@ mod tests {
         let tip = client.highest_block().expect("there should be blocks here");
 
         // call the download range method
+        // 调用download range方法
         sync_controller.download_block_range(tip.hash, tip.number);
 
         // ensure we have one in flight range request
+        // 确保我们有一个in flight range request
         assert_eq!(sync_controller.inflight_block_range_requests.len(), 1);
 
         // ensure the range request is made correctly
+        // 确保range request正确设置
         let first_req = sync_controller.inflight_block_range_requests.first().unwrap();
         assert_eq!(first_req.start_hash(), tip.hash);
         assert_eq!(first_req.count(), tip.number);
 
         // ensure they are in ascending order
+        // 确保它们是升序的
         for num in 1..=10 {
             let sync_future = poll_fn(|cx| sync_controller.poll(cx));
             let next_ready = sync_future.await;

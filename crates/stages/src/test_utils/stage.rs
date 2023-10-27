@@ -17,6 +17,7 @@ impl TestStage {
     }
 
     pub fn with_exec(mut self, exec_outputs: VecDeque<Result<ExecOutput, StageError>>) -> Self {
+        // 设置exec outputs
         self.exec_outputs = exec_outputs;
         self
     }
@@ -25,6 +26,7 @@ impl TestStage {
         mut self,
         unwind_outputs: VecDeque<Result<UnwindOutput, StageError>>,
     ) -> Self {
+        // 设置unwind outputs
         self.unwind_outputs = unwind_outputs;
         self
     }

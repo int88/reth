@@ -88,6 +88,7 @@ impl<'this, DB: Database> DatabaseProviderRW<'this, DB> {
 }
 
 /// A provider struct that fetchs data from the database.
+/// 一个provider结构，从db中获取data
 /// Wrapper around [`DbTx`] and [`DbTxMut`]. Example: [`HeaderProvider`] [`BlockHashReader`]
 #[derive(Debug)]
 pub struct DatabaseProvider<'this, TX>
@@ -95,6 +96,7 @@ where
     Self: 'this,
 {
     /// Database transaction.
+    /// Db的tx
     tx: TX,
     /// Chain spec
     chain_spec: Arc<ChainSpec>,

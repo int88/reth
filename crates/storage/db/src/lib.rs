@@ -89,6 +89,7 @@ use mdbx::{Env, EnvKind, NoWriteMap, WriteMap};
 
 #[cfg(feature = "mdbx")]
 /// Alias type for the database environment in use. Read/Write mode.
+/// Alias类型用于db env使用，读写模式
 pub type DatabaseEnv = Env<WriteMap>;
 
 #[cfg(feature = "mdbx")]
@@ -171,6 +172,7 @@ pub mod test_utils {
     pub const ERROR_TEMPDIR: &str = "Not able to create a temporary directory.";
 
     /// Create read/write database for testing
+    /// 创建读/写的db用于测试
     pub fn create_test_rw_db() -> Arc<DatabaseEnv> {
         Arc::new(
             init_db(tempfile::TempDir::new().expect(ERROR_TEMPDIR).into_path(), None)

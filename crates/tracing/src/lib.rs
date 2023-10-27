@@ -124,8 +124,10 @@ where
 }
 
 /// Initializes a tracing subscriber for tests.
+/// 初始化一个tracing subscriber用于测试
 ///
 /// The filter is configurable via `RUST_LOG`.
+/// filter通过`RUST_LOG`进行配置
 ///
 /// # Note
 ///

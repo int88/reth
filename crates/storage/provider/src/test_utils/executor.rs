@@ -55,6 +55,7 @@ impl PrunableBlockExecutor for TestExecutor {
 }
 
 /// Executor factory with pre-set execution results.
+/// Executor factory，有着提前设置的execution结果
 #[derive(Clone, Debug)]
 pub struct TestExecutorFactory {
     exec_results: Arc<Mutex<Vec<BundleStateWithReceipts>>>,
@@ -63,11 +64,13 @@ pub struct TestExecutorFactory {
 
 impl TestExecutorFactory {
     /// Create new instance of test factory.
+    /// 创建新的instance，有着test factory
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { exec_results: Arc::new(Mutex::new(Vec::new())), chain_spec }
     }
 
     /// Extend the mocked execution results
+    /// 扩展mocked执行结果
     pub fn extend(&self, results: Vec<BundleStateWithReceipts>) {
         self.exec_results.lock().extend(results);
     }
