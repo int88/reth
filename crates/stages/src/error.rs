@@ -56,6 +56,7 @@ pub enum StageError {
     #[error("Invalid stage checkpoint: {0}")]
     StageCheckpoint(u64),
     /// Download channel closed
+    /// 下载的channel被关闭了
     #[error("Download channel closed")]
     ChannelClosed,
     /// The stage encountered a database integrity error.

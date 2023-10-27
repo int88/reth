@@ -408,6 +408,7 @@ table!(
 
 table!(
     /// Stores the highest synced block number and stage-specific checkpoint of each stage.
+    /// 存储最高的synced block number以及stage特定的checkpoint，对于每个stage
     ( SyncStage ) StageId | StageCheckpoint
 );
 

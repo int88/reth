@@ -41,6 +41,7 @@ pub trait Database: for<'a> DatabaseGAT<'a> {
 
     /// Takes a function and passes a write-read transaction into it, making sure it's committed in
     /// the end of the execution.
+    /// 拿一个函数并且传递一个读写的tx，确保在execution的最后提交
     fn update<T, F>(&self, f: F) -> Result<T, DatabaseError>
     where
         F: FnOnce(&<Self as DatabaseGAT<'_>>::TXMut) -> T,

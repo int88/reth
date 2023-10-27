@@ -121,6 +121,7 @@ impl std::ops::DerefMut for BlockWithSenders {
 /// Sealed Ethereum full block.
 ///
 /// Withdrawals can be optionally included at the end of the RLP encoded message.
+/// Withdrawals可以可选地包含在RLP encoded message的尾部
 #[derive_arbitrary(rlp, 10)]
 #[derive(
     Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, RlpEncodable, RlpDecodable,
@@ -128,12 +129,16 @@ impl std::ops::DerefMut for BlockWithSenders {
 #[rlp(trailing)]
 pub struct SealedBlock {
     /// Locked block header.
+    /// 锁住的block header
     pub header: SealedHeader,
     /// Transactions with signatures.
+    /// 有着signatures的txs
     pub body: Vec<TransactionSigned>,
     /// Ommer/uncle headers
+    /// Ommer/uncle的headers
     pub ommers: Vec<Header>,
     /// Block withdrawals.
+    /// Blockd的withdrawals
     pub withdrawals: Option<Vec<Withdrawal>>,
 }
 

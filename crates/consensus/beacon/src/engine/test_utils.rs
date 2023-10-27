@@ -54,6 +54,7 @@ type TestBeaconConsensusEngine<Client> = BeaconConsensusEngine<
 pub struct TestEnv<DB> {
     pub db: DB,
     // Keep the tip receiver around, so it's not dropped.
+    // 保持tip receiver，这样它就不会被dropped
     #[allow(dead_code)]
     tip_rx: watch::Receiver<H256>,
     engine_handle: BeaconConsensusEngineHandle,
@@ -127,6 +128,7 @@ enum TestConsensusConfig {
 }
 
 /// Represents either test pipeline outputs, or real pipeline configuration.
+/// 代表test pipeline的outputs，或者真的pipeline配置
 #[derive(Debug)]
 enum TestPipelineConfig {
     /// Test pipeline outputs.
@@ -142,6 +144,7 @@ impl Default for TestPipelineConfig {
 }
 
 /// Represents either test executor results, or real executor configuration.
+/// 代表test executor的结果，或者真的executor配置
 #[derive(Debug)]
 enum TestExecutorConfig {
     /// Test executor results.
@@ -274,6 +277,7 @@ where
 
 /// The basic configuration for a `TestConsensusEngine`, without generics for the client or
 /// consensus engine.
+/// `TestConsensusEngine`的基础配置，没有generics对于client或者consensus engine
 #[derive(Debug)]
 pub struct TestConsensusEngineBuilder {
     chain_spec: Arc<ChainSpec>,
@@ -286,6 +290,7 @@ pub struct TestConsensusEngineBuilder {
 
 impl TestConsensusEngineBuilder {
     /// Create a new `TestConsensusEngineBuilder` with the given `ChainSpec`.
+    /// 创建一个新的`TestConensusEngineBuilder`用给定的`ChainSpec`
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self {
             chain_spec,
@@ -298,6 +303,7 @@ impl TestConsensusEngineBuilder {
     }
 
     /// Set the pipeline execution outputs to use for the test consensus engine.
+    /// 设置pipeline执行的outputs，用于测试consensus engine
     pub fn with_pipeline_exec_outputs(
         mut self,
         pipeline_exec_outputs: VecDeque<Result<ExecOutput, StageError>>,
@@ -313,6 +319,7 @@ impl TestConsensusEngineBuilder {
     }
 
     /// Sets the max block for the pipeline to run.
+    /// 设置max block，为了pipeline运行
     pub fn with_max_block(mut self, max_block: BlockNumber) -> Self {
         self.max_block = Some(max_block);
         self
@@ -338,6 +345,7 @@ impl TestConsensusEngineBuilder {
 
     /// Disables blockchain tree driven sync. This is the same as setting the pipeline run
     /// threshold to 0.
+    /// 禁止blockchain tree驱动的sync，这和设置pipeline运行的threshold为0
     pub fn disable_blockchain_tree_sync(mut self) -> Self {
         self.pipeline_run_threshold = Some(0);
         self
@@ -353,6 +361,7 @@ impl TestConsensusEngineBuilder {
     }
 
     /// Builds the test consensus engine into a `TestConsensusEngine` and `TestEnv`.
+    /// 构建test consensus engine到一个`TestConsensusEngine`以及`TestEnv`
     pub fn build(
         self,
     ) -> (TestBeaconConsensusEngine<NoopFullBlockClient>, TestEnv<Arc<DatabaseEnv>>) {
@@ -364,8 +373,10 @@ impl TestConsensusEngineBuilder {
 
 /// A builder for `TestConsensusEngine`, allows configuration of mocked pipeline outputs and
 /// mocked executor results.
+/// 对于`TestConsensusEngine`的builder，允许配置mocked pipeline outputs以及mocked executor results
 ///
 /// This optionally includes a client for network operations.
+/// 这可选地包含一个client用于网络操作
 #[derive(Debug)]
 pub struct NetworkedTestConsensusEngineBuilder<Client> {
     base_config: TestConsensusEngineBuilder,
@@ -435,6 +446,7 @@ where
     }
 
     /// Builds the test consensus engine into a `TestConsensusEngine` and `TestEnv`.
+    /// 构建test consensus engine到一个`TestConsensusEngine`以及`TestEnv`
     pub fn build(self) -> (TestBeaconConsensusEngine<Client>, TestEnv<Arc<DatabaseEnv>>) {
         reth_tracing::init_test_tracing();
         let db = create_test_rw_db();
@@ -554,7 +566,9 @@ pub fn spawn_consensus_engine<Client: HeadersClient + BodiesClient + 'static>(
 ) -> oneshot::Receiver<Result<(), BeaconConsensusEngineError>> {
     let (tx, rx) = oneshot::channel();
     tokio::spawn(async move {
+        // 执行engine
         let result = engine.await;
+        // 转发consensus engine的结果失败
         tx.send(result).expect("failed to forward consensus engine result");
     });
     rx

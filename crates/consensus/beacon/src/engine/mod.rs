@@ -614,9 +614,11 @@ where
     }
 
     /// Invoked when we receive a new forkchoice update message.
+    /// 当我们接受到一个新的forkchoice update message的时候被调用
     ///
     /// Returns `true` if the engine now reached its maximum block number, See
     /// [EngineSyncController::has_reached_max_block].
+    /// 返回`true`，如果engine已经到达了maximum block number
     fn on_forkchoice_updated(
         &mut self,
         state: ForkchoiceState,
@@ -626,12 +628,14 @@ where
         self.metrics.forkchoice_updated_messages.increment(1);
         self.blockchain.on_forkchoice_update_received(&state);
 
+        // 调用fork choice update
         let on_updated = match self.forkchoice_updated(state, attrs) {
             Ok(response) => response,
             Err(error) => {
                 if let RethError::Execution(ref err) = error {
                     if err.is_fatal() {
                         // FCU resulted in a fatal error from which we can't recover
+                        // FUC导致了一个fatal error，我们不能recover
                         let err = err.clone();
                         let _ = tx.send(Err(error));
                         return OnForkchoiceUpdateOutcome::Fatal(err)
@@ -645,9 +649,11 @@ where
         let fcu_status = on_updated.forkchoice_status();
 
         // update the forkchoice state tracker
+        // 更新forkchoice state tracker
         self.forkchoice_state_tracker.set_latest(state, fcu_status);
 
         // send the response to the CL ASAP
+        // 尽快发送response到CL
         let _ = tx.send(Ok(on_updated));
 
         match fcu_status {
@@ -673,6 +679,7 @@ where
         }
 
         // notify listeners about new processed FCU
+        // 通知listeners，关于新处理的FCU
         self.listeners.notify(BeaconConsensusEngineEvent::ForkchoiceUpdated(state, fcu_status));
 
         OnForkchoiceUpdateOutcome::Processed
@@ -1899,6 +1906,7 @@ where
                     }
                     BeaconEngineMessage::NewPayload { payload, cancun_fields, tx } => {
                         this.metrics.new_payload_messages.increment(1);
+                        // 处理new payload
                         let res = this.on_new_payload(payload, cancun_fields);
                         let _ = tx.send(res);
                     }
@@ -2017,6 +2025,7 @@ mod tests {
     }
 
     // Test that the consensus engine is idle until first forkchoice updated is received.
+    // 测试censensus engine处于idle，直到接收到第一个forkchoice
     #[tokio::test]
     async fn is_idle_until_forkchoice_is_set() {
         let chain_spec = Arc::new(
@@ -2027,24 +2036,29 @@ mod tests {
                 .build(),
         );
 
+        // 构建test conensus engine
         let (consensus_engine, env) = TestConsensusEngineBuilder::new(chain_spec.clone())
             .with_pipeline_exec_outputs(VecDeque::from([Err(StageError::ChannelClosed)]))
             .disable_blockchain_tree_sync()
             .with_max_block(1)
             .build();
 
+        // 生成consensus engine
         let mut rx = spawn_consensus_engine(consensus_engine);
 
         // consensus engine is idle
+        // consensus engine处于idle
         std::thread::sleep(Duration::from_millis(100));
         assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
 
         // consensus engine is still idle because no FCUs were received
+        // consensus engine依然处于idle，因为没有收到FCUs
         let _ = env.send_new_payload(try_block_to_payload_v1(SealedBlock::default()), None).await;
 
         assert_matches!(rx.try_recv(), Err(TryRecvError::Empty));
 
         // consensus engine is still idle because pruning is running
+        // consensus engine依然处于idle，因为prunning在运行
         let _ = env
             .send_forkchoice_updated(ForkchoiceState {
                 head_block_hash: H256::random(),
@@ -2055,6 +2069,7 @@ mod tests {
 
         // consensus engine receives a forkchoice state and triggers the pipeline when pruning is
         // finished
+        // consensus engine接收到一个forkchoice state并且触发pipeline，当pruning结束的时候
         loop {
             match rx.try_recv() {
                 Ok(result) => {
@@ -2078,8 +2093,10 @@ mod tests {
     }
 
     // Test that the consensus engine runs the pipeline again if the tree cannot be restored.
+    // 测试consensus engine再次运行pipeline，如果tree不能被restored
     // The consensus engine will propagate the second result (error) only if it runs the pipeline
     // for the second time.
+    // consensus engine会传播second result（error），只有第二次运行pipeline的时候
     #[tokio::test]
     async fn runs_pipeline_again_if_tree_not_restored() {
         let chain_spec = Arc::new(
@@ -2150,11 +2167,15 @@ mod tests {
         chain: Arc<ChainSpec>,
         mut blocks: impl Iterator<Item = &'a SealedBlock>,
     ) {
+        // 构建facotry
         let factory = ProviderFactory::new(db, chain);
+        // 构建provider
         let provider = factory.provider_rw().unwrap();
         blocks
+            // 插入blocks
             .try_for_each(|b| provider.insert_block(b.clone(), None, None).map(|_| ()))
             .expect("failed to insert");
+        // provider提交
         provider.commit().unwrap();
     }
 
@@ -2182,6 +2203,7 @@ mod tests {
 
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
+            // 发送forkchoice update
             let res = env.send_forkchoice_updated(ForkchoiceState::default()).await;
             assert_matches!(
                 res,
@@ -2211,10 +2233,13 @@ mod tests {
                 })]))
                 .build();
 
+            // 生成随机的genesis和block1
             let genesis = random_block(&mut rng, 0, None, None, Some(0));
             let block1 = random_block(&mut rng, 1, Some(genesis.hash), None, Some(0));
+            // 插入blocks
             insert_blocks(env.db.as_ref(), chain_spec.clone(), [&genesis, &block1].into_iter());
             env.db
+                // 更新db
                 .update(|tx| {
                     tx.put::<tables::SyncStage>(
                         StageId::Finish.to_string(),
@@ -2226,12 +2251,14 @@ mod tests {
 
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
+            // 构建forkchoice
             let forkchoice = ForkchoiceState {
                 head_block_hash: block1.hash,
                 finalized_block_hash: block1.hash,
                 ..Default::default()
             };
 
+            // 发送forkchoice
             let result = env.send_forkchoice_updated(forkchoice).await.unwrap();
             let expected_result = ForkchoiceUpdated::new(PayloadStatus::new(
                 PayloadStatusEnum::Valid,

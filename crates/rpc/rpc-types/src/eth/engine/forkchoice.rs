@@ -35,9 +35,11 @@ pub struct ForkchoiceState {
 }
 
 /// A standalone forkchoice update errors for RPC.
+/// 一个独立的forkchoice update errors，对于RPC
 ///
 /// These are considered hard RPC errors and are _not_ returned as [PayloadStatus] or
 /// [PayloadStatusEnum::Invalid].
+/// 那些被认为是hard RPC errors并且不作为[PayloadStatus]或者[PayloadStatusEnum::Invalid]返回
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ForkchoiceUpdateError {
     /// The forkchoice update has been processed, but the requested contained invalid
@@ -47,6 +49,7 @@ pub enum ForkchoiceUpdateError {
     #[error("Invalid payload attributes")]
     UpdatedInvalidPayloadAttributes,
     /// The given [ForkchoiceState] is invalid or inconsistent.
+    /// 给定的[ForkchoiceState]是非法的或者不一致
     #[error("Invalid forkchoice state")]
     InvalidState,
     /// Thrown when a forkchoice final block does not exist in the database.
@@ -80,15 +83,19 @@ impl From<ForkchoiceUpdateError> for jsonrpsee_types::error::ErrorObject<'static
 }
 
 /// Represents a successfully _processed_ forkchoice state update.
+/// 代表依次成功的_processed_ forkchoice state update
 ///
 /// Note: this can still be INVALID if the provided payload was invalid.
+/// 注意：可以是非法的，如果提供的payload是非法的
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ForkchoiceUpdated {
     /// Represents the outcome of the validation of the payload, independently of the payload being
     /// valid or not.
+    /// 代表payload的validation结果，独立于payload是否valid
     pub payload_status: PayloadStatus,
     /// The identifier of the payload build process that was successfully initiated.
+    /// 成功被初始化的payload build进程的identifier
     pub payload_id: Option<PayloadId>,
 }
 
