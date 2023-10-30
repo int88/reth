@@ -60,6 +60,7 @@ where
 }
 
 /// Calculate a transaction root.
+/// 计算一个tx root
 ///
 /// `(rlp(index), encoded(tx))` pairs.
 pub fn calculate_transaction_root<T>(transactions: &[T]) -> H256
@@ -100,6 +101,7 @@ pub fn calculate_log_root(logs: &[Log]) -> H256 {
 }
 
 /// Calculates the root hash for ommer/uncle headers.
+/// 计算ommer/uncle headers的root hash
 pub fn calculate_ommers_root(ommers: &[Header]) -> H256 {
     // RLP Encode
     let mut ommers_rlp = Vec::new();

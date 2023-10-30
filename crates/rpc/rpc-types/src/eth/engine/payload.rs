@@ -398,12 +398,14 @@ pub struct PayloadAttributes {
 }
 
 /// This structure contains the result of processing a payload or fork choice update.
+/// 这个包含处理一个payload或者fork choice update的结果
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayloadStatus {
     #[serde(flatten)]
     pub status: PayloadStatusEnum,
     /// Hash of the most recent valid block in the branch defined by payload and its ancestors
+    /// 最近的valid block的hash，由payload和它的ancestor定义
     pub latest_valid_hash: Option<H256>,
 }
 
@@ -427,6 +429,7 @@ impl PayloadStatus {
     }
 
     /// Returns true if the payload status is syncing.
+    /// 返回true，如果payload的状态是syncing
     pub fn is_syncing(&self) -> bool {
         self.status.is_syncing()
     }
@@ -475,25 +478,35 @@ impl From<PayloadError> for PayloadStatusEnum {
 #[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PayloadStatusEnum {
     /// VALID is returned by the engine API in the following calls:
+    /// VALID被engine API返回，在以下调用中：
     ///   - newPayload:       if the payload was already known or was just validated and executed
+    ///   - newPayload:       如果payload已经知道或者刚刚被校验和执行
     ///   - forkchoiceUpdate: if the chain accepted the reorg (might ignore if it's stale)
+    ///   - forkchoiceUpdate: 如果chain接收reorg（可能忽略，如果它是stale）
     Valid,
 
     /// INVALID is returned by the engine API in the following calls:
+    /// INVALID被engine API返回，在以下调用中：
     ///   - newPayload:       if the payload failed to execute on top of the local chain
+    ///   - newPayload:       如果payload在local chain执行失败
     ///   - forkchoiceUpdate: if the new head is unknown, pre-merge, or reorg to it fails
+    ///   - forkchoiceUpdate: 如果新的head是unkown，pre-merge或者reorg失败
     Invalid {
         #[serde(rename = "validationError")]
         validation_error: String,
     },
 
     /// SYNCING is returned by the engine API in the following calls:
+    /// SYNCING被engine API返回，在以下场景：
     ///   - newPayload:       if the payload was accepted on top of an active sync
+    ///   - newPayload:       如果payload被接收，在一个active sync之上
     ///   - forkchoiceUpdate: if the new head was seen before, but not part of the chain
+    ///   - forkchoiceUpdate: 如果新的head被看到，但是不是chain的一部分
     Syncing,
 
     /// ACCEPTED is returned by the engine API in the following calls:
     ///   - newPayload: if the payload was accepted, but not processed (side chain)
+    ///   - newPayload: 如果payload被接受，但是没有处理（side chain）
     Accepted,
 }
 
@@ -517,6 +530,7 @@ impl PayloadStatusEnum {
     }
 
     /// Returns true if the payload status is syncing.
+    /// 返回true，如果payload的状态是syncing
     pub fn is_syncing(&self) -> bool {
         matches!(self, PayloadStatusEnum::Syncing)
     }

@@ -122,6 +122,7 @@ impl NetworkHandle {
     }
 
     /// Sends a [`NetworkHandleMessage`] to the manager
+    /// 发送一个[`NetworkHandleMessage`]到manager
     pub(crate) fn send_message(&self, msg: NetworkHandleMessage) {
         let _ = self.inner.to_manager_tx.send(msg);
     }
@@ -291,7 +292,9 @@ impl NetworkSyncUpdater for NetworkHandle {
     }
 
     /// Update the status of the node.
+    /// 更新node的状态
     fn update_status(&self, head: Head) {
+        // 发送NetworkHandleMessage
         self.send_message(NetworkHandleMessage::StatusUpdate { head });
     }
 }
@@ -321,6 +324,7 @@ struct NetworkInner {
 }
 
 /// Internal messages that can be passed to the  [`NetworkManager`](crate::NetworkManager).
+/// 内部的messages，可以被传递给[`NetworkManager`](crate::NetworkManager)
 #[allow(missing_docs)]
 #[derive(Debug)]
 pub(crate) enum NetworkHandleMessage {
@@ -350,6 +354,7 @@ pub(crate) enum NetworkHandleMessage {
     /// Returns the client that can be used to interact with the network.
     FetchClient(oneshot::Sender<FetchClient>),
     /// Apply a status update.
+    /// 应用一个status update
     StatusUpdate { head: Head },
     /// Get the current status
     GetStatus(oneshot::Sender<NetworkStatus>),

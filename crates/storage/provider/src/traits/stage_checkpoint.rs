@@ -5,12 +5,15 @@ use reth_primitives::{
 };
 
 /// The trait for fetching stage checkpoint related data.
+/// 用于获取stage checkpoint相关数据的trait
 #[auto_impl::auto_impl(&, Arc)]
 pub trait StageCheckpointReader: Send + Sync {
     /// Fetch the checkpoint for the given stage.
+    /// 获取给定的stage的checkpoint
     fn get_stage_checkpoint(&self, id: StageId) -> RethResult<Option<StageCheckpoint>>;
 
     /// Get stage checkpoint progress.
+    /// 获取stage checkpoint的进程
     fn get_stage_checkpoint_progress(&self, id: StageId) -> RethResult<Option<Vec<u8>>>;
 }
 

@@ -79,6 +79,7 @@ impl<DB> TestEnv<DB> {
 
     /// Sends the `ExecutionPayload` message to the consensus engine and retries if the engine
     /// is syncing.
+    /// 发送`ExecutionPayload` message到consensus engine并且重试，如果engine在同步
     pub async fn send_new_payload_retry_on_syncing<T: Into<ExecutionPayload>>(
         &self,
         payload: T,
@@ -88,6 +89,7 @@ impl<DB> TestEnv<DB> {
         loop {
             let result = self.send_new_payload(payload.clone(), cancun_fields.clone()).await?;
             if !result.is_syncing() {
+                // 如果不是syncing，则重试
                 return Ok(result)
             }
         }
@@ -326,6 +328,7 @@ impl TestConsensusEngineBuilder {
     }
 
     /// Uses the real pipeline instead of a pipeline with empty exec outputs.
+    /// 使用真正的pipeline，而不是有着空的exec outputs的pipeline
     pub fn with_real_pipeline(mut self) -> Self {
         self.pipeline_config = TestPipelineConfig::Real;
         self

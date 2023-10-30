@@ -113,8 +113,11 @@ pub fn generate_keys<R: Rng>(rng: &mut R, count: usize) -> Vec<KeyPair> {
 /// Generate a random block filled with signed transactions (generated using
 /// [random_signed_tx]). If no transaction count is provided, the number of transactions
 /// will be random, otherwise the provided count will be used.
+/// 生成随机的block，用signed txs（使用[random_signed_tx]生成）填充，如果没有提供tx
+/// count，txs的数目是随机的，否则会使用提供的cnt
 ///
 /// All fields use the default values (and are assumed to be invalid) except for:
+/// 除了`parent_hash`，`transactions_root`以及`ommers_hash`都使用默认值
 ///
 /// - `parent_hash`
 /// - `transactions_root`
@@ -122,8 +125,10 @@ pub fn generate_keys<R: Rng>(rng: &mut R, count: usize) -> Vec<KeyPair> {
 ///
 /// Additionally, `gas_used` and `gas_limit` always exactly match the total `gas_limit` of all
 /// transactions in the block.
+/// 另外，`gas_used`以及`gas_limit`
 ///
 /// The ommer headers are not assumed to be valid.
+/// ommer headers不假设为合法
 pub fn random_block<R: Rng>(
     rng: &mut R,
     number: u64,
@@ -132,17 +137,21 @@ pub fn random_block<R: Rng>(
     ommers_count: Option<u8>,
 ) -> SealedBlock {
     // Generate transactions
+    // 生成txs
     let tx_count = tx_count.unwrap_or_else(|| rng.gen::<u8>());
     let transactions: Vec<TransactionSigned> =
         (0..tx_count).map(|_| random_signed_tx(rng)).collect();
+    // 获取total gas
     let total_gas = transactions.iter().fold(0, |sum, tx| sum + tx.transaction.gas_limit());
 
     // Generate ommers
+    // 生成ommers
     let ommers_count = ommers_count.unwrap_or_else(|| rng.gen_range(0..2));
     let ommers =
         (0..ommers_count).map(|_| random_header(rng, number, parent).unseal()).collect::<Vec<_>>();
 
     // Calculate roots
+    // 计算roots
     let transactions_root = proofs::calculate_transaction_root(&transactions);
     let ommers_hash = proofs::calculate_ommers_root(&ommers);
 

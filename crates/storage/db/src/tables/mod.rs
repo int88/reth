@@ -245,6 +245,7 @@ table!(
 
 table!(
     /// Stores the total difficulty from a block header.
+    /// 存储来自一个block header的TD
     ( HeaderTD ) BlockNumber | CompactU256
 );
 
@@ -260,6 +261,7 @@ table!(
 
 table!(
     /// Stores block indices that contains indexes of transaction and the count of them.
+    /// 包含block indices，包含tx的indexes以及它们的计数
     ///
     /// More information about stored indices can be found in the [`StoredBlockBodyIndices`] struct.
     ( BlockBodyIndices ) BlockNumber | StoredBlockBodyIndices
@@ -287,6 +289,7 @@ table!(
 
 table!(
     /// Stores the mapping of transaction number to the blocks number.
+    /// 存储tx number到block number的映射
     ///
     /// The key is the highest transaction ID in the block.
     ( TransactionBlock ) TxNumber | BlockNumber

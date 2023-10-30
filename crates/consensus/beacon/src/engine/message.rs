@@ -50,6 +50,7 @@ impl OnForkChoiceUpdated {
 
     /// Creates a new instance of `OnForkChoiceUpdated` if the forkchoice update succeeded and no
     /// payload attributes were provided.
+    /// 创建一个新的`OnForkchoiceUpdated`实例，如果forkchoice更新成功并且没有提供paload attributes
     pub(crate) fn valid(status: PayloadStatus) -> Self {
         Self {
             forkchoice_status: ForkchoiceStatus::from_payload_status(&status.status),

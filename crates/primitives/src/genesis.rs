@@ -13,10 +13,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// The genesis block specification.
+/// genesis block的定义
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Genesis {
     /// The fork configuration for this network.
+    /// 这个network的fork配置
     #[serde(default)]
     pub config: ChainConfig,
     /// The genesis header nonce.
@@ -36,8 +38,10 @@ pub struct Genesis {
     /// The genesis header mix hash.
     pub mix_hash: H256,
     /// The genesis header coinbase address.
+    /// genesis的header coinbase地址
     pub coinbase: Address,
     /// The initial state of accounts in the genesis block.
+    /// 在genesis block内初始的state of accounts
     pub alloc: HashMap<Address, GenesisAccount>,
     // NOTE: the following fields:
     // * base_fee_per_gas

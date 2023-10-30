@@ -44,9 +44,11 @@ impl From<reth_interfaces::db::DatabaseError> for BeaconConsensusEngineError {
 }
 
 /// Represents error cases for an applied forkchoice update.
+/// 代表error cases，对于一个应用的forkchoice update
 ///
 /// This represents all possible error cases, that must be returned as JSON RCP errors back to the
 /// beacon node.
+/// 这代表所有可能的error cases，必须返回JSON RPC errors到beacon node
 #[derive(Debug, thiserror::Error)]
 pub enum BeaconForkChoiceUpdateError {
     /// Thrown when a forkchoice update resulted in an error.
@@ -56,6 +58,7 @@ pub enum BeaconForkChoiceUpdateError {
     #[error(transparent)]
     Internal(Box<RethError>),
     /// Thrown when the engine task is unavailable/stopped.
+    /// 抛出，当engine task不可用/停止
     #[error("beacon consensus engine task stopped")]
     EngineUnavailable,
 }

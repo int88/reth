@@ -9,11 +9,16 @@ pub mod error;
 
 /// * [BlockchainTreeEngine::insert_block]: Connect block to chain, execute it and if valid insert
 ///   block inside tree.
+/// * [BlockchainTreeEngine::insert_block]: 连接block到chain，执行它并且如果合法，插入到tree中
 /// * [BlockchainTreeEngine::finalize_block]: Remove chains that join to now finalized block, as
 ///   chain becomes invalid.
+/// * [BlockchainTreeEngine::finalize_block]: 移除连接到finalized的chain，因为chain变为非法
 /// * [BlockchainTreeEngine::make_canonical]: Check if we have the hash of block that we want to
 ///   finalize and commit it to db. If we don't have the block, syncing should start to fetch the
 ///   blocks from p2p. Do reorg in tables if canonical chain if needed.
+/// * [BlockchainTreeEngine::make_canonical]: 检查是否我们有hash of
+///   block，我们想要fianlize并且提交到db，如果我们没有block，syncing应该开始从p2p抓取blocks，
+///   对tables进行reorg，如果canonical chain需要
 pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     /// Recover senders and call [`BlockchainTreeEngine::insert_block`].
     ///
@@ -50,6 +55,7 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     ) -> Result<InsertPayloadOk, InsertBlockError>;
 
     /// Finalize blocks up until and including `finalized_block`, and remove them from the tree.
+    /// Finalize blocks直到包含`finalized_block`并且从tree中移除
     fn finalize_block(&self, finalized_block: BlockNumber);
 
     /// Reads the last `N` canonical hashes from the database and updates the block indices of the
@@ -93,16 +99,21 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
 }
 
 /// All possible outcomes of a canonicalization attempt of [BlockchainTreeEngine::make_canonical].
+/// 所有可能的输出，对于[BlockchainTreeEngine::make_canonical]的canonicalization尝试
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CanonicalOutcome {
     /// The block is already canonical.
+    /// block已经是canonical
     AlreadyCanonical {
         /// The corresponding [SealedHeader] that is already canonical.
+        /// 对应的[SealedHeader]已经canonical
         header: SealedHeader,
     },
     /// Committed the block to the database.
+    /// 提交block到db
     Committed {
         /// The new corresponding canonical head
+        /// 新的对应的canonical head
         head: SealedHeader,
     },
 }
@@ -228,6 +239,7 @@ pub trait BlockchainTreeViewer: Send + Sync {
     fn lowest_buffered_ancestor(&self, hash: BlockHash) -> Option<SealedBlockWithSenders>;
 
     /// Return BlockchainTree best known canonical chain tip (BlockHash, BlockNumber)
+    /// 返回BlockchainTree best known的canonical chain tip（BlockHash，BlockNumber）
     fn canonical_tip(&self) -> BlockNumHash;
 
     /// Return block hashes that extends the canonical chain tip by one.

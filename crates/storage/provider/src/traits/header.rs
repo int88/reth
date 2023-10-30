@@ -33,6 +33,7 @@ pub trait HeaderProvider: Send + Sync {
     fn header_td(&self, hash: &BlockHash) -> RethResult<Option<U256>>;
 
     /// Get total difficulty by block number.
+    /// 通过block number获取td
     fn header_td_by_number(&self, number: BlockNumber) -> RethResult<Option<U256>>;
 
     /// Get headers in range of block numbers

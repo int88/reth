@@ -204,6 +204,7 @@ pub struct BeaconConsensusEngine<DB, BT, Client>
 where
     DB: Database,
     Client: HeadersClient + BodiesClient,
+    // 一系列接口的集合
     BT: BlockchainTreeEngine
         + BlockReader
         + BlockIdReader
@@ -600,14 +601,18 @@ where
 
     /// Checks if the given `head` points to an invalid header, which requires a specific response
     /// to a forkchoice update.
+    /// 检查是否给定的`head`指向一个非法的header，这需要对于一个forkchoice
+    /// update的一个特定的response
     fn check_invalid_ancestor(&mut self, head: H256) -> Option<PayloadStatus> {
         let parent_hash = {
             // check if the head was previously marked as invalid
+            // 检查是否head之前被标记为invalid
             let header = self.invalid_headers.get(&head)?;
             header.parent_hash
         };
 
         // populate the latest valid hash field
+        // 填充最新的，合法的hash字段
         let status = self.prepare_invalid_response(parent_hash);
 
         Some(status)
@@ -660,15 +665,19 @@ where
             ForkchoiceStatus::Invalid => {}
             ForkchoiceStatus::Valid => {
                 // FCU head is valid, we're no longer syncing
+                // FCU head是合法的，我们不再同步
                 self.sync_state_updater.update_sync_state(SyncState::Idle);
                 // node's fully synced, clear active download requests
+                // node已经完全同步了，清除活跃的download requests
                 self.sync.clear_block_download_requests();
 
                 // check if we reached the maximum configured block
+                // 检查是否我们到了配置的max block
                 let tip_number = self.blockchain.canonical_tip().number;
                 if self.sync.has_reached_max_block(tip_number) {
                     // Terminate the sync early if it's reached the maximum user
                     // configured block.
+                    // 尽早结束sync，如果已经到达了用户配置的最大的block
                     return OnForkchoiceUpdateOutcome::ReachedMaxBlock
                 }
             }
@@ -687,16 +696,20 @@ where
 
     /// Called to resolve chain forks and ensure that the Execution layer is working with the latest
     /// valid chain.
+    /// 被调用来解决chain forks并且确保Execution layer和最新valid chain一致
     ///
     /// These responses should adhere to the [Engine API Spec for
     /// `engine_forkchoiceUpdated`](https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#specification-1).
+    /// 这些responses应该遵守[Engine API Spec for `engine_forkchoiceUpdated`]
     ///
     /// Returns an error if an internal error occurred like a database error.
+    /// 返回一个error，如果发生了一个内部的error，例如database error
     fn forkchoice_updated(
         &mut self,
         state: ForkchoiceState,
         attrs: Option<PayloadAttributes>,
     ) -> RethResult<OnForkChoiceUpdated> {
+        // 接收到新的forkchoice state update
         trace!(target: "consensus::engine", ?state, "Received new forkchoice state update");
         if state.head_block_hash.is_zero() {
             return Ok(OnForkChoiceUpdated::invalid_state())
@@ -711,6 +724,7 @@ where
         if self.sync.is_pipeline_active() {
             // We can only process new forkchoice updates if the pipeline is idle, since it requires
             // exclusive access to the database
+            // 我们只处理新的forkchoice update，如果pipeline为idle，因为它需要对于db的独占访问
             trace!(target: "consensus::engine", "Pipeline is syncing, skipping forkchoice update");
             return Ok(OnForkChoiceUpdated::syncing())
         }
@@ -718,6 +732,8 @@ where
         if self.hooks.is_hook_with_db_write_running() {
             // We can only process new forkchoice updates if no hook with db write is running,
             // since it requires exclusive access to the database
+            // 我们只能处理新的forkchoice
+            // updates，如果没有db写的hook在运行，因为它需要对于db的独占访问
             warn!(
                 target: "consensus::engine",
                 "Hook is in progress, skipping forkchoice update. \
@@ -727,7 +743,9 @@ where
         }
 
         let start = Instant::now();
+        // 设置canonical
         let make_canonical_result = self.blockchain.make_canonical(&state.head_block_hash);
+        // 统计canonical latency
         let elapsed = self.record_make_canonical_latency(start, &make_canonical_result);
         let status = match make_canonical_result {
             Ok(outcome) => {
@@ -749,6 +767,7 @@ where
                         );
 
                         // new VALID update that moved the canonical chain forward
+                        // 新的VALID update将canonical chain向前移动
                         let _ = self.update_head(head.clone());
                         self.listeners.notify(BeaconConsensusEngineEvent::CanonicalChainCommitted(
                             head.clone(),
@@ -761,12 +780,15 @@ where
                     // if we return early then we wouldn't perform these consistency checks, so we
                     // need to do them here, and should do them before we process any payload
                     // attributes
+                    // 如果我们返回地早，我们不会执行任何一致性检查，因此我们要在这里做，
+                    // 并且应该在处理任何的payload attributes之前做
                     if let Some(invalid_fcu_response) = self.ensure_consistent_state(state)? {
                         trace!(target: "consensus::engine", ?state, head=?state.head_block_hash, "Forkchoice state is inconsistent, returning invalid response");
                         return Ok(invalid_fcu_response)
                     }
 
                     // the CL requested to build a new payload on top of this new VALID head
+                    // CL请求构建一个新的payload，在新的VALID head之上
                     let payload_response = self.process_payload_attributes(
                         attrs,
                         outcome.into_header().unseal(),
@@ -794,10 +816,12 @@ where
         if let Some(invalid_fcu_response) =
             self.ensure_consistent_state_with_status(state, &status)?
         {
+            // forkchoice state不一致，返回invalid response
             trace!(target: "consensus::engine", ?status, ?state, "Forkchoice state is inconsistent, returning invalid response");
             return Ok(invalid_fcu_response)
         }
 
+        // 返回forkchoice status
         trace!(target: "consensus::engine", ?status, ?state, "Returning forkchoice status");
         Ok(OnForkChoiceUpdated::valid(status))
     }
@@ -859,21 +883,28 @@ where
 
     /// Ensures that the given forkchoice state is consistent, assuming the head block has been
     /// made canonical.
+    /// 确保给定的forkchoice state是一致的，假设head block已经为canonical
     ///
     /// If the forkchoice state is consistent, this will return Ok(None). Otherwise, this will
     /// return an instance of [OnForkChoiceUpdated] that is INVALID.
+    /// 如果forkchoice
+    /// state一致，则会返回Ok(None)，否则，返回一个[OnForkChoiceUpdated]实例，是非法的
     ///
     /// This also updates the safe and finalized blocks in the [CanonChainTracker], if they are
     /// consistent with the head block.
+    /// 它同时更新[CanonChainTrakcer]里的safe and finalized blocks，如果他们和head block一致
     fn ensure_consistent_state(
         &mut self,
         state: ForkchoiceState,
     ) -> RethResult<Option<OnForkChoiceUpdated>> {
         // Ensure that the finalized block, if not zero, is known and in the canonical chain
         // after the head block is canonicalized.
+        // 确保finalized block，如果不是0，是已知的并且在canonical chain，在head
+        // block已经canonicalized之后
         //
         // This ensures that the finalized block is consistent with the head block, i.e. the
         // finalized block is an ancestor of the head block.
+        // 这确保finalized block和head block一致，例如，finalized block是head block的ancestor
         if !state.finalized_block_hash.is_zero() &&
             !self.blockchain.is_canonical(state.finalized_block_hash)?
         {
@@ -881,10 +912,12 @@ where
         }
 
         // Finalized block is consistent, so update it in the canon chain tracker.
+        // Finalzied block是一致的，因此更新canon chain tracker
         self.update_finalized_block(state.finalized_block_hash)?;
 
         // Also ensure that the safe block, if not zero, is known and in the canonical chain
         // after the head block is canonicalized.
+        // 同时确保safe block
         //
         // This ensures that the safe block is consistent with the head block, i.e. the safe
         // block is an ancestor of the head block.
@@ -917,11 +950,15 @@ where
     }
 
     /// Updates the state of the canon chain tracker based on the given head.
+    /// 基于给定的head更新canon chain tracker的state
     ///
     /// This expects the given head to be the new canonical head.
+    /// 这期望给定的head是新的canonical head
     /// Additionally, updates the head used for p2p handshakes.
+    /// 另外，更新用于p2p handshakes的head
     ///
     /// This should be called before returning a VALID forkchoice update response
+    /// 这应该被调用，当返回一个VALID forkchoice update response
     #[inline]
     fn update_head(&self, head: SealedHeader) -> RethResult<()> {
         let mut head_block = Head {
@@ -930,10 +967,12 @@ where
             difficulty: head.difficulty,
             timestamp: head.timestamp,
             // NOTE: this will be set later
+            // 注意：这会后续设置
             total_difficulty: Default::default(),
         };
 
         // we update the the tracked header first
+        // 我们首先更新tracked header
         self.blockchain.set_canonical_head(head);
 
         head_block.total_difficulty =
@@ -968,6 +1007,7 @@ where
     }
 
     /// Updates the tracked finalized block if we have it
+    /// 更新追踪的finalized blcok，如果我们有的话
     ///
     /// Returns an error if the block is not found.
     #[inline]
@@ -975,15 +1015,18 @@ where
         if !finalized_block_hash.is_zero() {
             if self.blockchain.finalized_block_hash()? == Some(finalized_block_hash) {
                 // nothing to update
+                // 没有什么需要更新的
                 return Ok(())
             }
 
+            // 获取finalized block
             let finalized = self
                 .blockchain
                 .find_block_by_hash(finalized_block_hash, BlockSource::Any)?
                 .ok_or_else(|| {
                     RethError::Provider(ProviderError::UnknownBlockHash(finalized_block_hash))
                 })?;
+            // 设置finalize block
             self.blockchain.finalize_block(finalized.number);
             self.blockchain.set_finalized(finalized.header.seal(finalized_block_hash));
         }
@@ -1077,9 +1120,13 @@ where
     /// Return the parent hash of the lowest buffered ancestor for the requested block, if there
     /// are any buffered ancestors. If there are no buffered ancestors, and the block itself does
     /// not exist in the buffer, this returns the hash that is passed in.
+    /// 返回请求的block的lowest buffered ancestor的parent
+    /// hash，如果有任何缓存的ancestor，如果没有缓存的ancestors，并且block自己不存在于buffer，
+    /// 返回传入的hash
     ///
     /// Returns the parent hash of the block itself if the block is buffered and has no other
     /// buffered ancestors.
+    /// 返回block自己的parent hash，如果它被缓存的话，并且没有其他缓存的ancestors
     fn lowest_buffered_ancestor_or(&self, hash: H256) -> H256 {
         self.blockchain
             .lowest_buffered_ancestor(hash)
@@ -1967,6 +2014,7 @@ where
 }
 
 /// Represents all outcomes of an applied fork choice update.
+/// 代表一个applied fork choice update的所有outcomes
 #[derive(Debug)]
 enum OnForkchoiceUpdateOutcome {
     /// FCU was processed successfully.
@@ -2290,6 +2338,7 @@ mod tests {
 
             let genesis = random_block(&mut rng, 0, None, None, Some(0));
             let block1 = random_block(&mut rng, 1, Some(genesis.hash), None, Some(0));
+            // 插入了genesis和block1
             insert_blocks(env.db.as_ref(), chain_spec.clone(), [&genesis, &block1].into_iter());
 
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
@@ -2303,19 +2352,26 @@ mod tests {
 
             // if we `await` in the assert, the forkchoice will poll after we've inserted the block,
             // and it will return VALID instead of SYNCING
+            // 如果我们`await`在assert，forkchoice会轮询，在我们插入block之后，
+            // 并且它会返回VALID而不是SYNCING
             let invalid_rx = env.send_forkchoice_updated(next_forkchoice_state).await;
 
             // Insert next head immediately after sending forkchoice update
+            // 立刻插入next head，在发送forkchoice update之后
             insert_blocks(env.db.as_ref(), chain_spec.clone(), [&next_head].into_iter());
 
+            // 期望获得的状态是Syncing
             let expected_result = ForkchoiceUpdated::from_status(PayloadStatusEnum::Syncing);
             assert_matches!(invalid_rx, Ok(result) => assert_eq!(result, expected_result));
 
+            // 再次发送forkchoice
             let result = env.send_forkchoice_retry_on_syncing(next_forkchoice_state).await.unwrap();
+            // 得到的状态为VALID
             let expected_result = ForkchoiceUpdated::from_status(PayloadStatusEnum::Valid)
                 .with_latest_valid_hash(next_head.hash);
             assert_eq!(result, expected_result);
 
+            // 再次收到的为empty
             assert_matches!(engine_rx.try_recv(), Err(TryRecvError::Empty));
         }
 
@@ -2346,11 +2402,13 @@ mod tests {
 
             let res = env
                 .send_forkchoice_updated(ForkchoiceState {
+                    // 未知的head block hash
                     head_block_hash: H256::random(),
                     finalized_block_hash: block1.hash,
                     ..Default::default()
                 })
                 .await;
+            // 期望的状态是Syncing
             let expected_result = ForkchoiceUpdated::from_status(PayloadStatusEnum::Syncing);
             assert_matches!(res, Ok(result) => assert_eq!(result, expected_result));
             drop(engine);
@@ -2380,10 +2438,12 @@ mod tests {
             block1.header.difficulty = U256::from(1);
 
             // a second pre-merge block
+            // 一个second pre-merge block
             let mut block2 = random_block(&mut rng, 1, Some(genesis.hash), None, Some(0));
             block2.header.difficulty = U256::from(1);
 
             // a transition block
+            // 一个transition block
             let mut block3 = random_block(&mut rng, 1, Some(genesis.hash), None, Some(0));
             block3.header.difficulty = U256::from(1);
 
@@ -2405,7 +2465,9 @@ mod tests {
 
             assert_matches!(res, Ok(result) => {
                 let ForkchoiceUpdated { payload_status, .. } = result;
+                // 获取payload status为非法
                 assert_matches!(payload_status.status, PayloadStatusEnum::Invalid { .. });
+                // 最新的valid hash的状态为zero
                 assert_eq!(payload_status.latest_valid_hash, Some(H256::zero()));
             });
         }
@@ -2462,6 +2524,7 @@ mod tests {
 
         #[tokio::test]
         async fn new_payload_before_forkchoice() {
+            // 在forkchoice之前发送new_payload
             let mut rng = generators::rng();
             let chain_spec = Arc::new(
                 ChainSpecBuilder::default()
@@ -2481,6 +2544,7 @@ mod tests {
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send new payload
+            // 发送新的payload
             let res = env
                 .send_new_payload(
                     try_block_to_payload_v1(random_block(&mut rng, 0, None, None, Some(0))),
@@ -2489,9 +2553,11 @@ mod tests {
                 .await;
 
             // Invalid, because this is a genesis block
+            // 非法，因为这是一个genesis block
             assert_matches!(res, Ok(result) => assert_matches!(result.status, PayloadStatusEnum::Invalid { .. }));
 
             // Send new payload
+            // 发送新的payload
             let res = env
                 .send_new_payload(
                     try_block_to_payload_v1(random_block(&mut rng, 1, None, None, Some(0))),
@@ -2526,6 +2592,7 @@ mod tests {
             let genesis = random_block(&mut rng, 0, None, None, Some(0));
             let block1 = random_block(&mut rng, 1, Some(genesis.hash), None, Some(0));
             let block2 = random_block(&mut rng, 2, Some(block1.hash), None, Some(0));
+            // 插入blocks
             insert_blocks(
                 env.db.as_ref(),
                 chain_spec.clone(),
@@ -2535,6 +2602,7 @@ mod tests {
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send forkchoice
+            // 发送forkchoice
             let res = env
                 .send_forkchoice_updated(ForkchoiceState {
                     head_block_hash: block1.hash,
@@ -2542,16 +2610,19 @@ mod tests {
                     ..Default::default()
                 })
                 .await;
+            // 获取的结果是VALID
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Valid)
                 .with_latest_valid_hash(block1.hash);
             assert_matches!(res, Ok(ForkchoiceUpdated { payload_status, .. }) => assert_eq!(payload_status, expected_result));
 
             // Send new payload
+            // 发送新的payload
             let result = env
                 .send_new_payload_retry_on_syncing(try_block_to_payload_v1(block2.clone()), None)
                 .await
                 .unwrap();
 
+            // 期待的状态是VALID
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Valid)
                 .with_latest_valid_hash(block2.hash);
             assert_eq!(result, expected_result);
@@ -2565,6 +2636,7 @@ mod tests {
             let amount = 1000000000000000000u64;
             let alloc = genesis_keys.iter().map(|pair| {
                 (
+                    // public key到地址
                     public_key_to_address(pair.public_key()),
                     GenesisAccount::default().with_balance(U256::from(amount)),
                 )
@@ -2592,12 +2664,14 @@ mod tests {
 
             // TODO: add transactions that transfer from the alloc accounts, generating the new
             // block tx and state root
+            // TODO: 添加txs，从alloc accounts传输，生成新的block tx以及state root
 
             insert_blocks(env.db.as_ref(), chain_spec.clone(), [&genesis, &block1].into_iter());
 
             let mut engine_rx = spawn_consensus_engine(consensus_engine);
 
             // Send forkchoice
+            // 发送forkchoice
             let res = env
                 .send_forkchoice_updated(ForkchoiceState {
                     head_block_hash: block1.hash,
@@ -2648,8 +2722,10 @@ mod tests {
             assert_matches!(res, Ok(ForkchoiceUpdated { payload_status, .. }) => assert_eq!(payload_status, expected_result));
 
             // Send new payload
+            // 发送新的payload，parent还没有插入
             let block = random_block(&mut rng, 2, Some(H256::random()), None, Some(0));
             let res = env.send_new_payload(try_block_to_payload_v1(block), None).await;
+            // 返回的状态为Syncing
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Syncing);
             assert_matches!(res, Ok(result) => assert_eq!(result, expected_result));
 
@@ -2703,6 +2779,7 @@ mod tests {
                 })
                 .await;
 
+            // 返回的结果为INVALID
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Invalid {
                 validation_error: BlockValidationError::BlockPreMerge { hash: block1.hash }
                     .to_string(),
@@ -2716,6 +2793,7 @@ mod tests {
                 .await
                 .unwrap();
 
+            // 返回的结果是INVALID
             let expected_result = PayloadStatus::from_status(PayloadStatusEnum::Invalid {
                 validation_error: BlockValidationError::BlockPreMerge { hash: block2.hash }
                     .to_string(),

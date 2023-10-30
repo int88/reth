@@ -208,8 +208,10 @@ where
     }
 
     /// Check if the engine reached max block as specified by `max_block` parameter.
+    /// 检查engine是否到达了max block，通过`max_block`参数指定
     ///
     /// Note: this is mainly for debugging purposes.
+    /// 注意：这主要用于debug
     pub(crate) fn has_reached_max_block(&self, progress: BlockNumber) -> bool {
         let has_reached_max_block =
             self.max_block.map(|target| progress >= target).unwrap_or_default();

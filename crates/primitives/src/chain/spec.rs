@@ -777,6 +777,7 @@ impl ChainSpecBuilder {
     }
 
     /// Enable London at genesis.
+    /// 在genesis使能London
     pub fn london_activated(mut self) -> Self {
         self = self.berlin_activated();
         self.hardforks.insert(Hardfork::London, ForkCondition::Block(0));

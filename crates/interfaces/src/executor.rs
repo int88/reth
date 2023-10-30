@@ -54,6 +54,7 @@ pub enum BlockValidationError {
         gas_spent_by_tx: Vec<(u64, u64)>,
     },
     /// Error for pre-merge block
+    /// 对于pre-merge的block是error
     #[error("Block {hash:?} is pre merge")]
     BlockPreMerge {
         /// The hash of the block

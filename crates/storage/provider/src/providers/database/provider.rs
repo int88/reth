@@ -1954,21 +1954,26 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         let block_number = block.number;
         self.tx.put::<tables::CanonicalHeaders>(block.number, block.hash())?;
         // Put header with canonical hashes.
+        // 放入header，有着canonical hashes
         self.tx.put::<tables::Headers>(block.number, block.header.as_ref().clone())?;
         self.tx.put::<tables::HeaderNumbers>(block.hash(), block.number)?;
 
         // total difficulty
+        // td
         let ttd = if block.number == 0 {
             block.difficulty
         } else {
             let parent_block_number = block.number - 1;
+            // 获取parent ttd
             let parent_ttd = self.header_td_by_number(parent_block_number)?.unwrap_or_default();
             parent_ttd + block.difficulty
         };
 
+        // 插入header TD
         self.tx.put::<tables::HeaderTD>(block.number, ttd.into())?;
 
         // insert body ommers data
+        // 插入body ommers data
         if !block.ommers.is_empty() {
             self.tx.put::<tables::BlockOmmers>(
                 block.number,
@@ -2008,6 +2013,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
                 self.tx.put::<tables::TxSenders>(next_tx_num, sender)?;
             }
 
+            // 插入txs
             self.tx.put::<tables::Transactions>(next_tx_num, transaction.into())?;
 
             if prune_modes
@@ -2022,6 +2028,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
 
         if let Some(withdrawals) = block.withdrawals {
             if !withdrawals.is_empty() {
+                // 插入block withdrawals
                 self.tx.put::<tables::BlockWithdrawals>(
                     block_number,
                     StoredBlockWithdrawals { withdrawals },
@@ -2030,9 +2037,11 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         }
 
         let block_indices = StoredBlockBodyIndices { first_tx_num, tx_count };
+        // 插入block body indices
         self.tx.put::<tables::BlockBodyIndices>(block_number, block_indices.clone())?;
 
         if !block_indices.is_empty() {
+            // 插入transaction block
             self.tx.put::<tables::TransactionBlock>(block_indices.last_tx_num(), block_number)?;
         }
 

@@ -32,6 +32,7 @@ pub enum ProviderError {
         address: Address,
     },
     /// The total difficulty for a block is missing.
+    /// block的td缺失
     #[error("Total difficulty not found for block #{number}")]
     TotalDifficultyNotFound { number: BlockNumber },
     /// Thrown when required header related data was not found but was required.
