@@ -10,25 +10,35 @@ use crate::metrics::BlockBufferMetrics;
 pub type BufferedBlocks = BTreeMap<BlockNumber, HashMap<BlockHash, SealedBlockWithSenders>>;
 
 /// Contains the Tree of pending blocks that are not executed but buffered
+/// 包含Tree of pending blocks，没有被执行但是缓存了
 /// It allows us to store unconnected blocks for potential inclusion.
+/// 这允许我们存储unconnected blocks，用于潜在的inclusion
 ///
 /// It has three main functionality:
+/// 有三个主要功能
 /// * [BlockBuffer::insert_block] for inserting blocks inside the buffer.
+/// * [BlockBuffer::insert_block]插入blocks到buffer中
 /// * [BlockBuffer::remove_with_children] for connecting blocks if the parent gets received and
 ///   inserted.
+/// * [BlockBuffer::remove_with_children]对于connecting blocks，如果parents被接收并且插入
 /// * [BlockBuffer::clean_old_blocks] to clear old blocks that are below finalized line.
+/// * [BlockBuffer::clean_old_blocks]清理old blocks，在finalized line之下
 ///
 /// Note: Buffer is limited by number of blocks that it can contain and eviction of the block
 /// is done by last recently used block.
+/// 注意：Buffer受限于它可以包含的blocks的数目，通过lru block驱逐block
 #[derive(Debug)]
 pub struct BlockBuffer {
     /// Blocks ordered by block number inside the BTreeMap.
+    /// 在BTreeMap按照block number排序
     ///
     /// Note: BTreeMap is used so that we can remove the finalized old blocks
     /// from the buffer
+    /// 注意：使用BTreeMap，这样我们可以从buffer中移除finalized old blocks
     pub(crate) blocks: BufferedBlocks,
     /// Needed for removal of the blocks. and to connect the potential unconnected block
     /// to the connected one.
+    /// 移除blocks的时候需要，为了连接潜在的unconnected block到connected one
     pub(crate) parent_to_child: HashMap<BlockHash, HashSet<BlockNumHash>>,
     /// Helper map for fetching the block num from the block hash.
     pub(crate) hash_to_num: HashMap<BlockHash, BlockNumber>,
@@ -43,6 +53,7 @@ pub struct BlockBuffer {
 
 impl BlockBuffer {
     /// Create new buffer with max limit of blocks
+    /// 创建新的buffer，有着最大的blocks的数目
     pub fn new(limit: usize) -> Self {
         Self {
             blocks: Default::default(),
@@ -93,10 +104,12 @@ impl BlockBuffer {
 
     /// Clean up the old blocks from the buffer as blocks before finalization are not needed
     /// anymore. We can discard them from the buffer.
+    /// 清理老的blocks，从buffer，因为finalization之前的blocks不再需要了，我们可以从buffer中清除
     pub fn clean_old_blocks(&mut self, finalized_number: BlockNumber) {
         let mut remove_parent_children = Vec::new();
 
         // discard all blocks that are before the finalized number.
+        // 丢弃所有的blocks，在finalization number之前
         while let Some(entry) = self.blocks.first_entry() {
             if *entry.key() > finalized_number {
                 break
@@ -107,6 +120,7 @@ impl BlockBuffer {
             );
         }
         // remove from lru
+        // 从lru中删除
         for block in remove_parent_children.iter() {
             self.lru.pop(block);
         }
@@ -192,9 +206,12 @@ impl BlockBuffer {
     }
 
     /// Remove all children and their descendants for the given blocks and return them.
+    /// 移除所有的children以及他们的descendants，对于给定的blocks并且返回他们
     fn remove_children(&mut self, parent_blocks: Vec<BlockNumHash>) -> Vec<SealedBlockWithSenders> {
         // remove all parent child connection and all the child children blocks that are connected
         // to the discarded parent blocks.
+        // 移除所有parent child connection以及所有的child children blocks，他们连接到被丢弃的parent
+        // blocks
         let mut remove_parent_children = parent_blocks;
         let mut removed_blocks = Vec::new();
         while let Some(parent_num_hash) = remove_parent_children.pop() {

@@ -1399,6 +1399,7 @@ impl<'this, TX: DbTxMut<'this>> StageCheckpointWriter for DatabaseProvider<'this
         drop_stage_checkpoint: bool,
     ) -> RethResult<()> {
         // iterate over all existing stages in the table and update its progress.
+        // 遍历table中所有存在的stages并且更新它们的progress
         let mut cursor = self.tx.cursor_write::<tables::SyncStage>()?;
         for stage_id in StageId::ALL {
             let (_, checkpoint) = cursor.seek_exact(stage_id.to_string())?.unwrap_or_default();
@@ -2068,20 +2069,25 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
         let expected_state_root = last.state_root;
 
         // Insert the blocks
+        // 插入blocks
         for block in blocks {
             let (block, senders) = block.into_components();
             self.insert_block(block, Some(senders), prune_modes)?;
         }
 
         // Write state and changesets to the database.
+        // 写入state以及changesets到db
         // Must be written after blocks because of the receipt lookup.
+        // 必须在blocks之后写入，因为receipt lookup
         state.write_to_db(self.tx_ref(), OriginalValuesKnown::No)?;
 
+        // 插入hashes
         self.insert_hashes(first_number..=last_block_number, last_block_hash, expected_state_root)?;
 
         self.calculate_history_indices(first_number..=last_block_number)?;
 
         // Update pipeline progress
+        // 更新pipeline progress
         self.update_pipeline_stages(new_tip_number, false)?;
 
         Ok(())

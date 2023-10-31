@@ -102,6 +102,7 @@ use std::path::Path;
 
 /// Opens up an existing database or creates a new one at the specified path. Creates tables if
 /// necessary. Read/Write mode.
+/// 打开已经已经存在的db或者创建一个新的，在指定路径，创建tables如果需要的话
 pub fn init_db<P: AsRef<Path>>(path: P, log_level: Option<LogLevel>) -> eyre::Result<DatabaseEnv> {
     use crate::version::{check_db_version_file, create_db_version_file, DatabaseVersionError};
 

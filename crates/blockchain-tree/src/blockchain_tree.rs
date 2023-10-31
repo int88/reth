@@ -122,6 +122,7 @@ pub struct BlockHashes<'a> {
 
 impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> {
     /// Create a new blockchain tree.
+    /// 创建一个新的blockchain tree
     pub fn new(
         externals: TreeExternals<DB, C, EF>,
         canon_state_notification_sender: CanonStateNotificationSender,
@@ -130,6 +131,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     ) -> RethResult<Self> {
         let max_reorg_depth = config.max_reorg_depth();
 
+        // 获取最新的canonical hashes
         let last_canonical_hashes = externals
             .db
             .tx()?
@@ -151,9 +153,11 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
         Ok(Self {
             externals,
+            // 构建新的buffered blocks
             buffered_blocks: BlockBuffer::new(config.max_unconnected_blocks()),
             block_chain_id_generator: 0,
             chains: Default::default(),
+            // 构建block indices
             block_indices: BlockIndices::new(
                 last_finalized_block_number,
                 BTreeMap::from_iter(last_canonical_hashes),
@@ -742,19 +746,23 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Finalize blocks up until and including `finalized_block`, and remove them from the tree.
+    /// Finalize blocks直到并且包含`finalized_block`，并且从tree中移除
     pub fn finalize_block(&mut self, finalized_block: BlockNumber) {
         // remove blocks
+        // 移除blocks
         let mut remove_chains = self.block_indices.finalize_canonical_blocks(
             finalized_block,
             self.config.num_of_additional_canonical_block_hashes(),
         );
         // remove chains of removed blocks
+        // 移除chains of removed blocks
         while let Some(chain_id) = remove_chains.pop_first() {
             if let Some(chain) = self.chains.remove(&chain_id) {
                 remove_chains.extend(self.block_indices.remove_chain(&chain));
             }
         }
         // clean block buffer.
+        // 清理block buffer
         self.buffered_blocks.clean_old_blocks(finalized_block);
     }
 
@@ -866,8 +874,10 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Split a sidechain at the given point, and return the canonical part of it.
+    /// 在给定点拆开一个sidechain，并且返回它的canonical部分
     ///
     /// The pending part of the chain is reinserted into the tree with the same `chain_id`.
+    /// chain的pending部分被重新插入到tree，用同样的`chain_id`
     fn split_chain(
         &mut self,
         chain_id: BlockChainId,
@@ -879,8 +889,11 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             ChainSplit::Split { canonical, pending } => {
                 trace!(target: "blockchain_tree", ?canonical, ?pending, "Split chain");
                 // rest of split chain is inserted back with same chain_id.
+                // split chain的剩余部分被用同样的chain_id重新插回
                 self.block_indices.insert_chain(chain_id, &pending);
+                // 重新插入chain
                 self.chains.insert(chain_id, AppendableChain::new(pending));
+                // 返回canonical
                 canonical
             }
             ChainSplit::NoSplitCanonical(canonical) => {
@@ -894,13 +907,16 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Attempts to find the header for the given block hash if it is canonical.
+    /// 试着找到header，对于给定的block hash，如果这是canonical
     ///
     /// Returns `Ok(None)` if the block hash is not canonical (block hash does not exist, or is
     /// included in a sidechain).
+    /// 返回`Ok(None)`如果block hash不是canonical（block hash不存在，或者包含在sidechain）
     pub fn find_canonical_header(&self, hash: &BlockHash) -> RethResult<Option<SealedHeader>> {
         // if the indices show that the block hash is not canonical, it's either in a sidechain or
         // canonical, but in the db. If it is in a sidechain, it is not canonical. If it is not in
         // the db, then it is not canonical.
+        // 如果在sidechain中，则不是canonical，如果不在db中，则不是canonical
 
         let factory = self.externals.database();
         let provider = factory.provider()?;
@@ -922,20 +938,24 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Determines whether or not a block is canonical, checking the db if necessary.
+    /// 检查一个block是否为canonical，检查db，如果必要的话
     pub fn is_block_hash_canonical(&self, hash: &BlockHash) -> RethResult<bool> {
         self.find_canonical_header(hash).map(|header| header.is_some())
     }
 
     /// Make a block and its parent(s) part of the canonical chain and commit them to the database
+    /// 将一个block以及它的parents（s）成为canonical chain的一部分并且提交到db
     ///
     /// # Note
     ///
     /// This unwinds the database if necessary, i.e. if parts of the canonical chain have been
     /// re-orged.
+    /// 这会unwinds db，如果必要的话，例如，如果canonical chain的部分已经被reorg了
     ///
     /// # Returns
     ///
     /// Returns `Ok` if the blocks were canonicalized, or if the blocks were already canonical.
+    /// 返回`Ok`如果blocks被canonicalized，或者blocks已经为canonical
     #[track_caller]
     #[instrument(level = "trace", skip(self), target = "blockchain_tree")]
     pub fn make_canonical(&mut self, block_hash: &BlockHash) -> RethResult<CanonicalOutcome> {
@@ -943,6 +963,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let old_buffered_blocks = self.buffered_blocks.parent_to_child.clone();
 
         // If block is already canonical don't return error.
+        // 如果block已经是canonical的一部分，不返回error
         if let Some(header) = self.find_canonical_header(block_hash)? {
             info!(target: "blockchain_tree", ?block_hash, "Block is already canonical, ignoring.");
             let td = self.externals.database().provider()?.header_td(block_hash)?.ok_or(
@@ -959,6 +980,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             return Ok(CanonicalOutcome::AlreadyCanonical { header })
         }
 
+        // block hash没有在block indices中找到
         let Some(chain_id) = self.block_indices.get_blocks_chain_id(block_hash) else {
             warn!(target: "blockchain_tree", ?block_hash,  "Block hash not found in block indices");
             return Err(CanonicalError::from(BlockchainTreeError::BlockHashNotFoundInChain {
@@ -966,11 +988,13 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             })
             .into())
         };
+        // 从chains中移除
         let chain = self.chains.remove(&chain_id).expect("To be present");
 
         trace!(target: "blockchain_tree", ?chain, "Found chain to make canonical");
 
         // we are splitting chain at the block hash that we want to make canonical
+        // 我们在锋哥chain，在我们想要变为canonical的block hash
         let canonical = self.split_chain(chain_id, chain, SplitAt::Hash(*block_hash));
 
         let mut block_fork = canonical.fork_block();
@@ -978,10 +1002,12 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let mut chains_to_promote = vec![canonical];
 
         // loop while fork blocks are found in Tree.
+        // 循环直到fork blocks在Tree中找到
         while let Some(chain_id) = self.block_indices.get_blocks_chain_id(&block_fork.hash) {
             let chain = self.chains.remove(&chain_id).expect("To fork to be present");
             block_fork = chain.fork_block();
             // canonical chain is lower part of the chain.
+            // canonical chain是chain的lower部分
             let canonical = self.split_chain(chain_id, chain, SplitAt::Number(block_fork_number));
             block_fork_number = canonical.fork_block_number();
             chains_to_promote.push(canonical);
@@ -989,12 +1015,14 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
         let old_tip = self.block_indices.canonical_tip();
         // Merge all chain into one chain.
+        // 将所有chain合并为一个chain
         let mut new_canon_chain = chains_to_promote.pop().expect("There is at least one block");
         trace!(target: "blockchain_tree", ?new_canon_chain, "Merging chains");
         let mut chain_appended = false;
         for chain in chains_to_promote.into_iter().rev() {
             chain_appended = true;
             trace!(target: "blockchain_tree", ?chain, "Appending chain");
+            // 构建新的canonical chain
             new_canon_chain.append_chain(chain).expect("We have just build the chain.");
         }
 
@@ -1002,9 +1030,11 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             trace!(target: "blockchain_tree", ?new_canon_chain, "Canonical appended chain");
         }
         // update canonical index
+        // 更新canonical index
         self.block_indices.canonicalize_blocks(new_canon_chain.blocks());
 
         // event about new canonical chain.
+        // 关于新的canonical chain的事件
         let chain_notification;
         debug!(
             target: "blockchain_tree",
@@ -1016,9 +1046,11 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             chain_notification =
                 CanonStateNotification::Commit { new: Arc::new(new_canon_chain.clone()) };
             // append to database
+            // 添加到数据库
             self.commit_canonical(new_canon_chain)?;
         } else {
             // it forks to canonical block that is not the tip.
+            // canonical block的forks，不是tip
 
             let canon_fork: BlockNumHash = new_canon_chain.fork_block();
             // sanity check
@@ -1053,6 +1085,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
             if let Some(old_canon_chain) = old_canon_chain {
                 // state action
+                // state的动作
                 chain_notification = CanonStateNotification::Reorg {
                     old: Arc::new(old_canon_chain.clone()),
                     new: Arc::new(new_canon_chain.clone()),
@@ -1060,11 +1093,13 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
                 let reorg_depth = old_canon_chain.len();
 
                 // insert old canon chain
+                // 插入老的canon chain
                 self.insert_chain(AppendableChain::new(old_canon_chain));
 
                 self.update_reorg_metrics(reorg_depth as f64);
             } else {
                 // error here to confirm that we are reverting nothing from db.
+                // 这里的error用于确认我们从db中reverting nothing
                 error!(target: "blockchain_tree", "Reverting nothing from db on block: #{:?}", block_hash);
 
                 chain_notification =
@@ -1076,12 +1111,14 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let head = chain_notification.tip().header.clone();
 
         // send notification about new canonical chain.
+        // 关于新的canonical chain的通知
         let _ = self.canon_state_notification_sender.send(chain_notification);
 
         Ok(CanonicalOutcome::Committed { head })
     }
 
     /// Subscribe to new blocks events.
+    /// 订阅新的blocks events
     ///
     /// Note: Only canonical blocks are send.
     pub fn subscribe_canon_state(&self) -> CanonStateNotifications {
@@ -1089,6 +1126,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Canonicalize the given chain and commit it to the database.
+    /// 对给定的chain进行canonicalize并且提交给db
     fn commit_canonical(&self, chain: Chain) -> RethResult<()> {
         let provider = DatabaseProvider::new_rw(
             self.externals.db.tx_mut()?,
@@ -1130,10 +1168,13 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Revert canonical blocks from the database and return them.
+    /// 从db中revert canoncial blocks并且返回它们
     ///
     /// The block, `revert_until`, is non-inclusive, i.e. `revert_until` stays in the database.
+    /// block `revert_until`是不包含的，所以`revert_until`会包含在db中
     fn revert_canonical(&mut self, revert_until: BlockNumber) -> RethResult<Option<Chain>> {
         // read data that is needed for new sidechain
+        // 读取新的sidechain需要的data
 
         let provider = DatabaseProvider::new_rw(
             self.externals.db.tx_mut()?,
@@ -1144,6 +1185,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let revert_range = (revert_until + 1)..=tip;
         info!(target: "blockchain_tree", "Unwinding canonical chain blocks: {:?}", revert_range);
         // read block and execution result from database. and remove traces of block from tables.
+        // 从db读取block以及execution result，并且从tables中移除traces of block
         let blocks_and_execution = provider
             .take_block_and_execution_range(self.externals.chain_spec.as_ref(), revert_range)
             .map_err(|e| BlockExecutionError::CanonicalRevert { inner: e.to_string() })?;
@@ -1203,7 +1245,9 @@ mod tests {
     fn setup_externals(
         exec_res: Vec<BundleStateWithReceipts>,
     ) -> TreeExternals<Arc<DatabaseEnv>, Arc<TestConsensus>, TestExecutorFactory> {
+        // 创建测试的读写db
         let db = create_test_rw_db();
+        // 创建测试的consensus
         let consensus = Arc::new(TestConsensus::default());
         let chain_spec = Arc::new(
             ChainSpecBuilder::default()
@@ -1220,15 +1264,18 @@ mod tests {
 
     fn setup_genesis<DB: Database>(db: DB, mut genesis: SealedBlock) {
         // insert genesis to db.
+        // 插入genesis到db
 
         genesis.header.header.number = 10;
         genesis.header.header.state_root = EMPTY_ROOT;
         let factory = ProviderFactory::new(&db, MAINNET.clone());
         let provider = factory.provider_rw().unwrap();
 
+        // 插入block
         provider.insert_block(genesis, None, None).unwrap();
 
         // insert first 10 blocks
+        // 插入前十个blocks
         for i in 0..10 {
             provider
                 .tx_ref()
@@ -1237,6 +1284,7 @@ mod tests {
         }
         provider
             .tx_ref()
+            // 设置SyncStage的Finish stage
             .put::<tables::SyncStage>("Finish".to_string(), StageCheckpoint::new(10))
             .unwrap();
         provider.commit().unwrap();
@@ -1323,27 +1371,35 @@ mod tests {
         let genesis = data.genesis;
 
         // test pops execution results from vector, so order is from last to first.
+        // 测试从vector弹出execution results，因此顺序是从last到first
         let externals = setup_externals(vec![exec2.clone(), exec1.clone(), exec2, exec1]);
 
         // last finalized block would be number 9.
+        // 最后的finalized block为9
         setup_genesis(externals.db.clone(), genesis);
 
         // make tree
+        // 构建tree
         let config = BlockchainTreeConfig::new(1, 2, 3, 2);
+        // 构建notification sender
         let (sender, mut canon_notif) = tokio::sync::broadcast::channel(10);
         let mut tree =
             BlockchainTree::new(externals, sender, config, None).expect("failed to create tree");
 
         // genesis block 10 is already canonical
+        // genesis block 10已经为canonical
         tree.make_canonical(&H256::zero()).unwrap();
 
         // make sure is_block_hash_canonical returns true for genesis block
+        // 确保is_block_hash_canonical对于genesis block返回true
         tree.is_block_hash_canonical(&H256::zero()).unwrap();
 
         // make genesis block 10 as finalized
+        // 将genesis block 10设置为finalized
         tree.finalize_block(10);
 
         // block 2 parent is not known, block2 is buffered.
+        // block 2的parent未知，block2被缓存
         assert_eq!(
             tree.insert_block(block2.clone()).unwrap(),
             InsertPayloadOk::Inserted(BlockStatus::Disconnected {
@@ -1370,12 +1426,14 @@ mod tests {
         );
 
         // check if random block is known
+        // 检查是否随机的block已知
         let old_block = BlockNumHash::new(1, H256([32; 32]));
         let err = BlockchainTreeError::PendingBlockIsFinalized { last_finalized: 10 };
 
         assert_eq!(tree.is_block_known(old_block).unwrap_err().as_tree_error(), Some(err));
 
         // insert block1 and buffered block2 is inserted
+        // 插入block1并且缓存的block2被插入
         assert_eq!(
             tree.insert_block(block1.clone()).unwrap(),
             InsertPayloadOk::Inserted(BlockStatus::Valid)
@@ -1399,25 +1457,31 @@ mod tests {
             .assert(&tree);
 
         // already inserted block will `InsertPayloadOk::AlreadySeen(_)`
+        // 已经插入的block会`InsertPayloadOk::AlreadySeen(_)`
         assert_eq!(
             tree.insert_block(block1.clone()).unwrap(),
             InsertPayloadOk::AlreadySeen(BlockStatus::Valid)
         );
 
         // block two is already inserted.
+        // block2已经插入了
         assert_eq!(
             tree.insert_block(block2.clone()).unwrap(),
             InsertPayloadOk::AlreadySeen(BlockStatus::Valid)
         );
 
         // make block1 canonical
+        // 将block1设置为canonical
         tree.make_canonical(&block1.hash()).unwrap();
         // check notification
+        // 检查notification
         assert_matches!(canon_notif.try_recv(), Ok(CanonStateNotification::Commit{ new}) if *new.blocks() == BTreeMap::from([(block1.number,block1.clone())]));
 
         // make block2 canonicals
+        // 将block2设置为canonicals
         tree.make_canonical(&block2.hash()).unwrap();
         // check notification.
+        // 检查notification
         assert_matches!(canon_notif.try_recv(), Ok(CanonStateNotification::Commit{ new}) if *new.blocks() == BTreeMap::from([(block2.number,block2.clone())]));
 
         // Trie state:
@@ -1436,6 +1500,7 @@ mod tests {
             .assert(&tree);
 
         /**** INSERT SIDE BLOCKS *** */
+        // 插入SIDE BLOCKS
 
         let mut block1a = block1.clone();
         let block1a_hash = H256([0x33; 32]);
@@ -1445,6 +1510,7 @@ mod tests {
         block2a.hash = block2a_hash;
 
         // reinsert two blocks that point to canonical chain
+        // 插入两个blocks，指向canoncial chain
         assert_eq!(
             tree.insert_block(block1a.clone()).unwrap(),
             InsertPayloadOk::Inserted(BlockStatus::Accepted)
@@ -1484,6 +1550,7 @@ mod tests {
             .assert(&tree);
 
         // make b2a canonical
+        // 将b2a设置为canonical
         assert!(tree.make_canonical(&block2a_hash).is_ok());
         // check notification.
         assert_matches!(canon_notif.try_recv(),
@@ -1510,6 +1577,7 @@ mod tests {
             .with_pending_blocks((block2.number + 1, HashSet::new()))
             .assert(&tree);
 
+        // 将b1a设置为canonical
         assert!(tree.make_canonical(&block1a_hash).is_ok());
         // Trie state:
         //       b2a   b2 (side chain)
@@ -1535,16 +1603,19 @@ mod tests {
             .assert(&tree);
 
         // check notification.
+        // 检查notification
         assert_matches!(canon_notif.try_recv(),
             Ok(CanonStateNotification::Reorg{ old, new})
             if *old.blocks() == BTreeMap::from([(block1.number,block1.clone()),(block2a.number,block2a.clone())])
                 && *new.blocks() == BTreeMap::from([(block1a.number,block1a.clone())]));
 
         // check that b2 and b1 are not canonical
+        // 检查b2和b1不再是canonical
         assert!(!tree.is_block_hash_canonical(&block2.hash).unwrap());
         assert!(!tree.is_block_hash_canonical(&block1.hash).unwrap());
 
         // ensure that b1a is canonical
+        // 确保b1a是canonical
         assert!(tree.is_block_hash_canonical(&block1a.hash).unwrap());
 
         // make b2 canonical
@@ -1578,6 +1649,7 @@ mod tests {
         assert!(tree.is_block_hash_canonical(&block2.hash).unwrap());
 
         // finalize b1 that would make b1a removed from tree
+        // 对b1进行finalize，这样b1a从tree中移除
         tree.finalize_block(11);
         // Trie state:
         // b2   b2a (side chain)
@@ -1595,6 +1667,7 @@ mod tests {
             .assert(&tree);
 
         // unwind canonical
+        // 对canonical进行unwind
         assert_eq!(tree.unwind(block1.number), Ok(()));
         // Trie state:
         //    b2   b2a (pending block)
@@ -1617,6 +1690,7 @@ mod tests {
             .assert(&tree);
 
         // commit b2a
+        // 对b2a进行提交
         tree.make_canonical(&block2.hash).unwrap();
 
         // Trie state:
@@ -1640,6 +1714,7 @@ mod tests {
             if *new.blocks() == BTreeMap::from([(block2.number,block2.clone())]));
 
         // insert unconnected block2b
+        // 插入未连接的block2b
         let mut block2b = block2a.clone();
         block2b.hash = H256([0x99; 32]);
         block2b.parent_hash = H256([0x88; 32]);
@@ -1659,6 +1734,7 @@ mod tests {
             .assert(&tree);
 
         // update canonical block to b2, this would make b2a be removed
+        // 更新canonical block到b2，这会让b2a被移除
         assert_eq!(tree.connect_buffered_blocks_to_canonical_hashes_and_finalize(12), Ok(()));
 
         assert_eq!(tree.is_block_known(block2.num_hash()).unwrap(), Some(BlockStatus::Valid));

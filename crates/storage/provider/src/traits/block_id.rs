@@ -4,6 +4,8 @@ use reth_primitives::{BlockHashOrNumber, BlockId, BlockNumber, BlockNumberOrTag,
 
 /// Client trait for getting important block numbers (such as the latest block number), converting
 /// block hashes to numbers, and fetching a block hash from its block number.
+/// Client trait用于获取重要的block numbers（例如最新的block number），转换block
+/// hashes到numbers，获取一个block hash，从它的block number
 ///
 /// This trait also supports fetching block hashes and block numbers from a [BlockHashOrNumber].
 #[auto_impl::auto_impl(&, Arc)]

@@ -15,6 +15,7 @@ use tracing::debug;
 pub type CanonStateNotifications = broadcast::Receiver<CanonStateNotification>;
 
 /// Type alias for a sender that sends [CanonStateNotification]
+/// 对于发送[CanonStateNotification]的一个sender
 pub type CanonStateNotificationSender = broadcast::Sender<CanonStateNotification>;
 
 /// A type that allows to register chain related event subscriptions.
@@ -59,15 +60,21 @@ impl Stream for CanonStateNotificationStream {
 }
 
 /// Chain action that is triggered when a new block is imported or old block is reverted.
+/// 当一个新的block被导入或者老的block被reverted的时候，触发的chain action
 /// and will return all [`crate::BundleStateWithReceipts`] and
 /// [`reth_primitives::SealedBlockWithSenders`] of both reverted and committed blocks.
+/// 会返回所有的[`crate::BundleStateWithReceipts`]和[`reth_primitives::SealedBlockWithSenders`]，
+/// 对于reverted和committed blocks
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub enum CanonStateNotification {
     /// Chain got extended without reorg and only new chain is returned.
+    /// Chain被扩展，没有reorg，并且只有新的chain返回
     Commit { new: Arc<Chain> },
     /// Chain reorgs and both old and new chain are returned.
+    /// Chain被reorgs并且old和新的chain都被返回
     /// Revert is just a subset of reorg where the new chain is empty.
+    /// Revert只是reorg的子集，其中新的chain为空
     Reorg { old: Arc<Chain>, new: Arc<Chain> },
 }
 

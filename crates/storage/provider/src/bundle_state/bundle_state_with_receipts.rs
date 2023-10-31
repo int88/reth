@@ -62,6 +62,7 @@ impl BundleStateWithReceipts {
     }
 
     /// Create new bundle state with receipts.
+    /// 用receipts创建新的bundle state
     pub fn new_init(
         state_init: BundleStateInit,
         revert_init: RevertsInit,
@@ -70,10 +71,12 @@ impl BundleStateWithReceipts {
         first_block: BlockNumber,
     ) -> Self {
         // sort reverts by block number
+        // 通过block number进行sort reverts
         let mut reverts = revert_init.into_iter().collect::<Vec<_>>();
         reverts.sort_unstable_by_key(|a| a.0);
 
         // initialize revm bundle
+        // 初始化revm bundle
         let bundle = BundleState::new(
             state_init.into_iter().map(|(address, (original, present, storage))| {
                 (

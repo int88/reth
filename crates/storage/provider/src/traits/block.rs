@@ -208,6 +208,7 @@ pub trait BlockReaderIdExt: BlockReader + BlockIdReader + ReceiptProviderIdExt {
 }
 
 /// BlockExecution Writer
+/// Block Execution的Writer
 #[auto_impl(&, Arc, Box)]
 pub trait BlockExecutionWriter: BlockWriter + BlockReader + Send + Sync {
     /// Get range of blocks and its execution result
@@ -220,6 +221,7 @@ pub trait BlockExecutionWriter: BlockWriter + BlockReader + Send + Sync {
     }
 
     /// Take range of blocks and its execution result
+    /// 获取一个范围的blocks以及它的执行结果
     fn take_block_and_execution_range(
         &self,
         chain_spec: &ChainSpec,

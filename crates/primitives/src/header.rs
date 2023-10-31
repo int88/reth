@@ -226,6 +226,7 @@ impl Header {
     }
 
     /// Seal the header with a known hash.
+    /// 用一个已知的hash seal the header
     ///
     /// WARNING: This method does not perform validation whether the hash is correct.
     pub fn seal(self, hash: H256) -> SealedHeader {
@@ -233,6 +234,7 @@ impl Header {
     }
 
     /// Calculate hash and seal the Header so that it can't be changed.
+    /// 计算hash并且seal the Header，这样就不能改变了
     pub fn seal_slow(self) -> SealedHeader {
         let hash = self.hash_slow();
         self.seal(hash)
@@ -495,6 +497,7 @@ impl Decodable for Header {
 
 /// A [`Header`] that is sealed at a precalculated hash, use [`SealedHeader::unseal()`] if you want
 /// to modify header.
+/// 一个[`Header`]用一个提前计算的hash进行封装
 #[add_arbitrary_tests(rlp)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SealedHeader {

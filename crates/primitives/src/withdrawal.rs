@@ -4,18 +4,23 @@ use reth_rlp::{RlpDecodable, RlpEncodable};
 use std::mem;
 
 /// Withdrawal represents a validator withdrawal from the consensus layer.
+/// Withdrawal代表来自consensus layer的validator withdrawal
 #[main_codec]
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash, RlpEncodable, RlpDecodable)]
 pub struct Withdrawal {
     /// Monotonically increasing identifier issued by consensus layer.
+    /// consensus layer使用的单调递增的identifier
     #[serde(with = "u64_hex")]
     pub index: u64,
     /// Index of validator associated with withdrawal.
+    /// 和withdrawal相关的validator的索引
     #[serde(with = "u64_hex", rename = "validatorIndex")]
     pub validator_index: u64,
     /// Target address for withdrawn ether.
+    /// withdrawn ether的target地址
     pub address: Address,
     /// Value of the withdrawal in gwei.
+    /// withdrawal的值
     #[serde(with = "u64_hex")]
     pub amount: u64,
 }

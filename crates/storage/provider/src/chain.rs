@@ -9,19 +9,26 @@ use reth_primitives::{
 use std::{borrow::Cow, collections::BTreeMap, fmt};
 
 /// A chain of blocks and their final state.
+/// 一个blocks的chain以及它们的final state
 ///
 /// The chain contains the state of accounts after execution of its blocks,
+/// 这个chain包含state of accounts，在执行它们的blocks之后
 /// changesets for those blocks (and their transactions), as well as the blocks themselves.
+/// 这些blocks的changeset（以及他们的txs），以及blocks自身
 ///
 /// Used inside the BlockchainTree.
+/// 在BlockchainTree中使用
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Chain {
     /// The state of all accounts after execution of the _all_ blocks in this chain's range from
     /// [Chain::first] to [Chain::tip], inclusive.
+    /// 所有accounts的state，在执行所有的blocks之后，从[Chain::first]到[Chain::tip]，包含
     ///
     /// This state also contains the individual changes that lead to the current state.
+    /// 这个state也包含单独的changes，导致当前的state
     pub state: BundleStateWithReceipts,
     /// All blocks in this chain.
+    /// 这个chain中所有的blocks
     pub blocks: BTreeMap<BlockNumber, SealedBlockWithSenders>,
 }
 
@@ -161,8 +168,10 @@ impl Chain {
     }
 
     /// Merge two chains by appending the given chain into the current one.
+    /// 合并两个chains，通过扩展给定chain到当前的
     ///
     /// The state of accounts for this chain is set to the state of the newest chain.
+    /// 这个chain的state of accounts被设置为最新chain的state
     pub fn append_chain(&mut self, chain: Chain) -> RethResult<()> {
         let chain_tip = self.tip();
         if chain_tip.hash != chain.fork_block_hash() {
@@ -174,6 +183,7 @@ impl Chain {
         }
 
         // Insert blocks from other chain
+        // 插入来自其他chain的blocks
         self.blocks.extend(chain.blocks);
         self.state.extend(chain.state);
 
@@ -181,12 +191,17 @@ impl Chain {
     }
 
     /// Split this chain at the given block.
+    /// 在给定的block对这个chain进行拆分
     ///
     /// The given block will be the last block in the first returned chain.
+    /// 给定的block回事第一个返回的chain的last block
     ///
     /// If the given block is not found, [`ChainSplit::NoSplitPending`] is returned.
+    /// 如果给定的block没有找到，[`ChainSplit::NoSplitPending`]被返回
     /// Split chain at the number or hash, block with given number will be included at first chain.
     /// If any chain is empty (Does not have blocks) None will be returned.
+    /// 在number或者hash对chain进行拆分，给定number的block会被包含在第一个chain，
+    /// 如果任何的chain是空的，None会被返回
     ///
     /// # Note
     ///
@@ -335,6 +350,7 @@ pub enum SplitAt {
 }
 
 /// Result of a split chain.
+/// 一个split chain的结果
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChainSplit {
     /// Chain is not split. Pending chain is returned.
@@ -345,14 +361,19 @@ pub enum ChainSplit {
     /// Given block split is lower than first block.
     NoSplitCanonical(Chain),
     /// Chain is split into two.
+    /// Chain被拆分为两部分
     /// Given block split is contained in first chain.
+    /// 给定的block被包含在第一个chain
     Split {
         /// Left contains lower block numbers that get are considered canonicalized. It ends with
         /// the [SplitAt] block. The substate of this chain is now empty and not usable.
+        /// 以[SplitAt] block终止
         canonical: Chain,
         /// Right contains all subsequent blocks after the [SplitAt], that are still pending.
+        /// Right包含所有后续的blocks，在[SplitAt]之后，依然处于pending
         ///
         /// The substate of the original chain is moved here.
+        /// original chain的子状态被移动到这里
         pending: Chain,
     },
 }

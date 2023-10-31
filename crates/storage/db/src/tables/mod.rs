@@ -240,6 +240,7 @@ macro_rules! dupsort {
 
 table!(
     /// Stores the header hashes belonging to the canonical chain.
+    /// 存储属于canonical chain的header hashes
     ( CanonicalHeaders ) BlockNumber | HeaderHash
 );
 

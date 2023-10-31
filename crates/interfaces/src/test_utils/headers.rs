@@ -258,9 +258,11 @@ impl HeadersClient for TestHeadersClient {
 }
 
 /// Consensus engine implementation for testing
+/// Consensus engine的实现，用于测试
 #[derive(Debug)]
 pub struct TestConsensus {
     /// Flag whether the header validation should purposefully fail
+    /// Flag表明header validation是否应该故意失败
     fail_validation: AtomicBool,
 }
 

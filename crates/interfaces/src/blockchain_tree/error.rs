@@ -7,6 +7,7 @@ use crate::{
 use reth_primitives::{BlockHash, BlockNumber, SealedBlock};
 
 /// Various error cases that can occur when a block violates tree assumptions.
+/// 各种error的情况，当一个block违反了tree的假设
 #[derive(Debug, Clone, Copy, thiserror::Error, Eq, PartialEq)]
 #[allow(missing_docs)]
 pub enum BlockchainTreeError {
@@ -35,6 +36,7 @@ pub enum BlockchainTreeError {
         block_number: BlockNumber,
     },
     /// Thrown if a block hash cannot be found in the blockchain tree chain.
+    /// 抛出，如果一个block hash不能在blockchain tree chain中找到
     #[error("Block hash {block_hash} not found in blockchain tree chain")]
     BlockHashNotFoundInChain {
         /// The block hash that could not be found.

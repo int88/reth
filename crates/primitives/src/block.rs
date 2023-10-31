@@ -241,11 +241,13 @@ impl std::ops::DerefMut for SealedBlock {
 }
 
 /// Sealed block with senders recovered from transactions.
+/// Sealed block并且有恢复自tx的senders
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SealedBlockWithSenders {
     /// Sealed block
     pub block: SealedBlock,
     /// List of senders that match transactions from block.
+    /// 一系列的senders，匹配来自block的txs
     pub senders: Vec<Address>,
 }
 

@@ -23,10 +23,12 @@ use std::{
 };
 
 /// The ID of a sidechain internally in a [`BlockchainTree`][super::BlockchainTree].
+/// 在一个[`BlockchainTree`][super::BlockchainTree]内部的sidechain的ID
 pub(crate) type BlockChainId = u64;
 
 /// A chain if the blockchain tree, that has functionality to execute blocks and append them to the
 /// it self.
+/// 一个chain，如果blockchain tree，有功能执行blocks并且扩展它们到自己
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AppendableChain {
     chain: Chain,
@@ -48,6 +50,7 @@ impl DerefMut for AppendableChain {
 
 impl AppendableChain {
     /// Create a new appendable chain from a given chain.
+    /// 从给定的chain创建一个新的appendable chain
     pub fn new(chain: Chain) -> Self {
         Self { chain }
     }

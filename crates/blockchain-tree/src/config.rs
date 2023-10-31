@@ -1,23 +1,31 @@
 //! Blockchain tree configuration
 
 /// The configuration for the blockchain tree.
+/// blockchain tree的配置
 #[derive(Clone, Copy, Debug)]
 pub struct BlockchainTreeConfig {
     /// Number of blocks after the last finalized block that we are storing.
+    /// 在上一次finalized block之后，我们存储的blocks的数目
     ///
     /// It should be more than the finalization window for the canonical chain.
+    /// 对于canonical chain，这应该超过finalization window
     max_blocks_in_chain: u64,
     /// The number of blocks that can be re-orged (finalization windows)
+    /// 可以被reorg的blocks的数目（finalization）
     max_reorg_depth: u64,
     /// The number of unconnected blocks that we are buffering
+    /// 我们正在缓存的unconnected blocks的数目
     max_unconnected_blocks: usize,
     /// Number of additional block hashes to save in blockchain tree. For `BLOCKHASH` EVM opcode we
     /// need last 256 block hashes.
+    /// 额外的保存在blockchain tree中的block hashes，对于`BLOCKHASH` EVM
+    /// opcode，我们需要最新的256个block hashes
     ///
     /// The total number of block hashes retained in-memory will be
     /// `max(additional_canonical_block_hashes, max_reorg_depth)`, and for Ethereum that would
     /// be 256. It covers both number of blocks required for reorg, and number of blocks
     /// required for `BLOCKHASH` EVM opcode.
+    /// 同时覆盖了需要reorg的blocks的数目以及`BLOCKHASH` EVM opcode需要的blocks的数目
     num_of_additional_canonical_block_hashes: u64,
 }
 
@@ -39,6 +47,7 @@ impl Default for BlockchainTreeConfig {
 
 impl BlockchainTreeConfig {
     /// Create tree configuration.
+    /// 创建tree的配置
     pub fn new(
         max_reorg_depth: u64,
         max_blocks_in_chain: u64,
@@ -46,6 +55,7 @@ impl BlockchainTreeConfig {
         max_unconnected_blocks: usize,
     ) -> Self {
         if max_reorg_depth > max_blocks_in_chain {
+            // sidechain的大小应该大于finalization window
             panic!("Side chain size should be more than finalization window");
         }
         Self {
@@ -57,6 +67,7 @@ impl BlockchainTreeConfig {
     }
 
     /// Return the maximum reorg depth.
+    /// 返回最大的reorg depth
     pub fn max_reorg_depth(&self) -> u64 {
         self.max_reorg_depth
     }
@@ -85,6 +96,7 @@ impl BlockchainTreeConfig {
     }
 
     /// Return max number of unconnected blocks that we are buffering
+    /// 返回我们正在缓冲的最大的unconnected blocks的数目
     pub fn max_unconnected_blocks(&self) -> usize {
         self.max_unconnected_blocks
     }

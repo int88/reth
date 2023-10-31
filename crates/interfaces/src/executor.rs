@@ -84,9 +84,11 @@ pub enum BlockExecutionError {
     #[error("Provider error")]
     ProviderError,
     /// Transaction error on revert with inner details
+    /// Transaction错误，在revert的时候，有着内部的细节
     #[error("Transaction error on revert: {inner:?}")]
     CanonicalRevert {
         /// The inner error message
+        /// 内部的error message
         inner: String,
     },
     /// Transaction error on commit with inner details

@@ -1,4 +1,5 @@
 //! Wrapper around BlockchainTree that allows for it to be shared.
+//! 对于BlockchainTree的封装，从而允许它共享
 use super::BlockchainTree;
 use parking_lot::RwLock;
 use reth_db::database::Database;
@@ -29,11 +30,13 @@ use tracing::trace;
 #[derive(Clone, Debug)]
 pub struct ShareableBlockchainTree<DB: Database, C: Consensus, EF: ExecutorFactory> {
     /// BlockchainTree
+    /// 内置BlockchainTree
     pub tree: Arc<RwLock<BlockchainTree<DB, C, EF>>>,
 }
 
 impl<DB: Database, C: Consensus, EF: ExecutorFactory> ShareableBlockchainTree<DB, C, EF> {
     /// Create a new shareable database.
+    /// 创建一个新的共享的db
     pub fn new(tree: BlockchainTree<DB, C, EF>) -> Self {
         Self { tree: Arc::new(RwLock::new(tree)) }
     }

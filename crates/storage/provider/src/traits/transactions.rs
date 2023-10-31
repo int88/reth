@@ -7,6 +7,7 @@ use reth_primitives::{
 use std::ops::RangeBounds;
 
 ///  Client trait for fetching [TransactionSigned] related data.
+/// Client trait用于获取[TransactionSigned]相关的数据
 #[auto_impl::auto_impl(&, Arc)]
 pub trait TransactionsProvider: BlockNumReader + Send + Sync {
     /// Get internal transaction identifier by transaction hash.
@@ -50,12 +51,14 @@ pub trait TransactionsProvider: BlockNumReader + Send + Sync {
     ) -> RethResult<Vec<Vec<TransactionSigned>>>;
 
     /// Get transactions by tx range.
+    /// 通过tx range获取txs
     fn transactions_by_tx_range(
         &self,
         range: impl RangeBounds<TxNumber>,
     ) -> RethResult<Vec<TransactionSignedNoHash>>;
 
     /// Get Senders from a tx range.
+    /// 从tx range获取Senders
     fn senders_by_tx_range(&self, range: impl RangeBounds<TxNumber>) -> RethResult<Vec<Address>>;
 
     /// Get transaction sender.

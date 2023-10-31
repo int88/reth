@@ -21,9 +21,11 @@ pub mod error;
 ///   对tables进行reorg，如果canonical chain需要
 pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     /// Recover senders and call [`BlockchainTreeEngine::insert_block`].
+    /// 恢复senders并且调用[`BlockchainTreeEngine::insert_block`]
     ///
     /// This will recover all senders of the transactions in the block first, and then try to insert
     /// the block.
+    /// 这会首先恢复tx中的所有senders，之后试着插入block
     fn insert_block_without_senders(
         &self,
         block: SealedBlock,
@@ -83,11 +85,13 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
 
     /// Make a block and its parent chain part of the canonical chain by committing it to the
     /// database.
+    /// 将一个block以及它的parent部分变为canonical chain，通过提交到db
     ///
     /// # Note
     ///
     /// This unwinds the database if necessary, i.e. if parts of the canonical chain have been
     /// re-orged.
+    /// 这会unwinds db，如果需要的话，例如，canonical chain的部分被re-org了
     ///
     /// # Returns
     ///
@@ -95,6 +99,7 @@ pub trait BlockchainTreeEngine: BlockchainTreeViewer + Send + Sync {
     fn make_canonical(&self, block_hash: &BlockHash) -> RethResult<CanonicalOutcome>;
 
     /// Unwind tables and put it inside state
+    /// 对tables进行unwind并且放入state
     fn unwind(&self, unwind_to: BlockNumber) -> RethResult<()>;
 }
 
@@ -142,21 +147,28 @@ impl CanonicalOutcome {
 }
 
 /// From Engine API spec, block inclusion can be valid, accepted or invalid.
+/// 来自Engine API spec，block inclusion可以为valid，accepted或者invalid
 /// Invalid case is already covered by error, but we need to make distinction
 /// between if it is valid (extends canonical chain) or just accepted (is side chain).
+/// 我们需要在valid（扩展canonical chain）或者只是accepted（sidechain）进行区分
 /// If we don't know the block parent we are returning Disconnected status
 /// as we can't make a claim if block is valid or not.
+/// 如果我们不知道block parent，我们返回Disconnected，因为我们不能确定一个block是否合法
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BlockStatus {
     /// If block validation is valid and block extends canonical chain.
     /// In BlockchainTree sense it forks on canonical tip.
+    /// block合法并且扩展canonical chain
     Valid,
     /// If the block is valid, but it does not extend canonical chain.
     /// (It is side chain) or hasn't been fully validated but ancestors of a payload are known.
+    /// 如果block合法，但是它没有扩展canonical chain，或者还没被校验，但是payload的ancestor已知
     Accepted,
     /// If blocks is not connected to canonical chain.
+    /// block没有连接到canonical chain
     Disconnected {
         /// The lowest ancestor block that is not connected to the canonical chain.
+        /// 最低的ancestor block没有被连接到canonical chain
         missing_ancestor: BlockNumHash,
     },
 }
@@ -174,13 +186,19 @@ pub enum InsertPayloadOk {
 }
 
 /// Allows read only functionality on the blockchain tree.
+/// 允许对于blockchain tree的只读功能
 ///
 /// Tree contains all blocks that are not canonical that can potentially be included
 /// as canonical chain. For better explanation we can group blocks into four groups:
+/// tree包含所有不是canonical，但是可能被包含进canonical
+/// chain的blocks，我们可以将blocks分为以下四部分
 /// * Canonical chain blocks
 /// * Side chain blocks. Side chain are block that forks from canonical chain but not its tip.
+/// * Side chain blocks，是fork自canonical chain的forks，但是不是tip
 /// * Pending blocks that extend the canonical chain but are not yet included.
+/// * Pending blocks，扩展canonical chain，但是还没有被包含
 /// * Future pending blocks that extend the pending blocks.
+/// * 未来的pending blocks，扩展pending blocks
 pub trait BlockchainTreeViewer: Send + Sync {
     /// Returns both pending and side-chain block numbers and their hashes.
     ///

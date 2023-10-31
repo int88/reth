@@ -8,24 +8,35 @@ use reth_provider::Chain;
 use std::collections::{btree_map, hash_map, BTreeMap, BTreeSet, HashMap, HashSet};
 
 /// Internal indices of the blocks and chains.
+/// blocks以及chains的内部索引
 ///
 /// This is main connection between blocks, chains and canonical chain.
+/// 这是主要的连接，在blocks, chains以及canonical chain之间
 ///
 /// It contains a list of canonical block hashes, forks to child blocks, and a mapping of block hash
 /// to chain ID.
+/// 它包含了一系列canonical block hashes，到child blocks的forks以及一个block hash到chain ID的映射
 #[derive(Debug, Clone)]
 pub struct BlockIndices {
     /// Last finalized block.
+    /// 最新finalized的block
     last_finalized_block: BlockNumber,
     /// Canonical chain. Contains N number (depends on `finalization_depth`) of blocks.
     /// These blocks are found in fork_to_child but not inside `blocks_to_chain` or
     /// `number_to_block` as those are chain specific indices.
+    /// Canonical chain，包含N个blocks（依赖于`finalization_depth`），
+    /// 这些blocks可以在fork_to_child找到，但是不在`blocks_to_chain`或者`number_to_block`，
+    /// 因为他们是chain特定的indices
     canonical_chain: CanonicalChain,
     /// Index needed when discarding the chain, so we can remove connected chains from tree.
+    /// 丢弃chain的时候需要，这样我们可以从tree移除connected chains
     ///
     /// This maintains insertion order for all child blocks, so
     /// [BlockIndices::pending_block_num_hash] returns always the same block: the first child block
     /// we inserted.
+    /// 它维护所有child
+    /// blocks的插入顺序，这样[BlockIndices::pending_block_num_hash]总是返回同一个block：
+    /// 第一个我们插入的child block
     ///
     /// NOTE: It contains just blocks that are forks as a key and not all blocks.
     fork_to_child: HashMap<BlockHash, LinkedHashSet<BlockHash>>,
@@ -39,11 +50,13 @@ pub struct BlockIndices {
     /// hashes.
     block_number_to_block_hashes: BTreeMap<BlockNumber, HashSet<BlockHash>>,
     /// Block hashes and side chain they belong
+    /// Block hashes以及它们所属的side chain
     blocks_to_chain: HashMap<BlockHash, BlockChainId>,
 }
 
 impl BlockIndices {
     /// Create new block indices structure
+    /// 创建新的block inidices结构
     pub fn new(
         last_finalized_block: BlockNumber,
         canonical_chain: BTreeMap<BlockNumber, BlockHash>,
@@ -102,8 +115,10 @@ impl BlockIndices {
     }
 
     /// Returns the block number of the canonical block with the given hash.
+    /// 返回给定hash的block number，对于canonical block
     ///
     /// Returns `None` if no block could be found in the canonical chain.
+    /// 返回`None`，如果没有block可以在canonical chain找到
     #[inline]
     pub(crate) fn get_canonical_block_number(&self, block_hash: &BlockHash) -> Option<BlockNumber> {
         self.canonical_chain.get_canonical_block_number(self.last_finalized_block, block_hash)
@@ -266,17 +281,21 @@ impl BlockIndices {
     }
 
     /// Remove all blocks from canonical list and insert new blocks to it.
+    /// 从canonical list移除所有的blocks并且插入新的blocks
     ///
     /// It is assumed that blocks are interconnected and that they connect to canonical chain
+    /// 假设blocks互相连接并且他们连接到canonical chain
     pub fn canonicalize_blocks(&mut self, blocks: &BTreeMap<BlockNumber, SealedBlockWithSenders>) {
         if blocks.is_empty() {
             return
         }
 
         // Remove all blocks from canonical chain
+        // 从canonical chain移除所有的blocks
         let first_number = *blocks.first_key_value().unwrap().0;
 
         // this will remove all blocks numbers that are going to be replaced.
+        // 这会移除所有的block numbers，需要被移除
         self.canonical_chain.retain(|&number, _| number < first_number);
 
         // remove them from block to chain_id index
@@ -324,8 +343,10 @@ impl BlockIndices {
     }
 
     /// Used for finalization of block.
+    /// 用于对block进行finalization
     ///
     /// Return list of chains for removal that depend on finalized canonical chain.
+    /// 返回一系列被移除的chains，取决于finalized canonical chain
     pub(crate) fn finalize_canonical_blocks(
         &mut self,
         finalized_block: BlockNumber,
@@ -333,6 +354,8 @@ impl BlockIndices {
     ) -> BTreeSet<BlockChainId> {
         // get finalized chains. blocks between [self.last_finalized,finalized_block).
         // Dont remove finalized_block, as sidechain can point to it.
+        // 获取finalized chains，blocks在[self.last_finalied, finalized_block]之间
+        // 不要移除finalized_block，因为sidechaink会指向它
         let finalized_blocks: Vec<BlockHash> = self
             .canonical_chain
             .iter()
@@ -341,6 +364,7 @@ impl BlockIndices {
             .collect();
 
         // remove unneeded canonical hashes.
+        // 移除非必须的canonical hashes
         let remove_until =
             finalized_block.saturating_sub(num_of_additional_canonical_hashes_to_retain);
         self.canonical_chain.retain(|&number, _| number >= remove_until);
@@ -349,6 +373,7 @@ impl BlockIndices {
 
         for block_hash in finalized_blocks.into_iter() {
             // there is a fork block.
+            // 有一个fork block，移除该block以及它的fork
             if let Some(fork_blocks) = self.fork_to_child.remove(&block_hash) {
                 lose_chains = fork_blocks.into_iter().fold(lose_chains, |mut fold, fork_child| {
                     if let Some(lose_chain) = self.blocks_to_chain.remove(&fork_child) {
@@ -360,6 +385,7 @@ impl BlockIndices {
         }
 
         // set last finalized block.
+        // 设置最新的finalized block
         self.last_finalized_block = finalized_block;
 
         lose_chains

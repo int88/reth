@@ -9,10 +9,12 @@ use serde::{Deserialize, Serialize};
 pub const MINIMUM_PRUNING_DISTANCE: u64 = 128;
 
 /// Pruning configuration for every part of the data that can be pruned.
+/// Pruning配置，对于每个可用被pruned部分的数据
 #[derive(Debug, Clone, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct PruneModes {
     /// Sender Recovery pruning configuration.
+    /// Sender Recovery的pruning配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sender_recovery: Option<PruneMode>,
     /// Transaction Lookup pruning configuration.
