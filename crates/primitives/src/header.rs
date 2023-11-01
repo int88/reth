@@ -59,6 +59,7 @@ pub struct Header {
     pub beneficiary: H160,
     /// The Keccak 256-bit hash of the root node of the state trie, after all transactions are
     /// executed and finalisations applied; formally Hr.
+    /// state trie的root node的hash of the root，在所有的tx被执行并且应用了finalisations之后
     pub state_root: H256,
     /// The Keccak 256-bit hash of the root node of the trie structure populated with each
     /// transaction in the transactions list portion of the block; formally Ht.
@@ -149,6 +150,7 @@ impl Default for Header {
 
 impl Header {
     /// Returns the parent block's number and hash
+    /// 返回parent block的number和hash
     pub fn parent_num_hash(&self) -> BlockNumHash {
         BlockNumHash { number: self.number.saturating_sub(1), hash: self.parent_hash }
     }

@@ -177,13 +177,18 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Check if then block is known to blockchain tree or database and return its status.
+    /// 检查block是否对blockchain tree已知或者db，并且返回它的状态
     ///
     /// Function will check:
     /// * if block is inside database and return [BlockStatus::Valid] if it is.
+    /// * 如果block在db，返回[BlockStatus::Valid]
     /// * if block is inside buffer and return [BlockStatus::Disconnected] if it is.
+    /// * 如果block在buffer，返回[BlockStatus::Disconnected]
     /// * if block is part of the side chain and return [BlockStatus::Accepted] if it is.
+    /// * 如果block是sidechain的一部分，返回[BlockStatus::Accepted]
     /// * if block is part of the canonical chain that tree knows, return [BlockStatus::Valid], if
     ///   it is.
+    /// * 如果是canonical chain的一部分，返回[BlockStatus::Valid]
     ///
     /// Returns an error if
     ///    - an error occurred while reading from the database.
@@ -194,13 +199,16 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     ) -> Result<Option<BlockStatus>, InsertBlockErrorKind> {
         let last_finalized_block = self.block_indices.last_finalized_block();
         // check db if block is finalized.
+        // 检查db，block是否被finalized
         if block.number <= last_finalized_block {
             // check if block is canonical
+            // 检查block是否是canonical
             if self.is_block_hash_canonical(&block.hash)? {
                 return Ok(Some(BlockStatus::Valid))
             }
 
             // check if block is inside database
+            // 检查block是否在db中
             if self.externals.database().provider()?.block_number(block.hash)?.is_some() {
                 return Ok(Some(BlockStatus::Valid))
             }
@@ -217,11 +225,13 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // is block inside chain
+        // block是否在tree里
         if let Some(status) = self.is_block_inside_chain(&block) {
             return Ok(Some(status))
         }
 
         // check if block is disconnected
+        // 检查是否block是disconnected
         if let Some(block) = self.buffered_blocks.block(block) {
             return Ok(Some(BlockStatus::Disconnected { missing_ancestor: block.parent_num_hash() }))
         }
@@ -317,9 +327,12 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Try inserting a validated [Self::validate_block] block inside the tree.
+    /// 试着插入一个validated [Self::validate_block] block到tree里
     ///
     /// If blocks does not have parent [`BlockStatus::Disconnected`] would be returned, in which
     /// case it is buffered for future inclusion.
+    /// 如果blocks没有parent，[`BlockStatus::Disconnected`]会被返回，
+    /// 这种情况下会被缓存用于后面的inclusion
     #[instrument(level = "trace", skip_all, fields(block = ?block.num_hash()), target = "blockchain_tree", ret)]
     fn try_insert_validated_block(
         &mut self,
@@ -330,12 +343,15 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         let parent = block.parent_num_hash();
 
         // check if block parent can be found in Tree
+        // 检查block parent能否在Tree中找到
         if let Some(chain_id) = self.block_indices.get_blocks_chain_id(&parent.hash) {
             // found parent in side tree, try to insert there
+            // 在side tree中找到，试着插入
             return self.try_insert_block_into_side_chain(block, chain_id)
         }
 
         // if not found, check if the parent can be found inside canonical chain.
+        // 如果没有找到，检查是否parent可以在canoncial chain中找到
         if self
             .is_block_hash_canonical(&parent.hash)
             .map_err(|err| InsertBlockError::new(block.block.clone(), err.into()))?
@@ -345,6 +361,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
         // this is another check to ensure that if the block points to a canonical block its block
         // is valid
+        // 另一个检查来确保，是否block指向一个canonical block，它的block是合法的
         if let Some(canonical_parent_number) =
             self.block_indices.canonical_number(block.parent_hash)
         {
@@ -361,6 +378,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // if there is a parent inside the buffer, validate against it.
+        // 检查是否parent在buffer中，校验它
         if let Some(buffered_parent) = self.buffered_blocks.block(parent) {
             self.externals
                 .consensus
@@ -369,11 +387,14 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // insert block inside unconnected block buffer. Delaying its execution.
+        // 插入block到unconnected block buffer，延迟执行
         self.buffered_blocks.insert_block(block.clone());
 
         // find the lowest ancestor of the block in the buffer to return as the missing parent
         // this shouldn't return None because that only happens if the block was evicted, which
         // shouldn't happen right after insertion
+        // 找到block的lowest ancestor在buffer，返回missing
+        // parent，这不应该返回None，因为这只在block被驱逐的时候发生，这不应该在插入之后立即发生
         let lowest_ancestor =
             self.buffered_blocks.lowest_ancestor(&block.hash).ok_or_else(|| {
                 InsertBlockError::tree_error(
@@ -386,10 +407,13 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// This tries to append the given block to the canonical chain.
+    /// 这试着扩展给定的block到canonical chain
     ///
     /// WARNING: this expects that the block extends the canonical chain: The block's parent is
     /// part of the canonical chain (e.g. the block's parent is the latest canonical hash). See also
     /// [Self::is_block_hash_canonical].
+    /// WARNING: 这期望block扩展canonical chain：这个block的parent是canonical
+    /// chain的一部分（例如，block的parent是最新的canonical hash）
     #[instrument(level = "trace", skip_all, target = "blockchain_tree")]
     fn try_append_canonical_chain(
         &mut self,
@@ -410,6 +434,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
                 .map_err(|err| InsertBlockError::new(block.block.clone(), err.into()))?;
 
             // Validate that the block is post merge
+            // 校验block是post merge
             let parent_td = provider
                 .header_td(&block.parent_hash)
                 .map_err(|err| InsertBlockError::new(block.block.clone(), err.into()))?
@@ -421,6 +446,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
                 })?;
 
             // Pass the parent total difficulty to short-circuit unnecessary calculations.
+            // 传递parent td来短路不必要的计算
             if !self.externals.chain_spec.fork(Hardfork::Paris).active_at_ttd(parent_td, U256::ZERO)
             {
                 return Err(InsertBlockError::execution_error(
@@ -443,6 +469,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             let canonical_chain = self.canonical_chain();
 
             if block.parent_hash == canonical_chain.tip().hash {
+                // 如果block的parent是canonical chain的tip
                 let chain = AppendableChain::new_canonical_head_fork(
                     block,
                     &parent_header,
@@ -463,7 +490,9 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             }
         };
 
+        // 插入chain
         self.insert_chain(chain);
+        // 试着连接buffered blocks
         self.try_connect_buffered_blocks(block_num_hash);
         Ok(block_status)
     }
@@ -608,17 +637,21 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Insert a chain into the tree.
+    /// 插入一个chain到tree中
     ///
     /// Inserts a chain into the tree and builds the block indices.
+    /// 插入一个chain到tree中并且构建block indices
     fn insert_chain(&mut self, chain: AppendableChain) -> Option<BlockChainId> {
         if chain.is_empty() {
             return None
         }
+        // 获取chain id
         let chain_id = self.block_chain_id_generator;
         self.block_chain_id_generator += 1;
 
         self.block_indices.insert_chain(chain_id, &chain);
         // add chain_id -> chain index
+        // 添加chain_id到chain index的映射
         self.chains.insert(chain_id, chain);
         Some(chain_id)
     }
@@ -663,8 +696,10 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
 
     /// Validate if block is correct and satisfies all the consensus rules that concern the header
     /// and block body itself.
+    /// 校验block是正确的并且满足所有的consensus rules，关于header以及block body自己
     fn validate_block(&self, block: &SealedBlockWithSenders) -> Result<(), ConsensusError> {
         if let Err(e) =
+            // 调用consesus的validate_header_with_total_difficulty
             self.externals.consensus.validate_header_with_total_difficulty(block, U256::MAX)
         {
             error!(
@@ -674,11 +709,13 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
             return Err(e)
         }
 
+        // 对header进行validate
         if let Err(e) = self.externals.consensus.validate_header(block) {
             error!(?block, "Failed to validate header {}: {e:?}", block.header.hash);
             return Err(e)
         }
 
+        // 对block进行validate
         if let Err(e) = self.externals.consensus.validate_block(block) {
             error!(?block, "Failed to validate block {}: {e:?}", block.header.hash);
             return Err(e)
@@ -708,29 +745,39 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Insert a block (with senders recovered) in the tree.
+    /// 插入一个block（senders已经恢复）到tree里
     ///
     /// Returns the [BlockStatus] on success:
+    /// 成功返回[BlockStatus]
     ///
     /// - The block is already part of a sidechain in the tree, or
+    /// - block已经是tree里sidechain的一部分
     /// - The block is already part of the canonical chain, or
+    /// - blocks已经是canonical chain的一部分
     /// - The parent is part of a sidechain in the tree, and we can fork at this block, or
+    /// - parent已经是sidechain的一部分，在tree里，我们可以在这个block进行fork
     /// - The parent is part of the canonical chain, and we can fork at this block
+    /// - parent是canonical chain的一部分，我们可以在这个block进行fork
     ///
     /// Otherwise, and error is returned, indicating that neither the block nor its parent is part
     /// of the chain or any sidechains.
+    /// 否则，返回error，表明这个block或者它的parent都不是chain或者任何sidechains的一部分
     ///
     /// This means that if the block becomes canonical, we need to fetch the missing blocks over
     /// P2P.
+    /// 这意味着如果block变为canonical，我们需要通过p2p拉取缺失的blocks
     ///
     /// # Note
     ///
     /// If the senders have not already been recovered, call
     /// [`BlockchainTree::insert_block_without_senders`] instead.
+    /// 如果sender没有被恢复，调用[`BlockchainTree::insert_block_without_senders`]
     pub fn insert_block(
         &mut self,
         block: SealedBlockWithSenders,
     ) -> Result<InsertPayloadOk, InsertBlockError> {
         // check if we already have this block
+        // 检查是否我们已经有这个block了
         match self.is_block_known(block.num_hash()) {
             Ok(Some(status)) => return Ok(InsertPayloadOk::AlreadySeen(status)),
             Err(err) => return Err(InsertBlockError::new(block.block, err)),
@@ -738,6 +785,7 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
         }
 
         // validate block consensus rules
+        // 校验block的consensus rules
         if let Err(err) = self.validate_block(&block) {
             return Err(InsertBlockError::consensus_error(err, block.block))
         }
@@ -851,11 +899,14 @@ impl<DB: Database, C: Consensus, EF: ExecutorFactory> BlockchainTree<DB, C, EF> 
     }
 
     /// Connect unconnected (buffered) blocks if the new block closes a gap.
+    /// 连接unconnected（缓存的）blocks，如果新的block关闭了一个gap
     ///
     /// This will try to insert all children of the new block, extending the chain.
+    /// 这会试着插入新的block的所有children，扩展chain
     ///
     /// If all children are valid, then this essentially moves appends all children blocks to the
     /// new block's chain.
+    /// 如果所有的children都是合法的，那么会扩展所有的children blocks到新的block的chain
     fn try_connect_buffered_blocks(&mut self, new_block: BlockNumHash) {
         trace!(target: "blockchain_tree", ?new_block, "try_connect_buffered_blocks");
 

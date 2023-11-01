@@ -39,6 +39,7 @@ pub struct BlockIndices {
     /// 第一个我们插入的child block
     ///
     /// NOTE: It contains just blocks that are forks as a key and not all blocks.
+    /// 注意：这包含blocks，forks作为key而不是所有的blocks
     fork_to_child: HashMap<BlockHash, LinkedHashSet<BlockHash>>,
     /// Utility index for Block number to block hash(s).
     ///
@@ -146,19 +147,24 @@ impl BlockIndices {
     }
 
     /// Insert block to chain and fork child indices of the new chain
+    /// 插入block到chain以及新的chain的fork child indices
     pub(crate) fn insert_chain(&mut self, chain_id: BlockChainId, chain: &Chain) {
         for (number, block) in chain.blocks().iter() {
             // add block -> chain_id index
+            // 添加block到chain_id index
             self.blocks_to_chain.insert(block.hash(), chain_id);
             // add number -> block
+            // 添加number到block
             self.block_number_to_block_hashes.entry(*number).or_default().insert(block.hash());
         }
         let first = chain.first();
         // add parent block -> block index
+        // 添加parent block到block index
         self.fork_to_child.entry(first.parent_hash).or_default().insert_if_absent(first.hash());
     }
 
     /// Get the chain ID the block belongs to
+    /// 获取这个block属于的chain ID
     pub(crate) fn get_blocks_chain_id(&self, block: &BlockHash) -> Option<BlockChainId> {
         self.blocks_to_chain.get(block).cloned()
     }

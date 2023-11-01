@@ -258,6 +258,7 @@ impl SealedBlockWithSenders {
     }
 
     /// Split Structure to its components
+    /// 分割结构到components
     pub fn into_components(self) -> (SealedBlock, Vec<Address>) {
         (self.block, self.senders)
     }
@@ -742,6 +743,7 @@ impl AsRef<H256> for RpcBlockHash {
 }
 
 /// Block number and hash.
+/// Block number以及hash
 #[derive(Clone, Copy, Hash, Default, PartialEq, Eq)]
 pub struct BlockNumHash {
     /// Block number
@@ -751,6 +753,7 @@ pub struct BlockNumHash {
 }
 
 /// Block number and hash of the forked block.
+/// Block number以及forked block的hash
 pub type ForkBlock = BlockNumHash;
 
 impl std::fmt::Debug for BlockNumHash {

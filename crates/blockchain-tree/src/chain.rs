@@ -61,8 +61,10 @@ impl AppendableChain {
     }
 
     /// Create a new chain that forks off the canonical.
+    /// 创建一个新的chain，分叉canonical
     ///
     /// This will also verify the state root of the block extending the canonical chain.
+    /// 这也会校验扩展canonical chain的state root
     pub fn new_canonical_head_fork<DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_header: &SealedHeader,
@@ -85,6 +87,7 @@ impl AppendableChain {
             canonical_fork,
         };
 
+        // 检验并且执行canonical head descendant
         let bundle_state = Self::validate_and_execute_canonical_head_descendant(
             block.clone(),
             parent_header,
@@ -97,6 +100,7 @@ impl AppendableChain {
     }
 
     /// Create a new chain that forks off of the canonical chain.
+    /// 创建一个新的chain，分叉canonicla chain
     pub fn new_canonical_fork<DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_header: &SealedHeader,
@@ -180,6 +184,7 @@ impl AppendableChain {
 
     /// Validate and execute the given block that _extends the canonical chain_, validating its
     /// state root after execution.
+    /// 校验并且执行给定的block，扩展canonical chain，校验它的state，在执行之后
     fn validate_and_execute<BSDP, DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_block: &SealedHeader,
@@ -194,25 +199,30 @@ impl AppendableChain {
         EF: ExecutorFactory,
     {
         // some checks are done before blocks comes here.
+        // 在blocks到这里来之前的一些检查
         externals.consensus.validate_header_against_parent(&block, parent_block)?;
 
         let (block, senders) = block.into_components();
         let block = block.unseal();
 
         // get the state provider.
+        // 获取state provider
         let db = externals.database();
         let canonical_fork = post_state_data_provider.canonical_fork();
         let state_provider = db.history_by_block_number(canonical_fork.number)?;
 
         let provider = BundleStateProvider::new(state_provider, post_state_data_provider);
 
+        // 获取executor
         let mut executor = externals.executor_factory.with_state(&provider);
         executor.execute_and_verify_receipt(&block, U256::MAX, Some(senders))?;
         let bundle_state = executor.take_output_state();
 
         // check state root if the block extends the canonical chain.
+        // 检查state root，是否block扩展了canonical chain
         if block_kind.extends_canonical_head() {
             // check state root
+            // 检查state root
             let state_root = provider.state_root(&bundle_state)?;
             if block.state_root != state_root {
                 return Err(ConsensusError::BodyStateRootDiff {
@@ -228,6 +238,7 @@ impl AppendableChain {
 
     /// Validate and execute the given block that _extends the canonical chain_, validating its
     /// state root after execution.
+    /// 校验并且执行给定的block，扩展canonical chain，校验它的state root，在执行之后
     fn validate_and_execute_canonical_head_descendant<BSDP, DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_block: &SealedHeader,
@@ -250,6 +261,7 @@ impl AppendableChain {
     }
 
     /// Validate and execute the given sidechain block, skipping state root validation.
+    /// 校验并且执行给定的sidechain block，跳过state root的校验
     fn validate_and_execute_sidechain<BSDP, DB, C, EF>(
         block: SealedBlockWithSenders,
         parent_block: &SealedHeader,
@@ -272,9 +284,12 @@ impl AppendableChain {
     }
 
     /// Validate and execute the given block, and append it to this chain.
+    /// 校验并且执行给定的block，扩展到这个chain
     ///
     /// This expects that the block's ancestors can be traced back to the `canonical_fork` (the
     /// first parent block of the `block`'s chain that is in the canonical chain).
+    /// 这期望block的ancestor可以追溯到`canonical_fork`（这个`block`的第一个parent
+    /// block的chain在canoncial chain）
     ///
     /// In other words, expects a gap less (side-) chain:  [`canonical_fork..block`] in order to be
     /// able to __execute__ the block.
@@ -315,6 +330,7 @@ impl AppendableChain {
         )
         .map_err(|err| InsertBlockError::new(block.block.clone(), err.into()))?;
         // extend the state.
+        // 扩展state
         self.state.extend(block_state);
         self.blocks.insert(block.number, block);
         Ok(())
@@ -322,22 +338,28 @@ impl AppendableChain {
 }
 
 /// Represents what kind of block is being executed and validated.
+/// 代表执行和校验的block的类型
 ///
 /// This is required because the state root check can only be performed if the targeted block can be
 /// traced back to the canonical __head__.
+/// 这是需要的，因为state root check可以被执行，只有targeted block可以在canonical __head__被trace到
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum BlockKind {
     /// The `block` is a descendant of the canonical head:
+    /// 这个block是canonical head的后代
     ///
     ///    [`head..(block.parent)*,block`]
     ExtendsCanonicalHead,
     /// The block can be traced back to an ancestor of the canonical head: a historical block, but
     /// this chain does __not__ include the canonical head.
+    /// 这个block可以追溯到canonical head的一个ancestor：一个historical
+    /// block，但是这个chain不包含canonical head
     ForksHistoricalBlock,
 }
 
 impl BlockKind {
     /// Returns `true` if the block is a descendant of the canonical head.
+    /// 返回`true`，如果这个block是canonical head的后代
     #[inline]
     pub(crate) fn extends_canonical_head(&self) -> bool {
         matches!(self, BlockKind::ExtendsCanonicalHead)

@@ -136,11 +136,13 @@ impl<DB: Database> ProviderFactory<DB> {
     }
 
     /// Storage provider for state at that given block
+    /// Storage provider，提供给定block的state
     pub fn history_by_block_number(
         &self,
         block_number: BlockNumber,
     ) -> RethResult<StateProviderBox<'_>> {
         let state_provider = self.state_provider_by_block_number(block_number)?;
+        // 返回block number对应的historical state provider
         trace!(target: "providers::db", ?block_number, "Returning historical state provider for block number");
         Ok(state_provider)
     }

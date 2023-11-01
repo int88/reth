@@ -132,6 +132,7 @@ impl Chain {
     }
 
     /// Create new chain with given blocks and post state.
+    /// 创建新的chain，用给定的blocks以及post state
     pub fn new(blocks: Vec<SealedBlockWithSenders>, state: BundleStateWithReceipts) -> Self {
         Self { state, blocks: blocks.into_iter().map(|b| (b.number, b)).collect() }
     }

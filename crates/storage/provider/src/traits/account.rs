@@ -21,6 +21,7 @@ pub trait AccountReader: Send + Sync {
 #[auto_impl(&, Arc, Box)]
 pub trait AccountExtReader: Send + Sync {
     /// Iterate over account changesets and return all account address that were changed.
+    /// 遍历account changeset并且返回所有改变的account address
     fn changed_accounts_with_range(
         &self,
         _range: impl RangeBounds<BlockNumber>,

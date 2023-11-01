@@ -228,12 +228,18 @@ pub trait BlockchainTreePendingStateProvider: Send + Sync {
 }
 
 /// Post state data needs for execution on it.
+/// 需要的Post state，在它之上执行
 /// This trait is used to create a state provider over pending state.
+/// 这个trait用于创建state provider，在pending state之上
 ///
 /// Pending state contains:
+/// Pending state包含：
 /// * [`BundleStateWithReceipts`] contains all changed of accounts and storage of pending chain
+/// * [`BundleStateWithReceipts`]包含所有的accounts以及pending chain的storage
 /// * block hashes of pending chain and canonical blocks.
+/// * pending chain和canonical blocks的block hashes
 /// * canonical fork, the block on what pending chain was forked from.
+/// * canonical fork，block分叉而来的pending chain
 #[auto_impl[Box,&]]
 pub trait BundleStateDataProvider: Send + Sync {
     /// Return post state
@@ -241,8 +247,10 @@ pub trait BundleStateDataProvider: Send + Sync {
     /// Return block hash by block number of pending or canonical chain.
     fn block_hash(&self, block_number: BlockNumber) -> Option<BlockHash>;
     /// return canonical fork, the block on what post state was forked from.
+    /// 返回canonical fork，block分叉而来的post state
     ///
     /// Needed to create state provider.
+    /// 创建state provider的试试需要
     fn canonical_fork(&self) -> BlockNumHash;
 }
 

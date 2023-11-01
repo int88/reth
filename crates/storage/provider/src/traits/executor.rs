@@ -25,15 +25,21 @@ pub trait ExecutorFactory: Send + Sync + 'static {
 }
 
 /// An executor capable of executing a block.
+/// 一个executro，能够执行一个block
 pub trait BlockExecutor {
     /// Execute a block.
+    /// 执行一个block
     ///
     /// The number of `senders` should be equal to the number of transactions in the block.
+    /// `senders`的数目应该等于block中tx的数目
     ///
     /// If no senders are specified, the `execute` function MUST recover the senders for the
     /// provided block's transactions internally. We use this to allow for calculating senders in
     /// parallel in e.g. staged sync, so that execution can happen without paying for sender
     /// recovery costs.
+    /// 如果没有指定senders，`execute`函数必须恢复senders，为提供的block的txs，
+    /// 我们使用它从而能并行计算senders，例如在staged sync，这样execution可以发生而不用支付sender
+    /// recovery costs
     fn execute(
         &mut self,
         block: &Block,
@@ -60,6 +66,7 @@ pub trait BlockExecutor {
 }
 
 /// A [BlockExecutor] capable of in-memory pruning of the data that will be written to the database.
+/// 一个[BlockExecutor]能够在内存处理data的pruning，最终会写入到db?
 pub trait PrunableBlockExecutor: BlockExecutor {
     /// Set tip - highest known block number.
     fn set_tip(&mut self, tip: BlockNumber);

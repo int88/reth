@@ -135,6 +135,7 @@ impl BlockBuffer {
     }
 
     /// Return reference to the asked block.
+    /// 返回请求的block的引用
     pub fn block(&self, block: BlockNumHash) -> Option<&SealedBlockWithSenders> {
         self.blocks.get(&block.number)?.get(&block.hash)
     }
