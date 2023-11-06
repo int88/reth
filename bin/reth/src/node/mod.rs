@@ -1,6 +1,8 @@
 //! Main node command
+//! 主要的node命令
 //!
 //! Starts the client
+//! 开始client
 use crate::{
     args::{
         get_secret_key,

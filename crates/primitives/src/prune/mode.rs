@@ -7,16 +7,20 @@ use reth_codecs::{main_codec, Compact};
 #[serde(rename_all = "lowercase")]
 pub enum PruneMode {
     /// Prune all blocks.
+    /// 清除所有的blocks
     Full,
     /// Prune blocks before the `head-N` block number. In other words, keep last N + 1 blocks.
+    /// 清理`head-N` block number之前的blocks，换句话说，保留最后N+1个blocks
     Distance(u64),
     /// Prune blocks before the specified block number. The specified block number is not pruned.
+    /// 清理特定block number之前的blocks，指定的block number不会被pruned
     Before(BlockNumber),
 }
 
 impl PruneMode {
     /// Returns block up to which variant pruning needs to be done, inclusive, according to the
     /// provided tip.
+    /// 返回blcoks，直到它，哪个variant pruning需要完成，inclusive，根据提供的tip
     pub fn prune_target_block(
         &self,
         tip: BlockNumber,
@@ -25,6 +29,7 @@ impl PruneMode {
     ) -> Result<Option<(BlockNumber, PruneMode)>, PrunePartError> {
         let result = match self {
             PruneMode::Full if min_blocks == 0 => Some((tip, *self)),
+            // 大于tip则不用prune
             PruneMode::Distance(distance) if *distance > tip => None, // Nothing to prune yet
             PruneMode::Distance(distance) if *distance >= min_blocks => {
                 Some((tip - distance, *self))
@@ -92,6 +97,7 @@ mod tests {
                 Ok(Some(tip - MINIMUM_PRUNING_DISTANCE - 2)),
             ),
             // MINIMUM_PRUNING_DISTANCE is 128
+            // MINIMUM_PRUNING_DISTANCE为128
             (PruneMode::Before(tip - 1), Err(PrunePartError::Configuration(prune_part))),
         ];
 
@@ -105,6 +111,7 @@ mod tests {
         }
 
         // Test for a scenario where there are no minimum blocks and Full can be used
+        // 测试一个场景，没有minimum blocks并且Full可以使用
         assert_eq!(
             PruneMode::Full.prune_target_block(tip, 0, prune_part),
             Ok(Some((tip, PruneMode::Full))),

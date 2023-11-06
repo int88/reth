@@ -27,6 +27,7 @@ pub struct DnsDiscoveryConfig {
     /// Maximum number of cached DNS records.
     pub dns_record_cache_limit: NonZeroU32,
     /// Links to the DNS networks to bootstrap.
+    /// 连接到DNS networks启动
     pub bootstrap_dns_networks: Option<HashSet<LinkEntry>>,
 }
 

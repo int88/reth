@@ -11,6 +11,7 @@ use reth_primitives::{Address, BlockNumber, StorageEntry, H256};
 #[auto_impl(&, Arc, Box)]
 pub trait StorageReader: Send + Sync {
     /// Get plainstate storages for addresses and storage keys.
+    /// 获取plainstate storages，对于地址以及storage keys
     fn plainstate_storages(
         &self,
         addresses_with_keys: impl IntoIterator<Item = (Address, impl IntoIterator<Item = H256>)>,

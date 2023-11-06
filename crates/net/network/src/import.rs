@@ -3,8 +3,10 @@ use reth_primitives::PeerId;
 use std::task::{Context, Poll};
 
 /// Abstraction over block import.
+/// 对于block import的抽象
 pub trait BlockImport: std::fmt::Debug + Send + Sync {
     /// Invoked for a received `NewBlock` broadcast message from the peer.
+    /// 对于一个从peer接收到的`NewBlock`广播Message进行调用
     ///
     /// > When a `NewBlock` announcement message is received from a peer, the client first verifies
     /// > the basic header validity of the block, checking whether the proof-of-work value is valid.
@@ -14,6 +16,7 @@ pub trait BlockImport: std::fmt::Debug + Send + Sync {
     fn on_new_block(&mut self, peer_id: PeerId, incoming_block: NewBlockMessage);
 
     /// Returns the results of a [`BlockImport::on_new_block`]
+    /// 返回一个 [`BlockImport::on_new_block`]的结果
     fn poll(&mut self, cx: &mut Context<'_>) -> Poll<BlockImportOutcome>;
 }
 

@@ -17,6 +17,7 @@ pub type TestPool =
     Pool<MockTransactionValidator<MockTransaction>, MockOrdering, InMemoryBlobStore>;
 
 /// Returns a new [Pool] used for testing purposes
+/// 返回一个新的[Pool]用于测试
 pub fn testing_pool() -> TestPool {
     testing_pool_with_validator(MockTransactionValidator::default())
 }

@@ -7,6 +7,7 @@ use reth_rlp::{RlpDecodableWrapper, RlpEncodableWrapper};
 use serde::{Deserialize, Serialize};
 
 /// A request for state tree nodes corresponding to the given hashes.
+/// 请求state tree nodes，对应给定的hashes
 /// This message was removed in `eth/67`, only clients running `eth/66` or earlier will respond to
 /// this message.
 #[derive_arbitrary(rlp)]

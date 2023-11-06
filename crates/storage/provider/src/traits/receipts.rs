@@ -18,6 +18,7 @@ pub trait ReceiptProvider: Send + Sync {
     fn receipt_by_hash(&self, hash: TxHash) -> RethResult<Option<Receipt>>;
 
     /// Get receipts by block num or hash.
+    /// 通过block number或者hash获取receipts
     ///
     /// Returns `None` if the block is not found.
     fn receipts_by_block(&self, block: BlockHashOrNumber) -> RethResult<Option<Vec<Receipt>>>;

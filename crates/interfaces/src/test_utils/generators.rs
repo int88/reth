@@ -174,11 +174,14 @@ pub fn random_block<R: Rng>(
 }
 
 /// Generate a range of random blocks.
+/// 生成一个范围的随机blocks
 ///
 /// The parent hash of the first block
 /// in the result will be equal to `head`.
+/// 第一个block的parent hash会等于`head`
 ///
 /// See [random_block] for considerations when validating the generated blocks.
+/// 考虑 [random_block]当校验生成的blocks时
 pub fn random_block_range<R: Rng>(
     rng: &mut R,
     block_numbers: RangeInclusive<BlockNumber>,

@@ -106,6 +106,7 @@ impl<'a, 'b, TX: DbTx<'a>> StateProvider for LatestStateProviderRef<'a, 'b, TX> 
 }
 
 /// State provider for the latest state.
+/// 对于最新的state的provider
 #[derive(Debug)]
 pub struct LatestStateProvider<'a, TX: DbTx<'a>> {
     /// database transaction
@@ -116,6 +117,7 @@ pub struct LatestStateProvider<'a, TX: DbTx<'a>> {
 
 impl<'a, TX: DbTx<'a>> LatestStateProvider<'a, TX> {
     /// Create new state provider
+    /// 创建新的state provider
     pub fn new(db: TX) -> Self {
         Self { db, _phantom: PhantomData {} }
     }

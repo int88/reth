@@ -43,6 +43,7 @@ pub fn fill_cfg_env(
 }
 
 /// Fill block environment from Block.
+/// 填充block environment，来自Block
 pub fn fill_block_env(
     block_env: &mut BlockEnv,
     chain_spec: &ChainSpec,
@@ -54,6 +55,7 @@ pub fn fill_block_env(
 }
 
 /// Fill block environment with coinbase.
+/// 用coinbase填充block environment
 #[inline]
 pub fn fill_block_env_with_coinbase(
     block_env: &mut BlockEnv,

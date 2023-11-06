@@ -22,22 +22,29 @@ use std::{
 };
 
 /// StateRoot is used to compute the root node of a state trie.
+/// StateRoot用于计算一个state trie的root node
 #[derive(Debug)]
 pub struct StateRoot<'a, 'b, TX, H> {
     /// A reference to the database transaction.
+    /// 对于db transaction的一个引用
     pub tx: &'a TX,
     /// The factory for hashed cursors.
+    /// 用于hashed cursors的factory
     pub hashed_cursor_factory: &'b H,
     /// A set of account prefixes that have changed.
+    /// 一系列account prefixes，他们已经变更
     pub changed_account_prefixes: PrefixSet,
     /// A map containing storage changes with the hashed address as key and a set of storage key
     /// prefixes as the value.
     pub changed_storage_prefixes: HashMap<H256, PrefixSet>,
     /// A map containing keys of accounts that were destroyed.
+    /// 一个map包含被摧毁的accounts的key
     pub destroyed_accounts: HashSet<H256>,
     /// Previous intermediate state.
+    /// 之前的中间状态
     previous_state: Option<IntermediateStateRootState>,
     /// The number of updates after which the intermediate progress should be returned.
+    /// 更新的数目，在中间的progress应该返回的
     threshold: u64,
 }
 
@@ -100,6 +107,7 @@ where
     TX: DbTx<'tx> + HashedCursorFactory<'a>,
 {
     /// Create a new [StateRoot] instance.
+    /// 创建一个新的[StateRoot]实例
     pub fn new(tx: &'a TX) -> Self {
         Self {
             tx,
@@ -202,6 +210,8 @@ where
 
     /// Walks the intermediate nodes of existing state trie (if any) and hashed entries. Feeds the
     /// nodes into the hash builder.
+    /// 遍历已经存在的state trie（如果有的话）和hashed entries的intermediate nodes，将nodes喂入hash
+    /// buidler
     ///
     /// # Returns
     ///
@@ -566,7 +576,9 @@ mod tests {
         storage: &BTreeMap<H256, U256>,
     ) {
         let hashed_address = keccak256(address);
+        // 插入hash account
         tx.put::<tables::HashedAccount>(hashed_address, account).unwrap();
+        // 插入storage
         insert_storage(tx, hashed_address, storage);
     }
 
@@ -673,6 +685,7 @@ mod tests {
 
     #[test]
     // This ensures we dont add empty accounts to the trie
+    // 确保我们不添加空的accounts到trie
     fn test_empty_account() {
         let state: State = BTreeMap::from([
             (
@@ -815,17 +828,21 @@ mod tests {
     }
 
     fn test_state_root_with_state(state: State) {
+        // 创建rw db
         let db = create_test_rw_db();
         let factory = ProviderFactory::new(db.as_ref(), MAINNET.clone());
         let tx = factory.provider_rw().unwrap();
 
         for (address, (account, storage)) in &state {
+            // 插入account
             insert_account(tx.tx_ref(), *address, *account, storage)
         }
         tx.commit().unwrap();
+        // 获取state root
         let expected = state_root(state.into_iter());
 
         let tx = factory.provider_rw().unwrap();
+        // 用tx构建state root
         let got = StateRoot::new(tx.tx_ref()).root().unwrap();
         assert_eq!(expected, got);
     }
@@ -899,6 +916,7 @@ mod tests {
         let mut hash_builder = HashBuilder::default();
 
         // Insert first account
+        // 插入第一个account
         let key1 =
             H256::from_str("b000000000000000000000000000000000000000000000000000000000000000")
                 .unwrap();
@@ -907,6 +925,7 @@ mod tests {
         hash_builder.add_leaf(Nibbles::unpack(key1), &encode_account(account1, None));
 
         // Some address whose hash starts with 0xB040
+        // 有的地址，hash从0xB040开始
         let address2 = Address::from_str("7db3e81b72d2695e19764583f6d219dbee0f35ca").unwrap();
         let key2 = keccak256(address2);
         assert_eq!(key2[0], 0xB0);
@@ -916,6 +935,7 @@ mod tests {
         hash_builder.add_leaf(Nibbles::unpack(key2), &encode_account(account2, None));
 
         // Some address whose hash starts with 0xB041
+        // 有的地址，hash从0xB041开始
         let address3 = Address::from_str("16b07afd1c635f77172e842a000ead9a2a222459").unwrap();
         let key3 = keccak256(address3);
         assert_eq!(key3[0], 0xB0);
@@ -968,6 +988,7 @@ mod tests {
         hash_builder.add_leaf(Nibbles::unpack(key6), &encode_account(account6, None));
 
         // Populate account & storage trie DB tables
+        // 填充account以及storage的trie DB tables
         let expected_root =
             H256::from_str("72861041bc90cd2f93777956f058a545412b56de79af5eb6b8075fe2eabbe015")
                 .unwrap();
@@ -980,16 +1001,20 @@ mod tests {
             (key6, encode_account(account6, None)),
         ]);
         // Check computed trie root to ensure correctness
+        // 检查计算的trie root来确保正确
         assert_eq!(computed_expected_root, expected_root);
 
         // Check hash builder root
+        // 检查hash builder root
         assert_eq!(hash_builder.root(), computed_expected_root);
 
         // Check state root calculation from scratch
+        // 从头开始计算state root
         let (root, trie_updates) = StateRoot::new(tx.tx_ref()).root_with_updates().unwrap();
         assert_eq!(root, computed_expected_root);
 
         // Check account trie
+        // 检查account trie
         let mut account_updates = trie_updates
             .iter()
             .filter_map(|(k, v)| match (k, v) {
@@ -1017,6 +1042,7 @@ mod tests {
         assert_eq!(node2a.hashes.len(), 1);
 
         // Check storage trie
+        // 检查storage trie
         let storage_updates = trie_updates
             .iter()
             .filter_map(|entry| match entry {

@@ -6,6 +6,7 @@ use reth_rlp::{encode_fixed_size, Encodable};
 pub use triehash;
 
 /// Compute the state root of a given set of accounts using [triehash::sec_trie_root].
+/// 计算state root，根据给定的一系列accounts，使用 [triehash::sec_trie_root]
 pub fn state_root<I, S>(accounts: I) -> H256
 where
     I: Iterator<Item = (Address, (Account, S))>,

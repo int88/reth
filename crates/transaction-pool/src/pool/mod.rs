@@ -140,8 +140,10 @@ where
     /// Manages listeners for transaction state change events.
     event_listener: RwLock<PoolEventBroadcast<T::Transaction>>,
     /// Listeners for new pending transactions.
+    /// 监听新的pending txs
     pending_transaction_listener: Mutex<Vec<PendingTransactionListener>>,
     /// Listeners for new transactions added to the pool.
+    /// 监听新的txs加入到pool
     transaction_listener: Mutex<Vec<TransactionListener<T::Transaction>>>,
     /// Listener for new blob transaction sidecars added to the pool.
     blob_transaction_sidecar_listener: Mutex<Vec<BlobTransactionSidecarListener>>,
@@ -230,6 +232,7 @@ where
 
     /// Adds a new transaction listener to the pool that gets notified about every new _pending_
     /// transaction inserted into the pool
+    /// 添加一个新的tx listener到Pool，对于每个新的pending tx插入到pool，都能接收到通知
     pub fn add_pending_listener(&self, kind: TransactionListenerKind) -> mpsc::Receiver<TxHash> {
         let (sender, rx) = mpsc::channel(PENDING_TX_LISTENER_BUFFER_SIZE);
         let listener = PendingTransactionListener { sender, kind };

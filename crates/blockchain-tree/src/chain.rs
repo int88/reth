@@ -1,7 +1,9 @@
 //! A chain in a [`BlockchainTree`][super::BlockchainTree].
+//！一个chain，在[`BlockchainTree`][super::BlockchainTree].
 //!
 //! A [`Chain`] contains the state of accounts for the chain after execution of its constituent
 //! blocks, as well as a list of the blocks the chain is composed of.
+//! 一个[`Chain`]包含chain的state of accounts，在执行它的constituent blocks之后，以及它组成的一系列chain
 use super::externals::TreeExternals;
 use crate::BundleStateDataRef;
 use reth_db::database::Database;
@@ -123,6 +125,7 @@ impl AppendableChain {
             canonical_fork,
         };
 
+        // 构建bundle state
         let bundle_state = Self::validate_and_execute_sidechain(
             block.clone(),
             parent_header,
@@ -135,6 +138,7 @@ impl AppendableChain {
     }
 
     /// Create a new chain that forks off of an existing sidechain.
+    /// 创建一个新的chain，它对一个已经存在的sidechain进行了分叉
     ///
     /// This differs from [AppendableChain::new_canonical_fork] in that this starts a new fork.
     pub(crate) fn new_chain_fork<DB, C, EF>(

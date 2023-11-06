@@ -1,4 +1,5 @@
 //! Low level example of connecting to and communicating with a peer.
+//! 底层的例子，关于连接并且和一个peer交互
 //!
 //! Run with
 //!
@@ -28,14 +29,17 @@ pub static MAINNET_BOOT_NODES: Lazy<Vec<NodeRecord>> = Lazy::new(mainnet_nodes);
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     // Setup configs related to this 'node' by creating a new random
+    // 设置configs，和这个'node'相关，通过创建一个新的random
     let our_key = rng_secret_key();
     let our_enr = NodeRecord::from_secret_key(DEFAULT_DISCOVERY_ADDRESS, &our_key);
 
     // Setup discovery v4 protocol to find peers to talk to
+    // 设置discovery v4 protocol，来找到peers进行talk
     let mut discv4_cfg = Discv4ConfigBuilder::default();
     discv4_cfg.add_boot_nodes(MAINNET_BOOT_NODES.clone()).lookup_interval(Duration::from_secs(1));
 
     // Start discovery protocol
+    // 开始discovery协议
     let discv4 = Discv4::spawn(our_enr.udp_addr(), our_enr, our_key, discv4_cfg.build()).await?;
     let mut discv4_stream = discv4.update_stream().await?;
 
@@ -43,6 +47,7 @@ async fn main() -> eyre::Result<()> {
         tokio::spawn(async move {
             if let DiscoveryUpdate::Added(peer) = update {
                 // Boot nodes hard at work, lets not disturb them
+                // Boot nodes在卖力干活，不要打扰他们
                 if MAINNET_BOOT_NODES.contains(&peer) {
                     return
                 }
@@ -63,6 +68,7 @@ async fn main() -> eyre::Result<()> {
                     }
                 };
 
+                // 成功和一个peer连接，使用eth-wire version
                 println!(
                     "Successfully connected to a peer at {}:{} ({}) using eth-wire version eth/{}",
                     peer.address, peer.tcp_port, their_hello.client_version, their_status.version
@@ -77,6 +83,7 @@ async fn main() -> eyre::Result<()> {
 }
 
 // Perform a P2P handshake with a peer
+// 和peer执行一个P2P handshake
 async fn handshake_p2p(
     peer: NodeRecord,
     key: SecretKey,
@@ -91,6 +98,7 @@ async fn handshake_p2p(
 }
 
 // Perform a ETH Wire handshake with a peer
+// 执行一个ETH Wire handshake，和一个peer
 async fn handshake_eth(p2p_stream: AuthedP2PStream) -> eyre::Result<(AuthedEthStream, Status)> {
     let fork_filter = MAINNET.fork_filter(Head {
         timestamp: MAINNET.fork(Hardfork::Shanghai).as_timestamp().unwrap(),
@@ -109,7 +117,9 @@ async fn handshake_eth(p2p_stream: AuthedP2PStream) -> eyre::Result<(AuthedEthSt
 }
 
 // Snoop by greedily capturing all broadcasts that the peer emits
+// 嗅探，通过贪婪地抓取这个peer发出的所有广播
 // note: this node cannot handle request so will be disconnected by peer when challenged
+// 注意：这个node不会处理request，因此会被peer disconnected，当被挑战的时候
 async fn snoop(peer: NodeRecord, mut eth_stream: AuthedEthStream) {
     while let Some(Ok(update)) = eth_stream.next().await {
         match update {

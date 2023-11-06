@@ -1,10 +1,15 @@
 //! Implementation of a tree-like structure for blockchains.
+//! 对于blockchains的类似于树的实现
 //!
 //! The [BlockchainTree] can validate, execute, and revert blocks in multiple competing sidechains.
+//! [BlockchainTree]可以校验、执行以及回退blocks，在多个竞争的sidechains
 //! This structure is used for Reth's sync mode at the tip instead of the pipeline, and is the
 //! primary executor and validator of payloads sent from the consensus layer.
+//! 这个结构用于Reth的sync
+//! mode，在top而不是pipeline，这是主要的executor和validator，对于来自consensus layer的payloads
 //!
 //! Blocks and their resulting state transitions are kept in-memory until they are persisted.
+//! Blocks以及他们的resulting state transitions被保存在内存中，直到他们被持久化
 //!
 //! ## Feature Flags
 //!
@@ -41,6 +46,7 @@ pub mod post_state_data;
 pub use post_state_data::{BundleStateData, BundleStateDataRef};
 
 /// Buffer of not executed blocks.
+/// 对没有执行的blocks的缓存
 pub mod block_buffer;
 mod canonical_chain;
 

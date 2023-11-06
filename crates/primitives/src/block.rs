@@ -187,6 +187,7 @@ impl SealedBlock {
     }
 
     /// Seal sealed block with recovered transaction senders.
+    /// 封装sealed block，伴随着恢复的tx senders
     pub fn try_seal_with_senders(self) -> Result<SealedBlockWithSenders, Self> {
         match self.senders() {
             Some(senders) => Ok(SealedBlockWithSenders { block: self, senders }),

@@ -20,9 +20,11 @@ pub enum BlockchainTreeError {
         last_finalized: BlockNumber,
     },
     /// Thrown if no side chain could be found for the block.
+    /// 抛出，如果对于block没有找到side chain
     #[error("BlockChainId can't be found in BlockchainTree with internal index {chain_id}")]
     BlockSideChainIdConsistency {
         /// The internal identifier for the side chain.
+        /// side chain的internal id
         chain_id: u64,
     },
     /// Thrown if a canonical chain header cannot be found.
@@ -45,9 +47,11 @@ pub enum BlockchainTreeError {
         block_hash: BlockHash,
     },
     // Thrown if the block failed to buffer
+    // 如果block缓存失败时抛出
     #[error("Block with hash {block_hash:?} failed to buffer")]
     BlockBufferingFailed {
         /// The block hash of the block that failed to buffer.
+        /// 缓存失败的block的block hash
         block_hash: BlockHash,
     },
 }

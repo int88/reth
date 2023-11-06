@@ -26,16 +26,19 @@ where
 
 /// The response to [`GetPooledTransactions`], containing the transaction bodies associated with
 /// the requested hashes.
+/// 对于[`GetPooledTransactions`]的response，包含tx bodies，和请求的hashes相关
 ///
 /// This response may not contain all bodies requested, but the bodies should be in the same order
 /// as the request's hashes. Hashes may be skipped, and the client should ensure that each body
 /// corresponds to a requested hash. Hashes may need to be re-requested if the bodies are not
 /// included in the response.
+/// 这个response可能不会包含所有请求的bodies，但是bodies必须和请求的hash保持一样的顺序
 // #[derive_arbitrary(rlp, 10)]
 #[derive(Clone, Debug, PartialEq, Eq, RlpEncodableWrapper, RlpDecodableWrapper, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PooledTransactions(
     /// The transaction bodies, each of which should correspond to a requested hash.
+    /// tx bodies，每个都应该包含对应的requested hash
     pub Vec<PooledTransactionsElement>,
 );
 

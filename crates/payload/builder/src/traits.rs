@@ -62,20 +62,26 @@ pub enum KeepPayloadJobAlive {
 }
 
 /// A type that knows how to create new jobs for creating payloads.
+/// 一个类型，知道如何创建新的jobs，对于创建payloads
 pub trait PayloadJobGenerator: Send + Sync {
     /// The type that manages the lifecycle of a payload.
+    /// 管理一个payload的lifecycle，
     ///
     /// This type is a future that yields better payloads.
+    /// 这个类型是一个future，生成更好的payloads
     type Job: PayloadJob;
 
     /// Creates the initial payload and a new [`PayloadJob`] that yields better payloads over time.
+    /// 创建初始的payload以及一个新的[`PayloadJob`]，随着时间生成更好的payloads
     ///
     /// This is called when the CL requests a new payload job via a fork choice update.
+    /// 这被调用，当CL请求一个新的payload job，通过一个forkchoicd update
     ///
     /// # Note
     ///
     /// This is expected to initially build a new (empty) payload without transactions, so it can be
     /// returned directly.
+    /// 这期望初始构建一个新的（空的）payload，没有txs，因此可以直接返回
     fn new_payload_job(
         &self,
         attr: PayloadBuilderAttributes,

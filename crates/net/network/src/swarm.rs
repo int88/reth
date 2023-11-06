@@ -23,12 +23,16 @@ use std::{
 use tracing::{debug, trace};
 
 /// Contains the connectivity related state of the network.
+/// 包含了state of the network相关的state
 ///
 /// A swarm emits [`SwarmEvent`]s when polled.
+/// 一个swarm发射[`SwarmEvent`]，当轮询的时候
 ///
 /// The manages the [`ConnectionListener`] and delegates new incoming connections to the
 /// [`SessionManager`]. Outgoing connections are either initiated on demand or triggered by the
 /// [`NetworkState`] and also delegated to the [`NetworkState`].
+/// 管理[`ConnectionListener`]并且委托incoming connections到[`SessionManager`]，outgoing
+/// connections被按需初始化或者通过[`NetworkState`]触发并且委托给[`NetworkState`]
 ///
 /// Following diagram gives displays the dataflow contained in the [`Swarm`]
 ///
@@ -43,6 +47,10 @@ use tracing::{debug, trace};
 /// request channel for the created session and sends requests it receives from the
 /// [`StateFetcher`], which receives request objects from the client interfaces responsible for
 /// downloading headers and bodies.
+/// [`NetworkState`]追踪一系列connected以及discovered peers，并且可以初始化outgoing
+/// connections，对于每个active session，[`NetworkState`]追踪ETH request
+/// channel的发送部分，从[`StateFetcher`]接收请求，从client接口接收request对象，
+/// 用于下载headers和bodies
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// ```mermaid
 ///  graph TB
@@ -81,6 +89,7 @@ where
     C: BlockNumReader,
 {
     /// Configures a new swarm instance.
+    /// 配置一个新的swarm实例
     pub(crate) fn new(
         incoming: ConnectionListener,
         sessions: SessionManager,
@@ -342,8 +351,10 @@ where
 
 /// All events created or delegated by the [`Swarm`] that represents changes to the state of the
 /// network.
+/// [`Swarm`]创建或者委托的所有events，代表state of the network的改变
 pub(crate) enum SwarmEvent {
     /// Events related to the actual network protocol.
+    /// 和真正的network protocol相关的Events
     ValidMessage {
         /// The peer that sent the message
         peer_id: PeerId,
@@ -409,6 +420,7 @@ pub(crate) enum SwarmEvent {
         error: Option<EthStreamError>,
     },
     /// Admin rpc: new peer added
+    /// 新加了peer
     PeerAdded(PeerId),
     /// Admin rpc: peer removed
     PeerRemoved(PeerId),

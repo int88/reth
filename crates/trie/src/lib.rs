@@ -1,5 +1,6 @@
 //! The implementation of Merkle Patricia Trie, a cryptographically
 //! authenticated radix trie that is used to store key-value bindings.
+//! Merkel Patricia Trie的实现，一个加密的认证radix trie，用于存储key-value的bindings
 //! <https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/>
 //!
 //! ## Feature Flags
@@ -38,6 +39,7 @@ pub use errors::*;
 pub mod proof;
 
 /// The implementation of the Merkle Patricia Trie.
+/// Merkle Patricia Trie的实现
 mod trie;
 pub use trie::{StateRoot, StorageRoot};
 

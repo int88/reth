@@ -1,4 +1,5 @@
 //! Discovery support for the network.
+//! network中对于Discovery的支持
 
 use crate::{
     error::{NetworkError, ServiceKind},
@@ -21,9 +22,11 @@ use tokio::{sync::mpsc, task::JoinHandle};
 use tokio_stream::wrappers::ReceiverStream;
 
 /// An abstraction over the configured discovery protocol.
+/// 配置的discovery protocol的抽象
 ///
 /// Listens for new discovered nodes and emits events for discovered nodes and their
 /// address.
+/// 监听新的discovered nodes并且发射events对于新发现的nodes以及他们的地址
 #[derive(Debug)]
 pub struct Discovery {
     /// All nodes discovered via discovery protocol.
@@ -52,9 +55,12 @@ pub struct Discovery {
 
 impl Discovery {
     /// Spawns the discovery service.
+    /// 生成discovery service
     ///
     /// This will spawn the [`reth_discv4::Discv4Service`] onto a new task and establish a listener
     /// channel to receive all discovered nodes.
+    /// 这会生成[`reth_discv4::Discv4Service`]到一个新的task并且建立一个listener
+    /// channel来接收所有发现的nodes
     pub async fn new(
         discovery_addr: SocketAddr,
         sk: SecretKey,
@@ -62,6 +68,7 @@ impl Discovery {
         dns_discovery_config: Option<DnsDiscoveryConfig>,
     ) -> Result<Self, NetworkError> {
         // setup discv4
+        // 设置discv4
         let local_enr = NodeRecord::from_secret_key(discovery_addr, &sk);
         let (discv4, discv4_updates, _discv4_service) = if let Some(disc_config) = discv4_config {
             let (discv4, mut discv4_service) =
@@ -77,6 +84,7 @@ impl Discovery {
         };
 
         // setup DNS discovery
+        // 设置DNS discovery
         let (_dns_discovery, dns_discovery_updates, _dns_disc_service) =
             if let Some(dns_config) = dns_discovery_config {
                 let (mut service, dns_disc) = DnsDiscoveryService::new_pair(

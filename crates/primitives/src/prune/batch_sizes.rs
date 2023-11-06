@@ -2,12 +2,17 @@ use paste::paste;
 use serde::{Deserialize, Serialize};
 
 /// Batch sizes for configuring the pruner.
+/// 用于配置pruner的Batch sizes
 /// The batch size for each prune part should be both large enough to prune the data which was
 /// generated with each new block, and small enough to not generate an excessive load on the
 /// database due to deletion of too many rows at once.
+/// 每个prune part的batch
+/// size应该足够大，来清理每个block都会生成的data，并且足够小，从而不产生额外的负载，在db，
+/// 因为一次性删除太多rows
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PruneBatchSizes {
     /// Maximum number of receipts to prune, per block.
+    /// 每个block清理的最大的receipts的数目
     receipts: usize,
     /// Maximum number of transaction lookup entries to prune, per block.
     transaction_lookup: usize,
@@ -15,9 +20,11 @@ pub struct PruneBatchSizes {
     transaction_senders: usize,
     /// Maximum number of account history entries to prune, per block.
     /// Measured in the number of `AccountChangeSet` table rows.
+    /// 按照`AccountChangeSet` table rows统计
     account_history: usize,
     /// Maximum number of storage history entries to prune, per block.
     /// Measured in the number of `StorageChangeSet` table rows.
+    /// 按照`StorageChangeSet` table rows中的数据统计
     storage_history: usize,
 }
 

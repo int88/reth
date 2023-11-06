@@ -34,6 +34,7 @@ pub struct Chain {
 
 impl Chain {
     /// Get the blocks in this chain.
+    /// 获取这个chain的blocks
     pub fn blocks(&self) -> &BTreeMap<BlockNumber, SealedBlockWithSenders> {
         &self.blocks
     }
@@ -49,6 +50,7 @@ impl Chain {
     }
 
     /// Get post state of this chain
+    /// 获取这个chain的post state
     pub fn state(&self) -> &BundleStateWithReceipts {
         &self.state
     }

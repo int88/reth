@@ -85,6 +85,7 @@ impl CanonicalChain {
     pub(crate) fn tip(&self) -> BlockNumHash {
         self.chain
             .last_key_value()
+            // 构造出BlockNumHash
             .map(|(&number, &hash)| BlockNumHash { number, hash })
             .unwrap_or_default()
     }

@@ -72,11 +72,13 @@ pub struct NewBlock {
 
 /// This informs peers of transactions that have appeared on the network and are not yet included
 /// in a block.
+/// 这通知peers，关于出现在network中的txs并且还没有包含进block
 #[derive_arbitrary(rlp, 10)]
 #[derive(Clone, Debug, PartialEq, Eq, RlpEncodableWrapper, RlpDecodableWrapper, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Transactions(
     /// New transactions for the peer to include in its mempool.
+    /// 新的txs，对于Peer，用于加入mempool
     pub Vec<TransactionSigned>,
 );
 

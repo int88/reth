@@ -1,4 +1,5 @@
 //! Fetch data from the network.
+//! 从network获取数据
 
 use crate::{message::BlockRequest, peers::PeersHandle};
 use futures::StreamExt;
@@ -25,26 +26,35 @@ mod client;
 pub use client::FetchClient;
 
 /// Manages data fetching operations.
+/// 管理data fetching操作
 ///
 /// This type is hooked into the staged sync pipeline and delegates download request to available
 /// peers and sends the response once ready.
+/// 这个类型hook进staged sync pipeline并且委托download
+/// request到可用的peers并且发送response，一旦完成
 ///
 /// This type maintains a list of connected peers that are available for requests.
+/// 这个类型维护一系列的connected peers，可以响应请求
 #[derive(Debug)]
 pub struct StateFetcher {
     /// Currently active [`GetBlockHeaders`] requests
+    /// 当前active的[`GetBlockHeaders`]请求
     inflight_headers_requests:
         HashMap<PeerId, Request<HeadersRequest, PeerRequestResult<Vec<Header>>>>,
     /// Currently active [`GetBlockBodies`] requests
     inflight_bodies_requests:
         HashMap<PeerId, Request<Vec<H256>, PeerRequestResult<Vec<BlockBody>>>>,
     /// The list of _available_ peers for requests.
+    /// 一系列可用的peers用于请求
     peers: HashMap<PeerId, Peer>,
     /// The handle to the peers manager
+    /// 到peers manager的handle
     peers_handle: PeersHandle,
     /// Number of active peer sessions the node's currently handling.
+    /// 一系列active peer sessions，node正在处理
     num_active_peers: Arc<AtomicUsize>,
     /// Requests queued for processing
+    /// 请求排队等待被处理
     queued_requests: VecDeque<DownloadRequest>,
     /// Receiver for new incoming download requests
     download_requests_rx: UnboundedReceiverStream<DownloadRequest>,

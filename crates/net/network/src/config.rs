@@ -306,6 +306,7 @@ impl NetworkConfigBuilder {
     }
 
     /// Convenience function for setting [Self::boot_nodes] to the mainnet boot nodes.
+    /// Convenience函数用于设置[Self::boot_nodes] mainnet boot nodes
     pub fn mainnet_boot_nodes(self) -> Self {
         self.boot_nodes(mainnet_nodes())
     }
@@ -328,6 +329,7 @@ impl NetworkConfigBuilder {
     }
 
     /// Disables all discovery.
+    /// 禁止所有的discovery
     pub fn disable_discovery(self) -> Self {
         self.disable_discv4_discovery().disable_dns_discovery()
     }
@@ -367,10 +369,13 @@ impl NetworkConfigBuilder {
 
     /// Consumes the type and creates the actual [`NetworkConfig`]
     /// for the given client type that can interact with the chain.
+    /// 消费type并且创建真正的[`NetworkConfig`]对于给定的类型，可以和chain进行交互
     ///
     /// The given client is to be used for interacting with the chain, for example fetching the
     /// corresponding block for a given block hash we receive from a peer in the status message when
     /// establishing a connection.
+    /// 给定的client用于和chain进行交互，例如，获取对应的block，对于给定的block
+    /// hash，我们从一个peer接受，在status message，当建立一个连接时
     pub fn build<C>(self, client: C) -> NetworkConfig<C> {
         let peer_id = self.get_peer_id();
         let Self {
@@ -404,12 +409,15 @@ impl NetworkConfigBuilder {
         });
 
         // set the status
+        // 设置status
         let status = Status::spec_builder(&chain_spec, &head).build();
 
         // set a fork filter based on the chain spec and head
+        // 设置fork filter，基于chain spec和head
         let fork_filter = chain_spec.fork_filter(head);
 
         // If default DNS config is used then we add the known dns network to bootstrap from
+        // 如果使用了默认的DNS配置，那么我们添加已知的dns network到bootstrap
         if let Some(dns_networks) =
             dns_discovery_config.as_mut().and_then(|c| c.bootstrap_dns_networks.as_mut())
         {
@@ -442,8 +450,10 @@ impl NetworkConfigBuilder {
 }
 
 /// Describes the mode of the network wrt. POS or POW.
+/// 描述network的模式，POS或者POW
 ///
 /// This affects block propagation in the `eth` sub-protocol [EIP-3675](https://eips.ethereum.org/EIPS/eip-3675#devp2p)
+/// 这影响`eth` sub-protocol的block propagation
 ///
 /// In POS `NewBlockHashes` and `NewBlock` messages become invalid.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]

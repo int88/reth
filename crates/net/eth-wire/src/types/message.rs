@@ -144,28 +144,39 @@ impl From<EthBroadcastMessage> for ProtocolBroadcastMessage {
 }
 
 /// Represents a message in the eth wire protocol, versions 66, 67 and 68.
+/// 代表一个在eth wire protocol之上的message
 ///
 /// The ethereum wire protocol is a set of messages that are broadcast to the network in two
 /// styles:
+/// ethereum wire protocol是一系列的messages，广播到network，以两种形式：
 ///  * A request message sent by a peer (such as [`GetPooledTransactions`]), and an associated
 ///  response message (such as [`PooledTransactions`]).
+///  * 一个request message被一个peer发送（例如[`GetPooledTransactions`]），以及一个相关的response
+///    message，例如[`PooledTransactions`]
 ///  * A message that is broadcast to the network, without a corresponding request.
+///  * 一个message被广播到network，而没有任何的request
 ///
 /// The newer `eth/66` is an efficiency upgrade on top of `eth/65`, introducing a request id to
 /// correlate request-response message pairs. This allows for request multiplexing.
+/// 新版的`eth/66`是`eth/65`之上一个高效的升级，引入了一个request id，来关联request-response
+/// pair，这允许请求的多路复用
 ///
 /// The `eth/67` is based on `eth/66` but only removes two messages, [`GetNodeData`] and
 /// [``NodeData].
+/// `eth/67`基于`eth/66`，但是只是移除了连个messagees，[`GetNodeData`]和[`NodeData`]
 ///
 /// The `eth/68` changes only NewPooledTransactionHashes to include `types` and `sized`. For
 /// it, NewPooledTransactionHashes is renamed as [`NewPooledTransactionHashes66`] and
 /// [`NewPooledTransactionHashes68`] is defined.
+/// `eth/68`只是改变了NewPooledTransactionHashes到包含`types`和`sized`
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EthMessage {
     /// Status is required for the protocol handshake
+    /// Status在protocol handshake的时候需要
     Status(Status),
     /// The following messages are broadcast to the network
+    /// 下面的message都广播到network
     NewBlockHashes(NewBlockHashes),
     NewBlock(Box<NewBlock>),
     Transactions(Transactions),
@@ -173,6 +184,7 @@ pub enum EthMessage {
     NewPooledTransactionHashes68(NewPooledTransactionHashes68),
 
     // The following messages are request-response message pairs
+    // 下面的messages都是request-response message对
     GetBlockHeaders(RequestPair<GetBlockHeaders>),
     BlockHeaders(RequestPair<BlockHeaders>),
     GetBlockBodies(RequestPair<GetBlockBodies>),

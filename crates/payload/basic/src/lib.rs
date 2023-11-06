@@ -1,4 +1,5 @@
 //! A basic payload generator for reth.
+//! 一个基本的payload generator，对于reth
 
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",
@@ -59,21 +60,28 @@ use tracing::{debug, trace};
 mod metrics;
 
 /// The [`PayloadJobGenerator`] that creates [`BasicPayloadJob`]s.
+/// [`PayloadJobGenerator`]用于创建[`BasicPayloadJob`]
 #[derive(Debug)]
 pub struct BasicPayloadJobGenerator<Client, Pool, Tasks, Builder = ()> {
     /// The client that can interact with the chain.
+    /// 可以和chain交互的client
     client: Client,
     /// txpool
     pool: Pool,
     /// How to spawn building tasks
+    /// 知道如何生成tasks
     executor: Tasks,
     /// The configuration for the job generator.
+    /// job generator的配置
     config: BasicPayloadJobGeneratorConfig,
     /// Restricts how many generator tasks can be executed at once.
+    /// 限制一次性能生成多少个tasks
     payload_task_guard: PayloadTaskGuard,
     /// The chain spec.
+    /// chain spec
     chain_spec: Arc<ChainSpec>,
     /// The type responsible for building payloads.
+    /// 负责构建payloads的类型
     ///
     /// See [PayloadBuilder]
     builder: Builder,
@@ -83,6 +91,7 @@ pub struct BasicPayloadJobGenerator<Client, Pool, Tasks, Builder = ()> {
 
 impl<Client, Pool, Tasks> BasicPayloadJobGenerator<Client, Pool, Tasks> {
     /// Creates a new [BasicPayloadJobGenerator] with the given config.
+    /// 创建一个新的[BasicPayloadJobGenerator]，用给定的配置
     pub fn new(
         client: Client,
         pool: Pool,

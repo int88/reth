@@ -35,6 +35,7 @@ impl RethCliExt for () {
 
 /// A trait that allows for extending and customizing parts of the node command
 /// [NodeCommand](crate::node::NodeCommand).
+/// 一个trait，允许扩展以及自定义部分的node command
 pub trait RethNodeCommandConfig: fmt::Debug {
     /// Allows for registering additional RPC modules for the transports.
     ///
@@ -97,6 +98,7 @@ pub trait RethNodeCommandConfig: fmt::Debug {
                 .max_gas_limit(conf.max_gas_limit()),
             chain_spec,
         );
+        // 构建payload builder service
         let (payload_service, payload_builder) = PayloadBuilderService::new(payload_generator);
 
         executor.spawn_critical("payload builder service", Box::pin(payload_service));

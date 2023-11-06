@@ -2,22 +2,32 @@
 //! - [`PayloadJobGenerator`]: a type that knows how to create new jobs for creating payloads based
 //!   on [`PayloadAttributes`](reth_rpc_types::engine::PayloadAttributes).
 //! - [`PayloadJob`]: a type that yields (better) payloads over time.
+//! 这个crate定义了抽象来创建以及更新payloads（blocks）
+//! - [`PayloadJobGenerator`]：是一个类型知道如何创建新的jobs用于创建paylods，
+//!   基于[`PayloadAttributes`](reth_rpc_types::engine::PayloadAttributes)
+//! - [`PayloadJob`]:是一个类型每次生成payloads
 //!
 //! This crate comes with the generic [`PayloadBuilderService`] responsible for managing payload
 //! jobs.
+//! 这个crate负责通用的[`PayloadBuilderService`]负责管理payload jobs
 //!
 //! ## Node integration
 //!
 //! In a standard node the [`PayloadBuilderService`] sits downstream of the engine API, or rather
 //! the component that handles requests from the consensus layer like `engine_forkchoiceUpdatedV1`.
+//! 在标准node，[`PayloadBuilderService`]是engine API的downstream，或者是组件负责处理来自consensus
+//! layer的请求，例如`engine_forkchoiceUpdatedV1`
 //!
 //! Payload building is enabled if the forkchoice update request contains payload attributes.
+//! Payload building被使能，如果forkchoice update请求包含payload attributes
 //!
 //! See also [the engine API docs](https://github.com/ethereum/execution-apis/blob/6709c2a795b707202e93c4f2867fa0bf2640a84f/src/engine/shanghai.md#engine_forkchoiceupdatedv2)
 //! If the forkchoice update request is `VALID` and contains payload attributes the
 //! [`PayloadBuilderService`] will create a new [`PayloadJob`] via the given [`PayloadJobGenerator`]
 //! and start polling it until the payload is requested by the CL and the payload job is resolved
 //! (see [`PayloadJob::resolve`]).
+//! 如果forkchoide update请求是`VALID`并且包含payload特性，
+//! [`PayloadBuilderService`]会创建一个新的[`PayloadJob`]通过给定的[`PayloadJobGenerator`]并且开始轮询，直到payload被CL请求并且paylod job被解析
 //!
 //! ## Example
 //!
@@ -39,6 +49,7 @@
 //!     type Job = EmptyBlockPayloadJob;
 //!
 //! /// This is invoked when the node receives payload attributes from the beacon node via `engine_forkchoiceUpdatedV1`
+//! /// 当node从beacon node接收到payload attributes时被调用，通过`engine_forkchoiceUpdatedV1`
 //! fn new_payload_job(&self, attr: PayloadBuilderAttributes) -> Result<Self::Job, PayloadBuilderError> {
 //!         Ok(EmptyBlockPayloadJob{ attributes: attr,})
 //!     }
@@ -46,6 +57,7 @@
 //! }
 //!
 //! /// A [PayloadJob] that builds empty blocks.
+//! /// 一个[PayloadJob]构建空的blocks
 //! pub struct EmptyBlockPayloadJob {
 //!   attributes: PayloadBuilderAttributes,
 //! }

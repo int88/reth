@@ -31,7 +31,9 @@ pub struct BundleStateWithReceipts {
     /// The collection of receipts.
     /// receipts的一系列结果
     /// Outer vector stores receipts for each block sequentially.
+    /// Outer vector为每个block顺序存储receipts
     /// The inner vector stores receipts ordered by transaction number.
+    /// 内部的vector存储receipts，按照transaction number的顺序
     ///
     /// If receipt is None it means it is pruned.  
     /// 如果receipt为None，则意味着被pruned

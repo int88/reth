@@ -33,6 +33,7 @@ use tracing::{debug, info, trace};
 #[derive(Clone, Debug)]
 pub struct PeersHandle {
     /// Sender half of command channel back to the [`PeersManager`]
+    /// 发送部分的command channel，回到[`PeersManager`]
     manager_tx: mpsc::UnboundedSender<PeerCommand>,
 }
 
@@ -76,11 +77,14 @@ impl PeersHandle {
 }
 
 /// Maintains the state of _all_ the peers known to the network.
+/// 维护所有的peers，对于network已知
 ///
 /// This is supposed to be owned by the network itself, but can be reached via the [`PeersHandle`].
 /// From this type, connections to peers are established or disconnected, see [`PeerAction`].
+/// 这应该被network自己所有，但是可以通过[`PeersHandle`]获取，到peers的连接被建立以及disconnected
 ///
 /// The [`PeersManager`] will be notified on peer related changes
+/// [`PeersManager`]会被通知peer相关的变更
 #[derive(Debug)]
 pub struct PeersManager {
     /// All peers known to the network

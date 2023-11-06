@@ -53,6 +53,7 @@ pub use reth_network_api::{Direction, PeerInfo};
 pub struct SessionId(usize);
 
 /// Manages a set of sessions.
+/// 管理一系列的sessions
 #[must_use = "Session Manager must be polled to process session events."]
 #[derive(Debug)]
 pub struct SessionManager {
@@ -71,14 +72,17 @@ pub struct SessionManager {
     /// The `Status` message to send to peers.
     status: Status,
     /// THe `HelloMessage` message to send to peers.
+    /// 发送给peers的`HelloMessage`
     hello_message: HelloMessage,
     /// The [`ForkFilter`] used to validate the peer's `Status` message.
     fork_filter: ForkFilter,
     /// Size of the command buffer per session.
     session_command_buffer: usize,
     /// The executor for spawned tasks.
+    /// 用于生成tasks的executor
     executor: Box<dyn TaskSpawner>,
     /// All pending session that are currently handshaking, exchanging `Hello`s.
+    /// 所有的pending session，当前正在handshaking，交换`Hello`
     ///
     /// Events produced during the authentication phase are reported to this manager. Once the
     /// session is authenticated, it can be moved to the `active_session` set.

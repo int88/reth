@@ -16,6 +16,7 @@ use std::{
 };
 
 /// Helper type to represent a bloom filter used for matching logs.
+/// Helper类型，用于表示一个bloom filter，用来匹配logs
 #[derive(Default, Debug)]
 pub struct BloomFilter(Vec<Bloom>);
 
@@ -252,6 +253,7 @@ impl FilterBlockOption {
 pub struct Filter {
     /// Filter block options, specifying on which blocks the filter should
     /// match.
+    /// Filter block options，指定filters应该匹配哪个blocks
     // https://eips.ethereum.org/EIPS/eip-234
     pub block_option: FilterBlockOption,
     /// Address
@@ -694,6 +696,7 @@ where
 #[derive(Debug, Default)]
 pub struct FilteredParams {
     /// The original filter, if any
+    /// 原始的filter，如果有的话
     pub filter: Option<Filter>,
 }
 
@@ -709,11 +712,13 @@ impl FilteredParams {
     }
 
     /// Returns the [BloomFilter] for the given address
+    /// 返回[BloomFilter]对于给定的地址
     pub fn address_filter(address: &FilterSet<Address>) -> BloomFilter {
         address.to_bloom_filter()
     }
 
     /// Returns the [BloomFilter] for the given topics
+    /// 返回[BloomFilter]对于给定的topics
     pub fn topics_filter(topics: &[FilterSet<H256>]) -> Vec<BloomFilter> {
         topics.iter().map(|t| t.to_bloom_filter()).collect()
     }

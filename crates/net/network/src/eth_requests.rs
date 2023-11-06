@@ -1,4 +1,5 @@
 //! Blocks/Headers management for the p2p network.
+//! 对于p2p network的Blocks/Headers管理
 
 use crate::{metrics::EthRequestHandlerMetrics, peers::PeersHandle};
 use futures::StreamExt;
@@ -27,6 +28,7 @@ use tokio_stream::wrappers::ReceiverStream;
 const MAX_RECEIPTS_SERVE: usize = 1024;
 
 /// Maximum number of block headers to serve.
+/// 能服务的最大的block headers的数目
 ///
 /// Used to limit lookups.
 const MAX_HEADERS_SERVE: usize = 1024;
@@ -51,20 +53,26 @@ const SOFT_RESPONSE_LIMIT: usize = 2 * 1024 * 1024;
 const APPROX_HEADER_SIZE: usize = 500;
 
 /// Manages eth related requests on top of the p2p network.
+/// 管理eth相关的请求，在p2p network之上
 ///
 /// This can be spawned to another task and is supposed to be run as background service.
+/// 这可以生成另一个task并且应该以background service运行
 #[derive(Debug)]
 #[must_use = "Manager does nothing unless polled."]
 pub struct EthRequestHandler<C> {
     /// The client type that can interact with the chain.
+    /// 和chain交互的client类型
     client: C,
     /// Used for reporting peers.
+    /// 用于汇报peers
     #[allow(unused)]
     // TODO use to report spammers
     peers: PeersHandle,
     /// Incoming request from the [NetworkManager](crate::NetworkManager).
+    /// 来自[NetworkManager](crate::NetworkManager)的Incoming request
     incoming_requests: ReceiverStream<IncomingEthRequest>,
     /// Metrics for the eth request handler.
+    /// 对于eth request handler的metrics
     metrics: EthRequestHandlerMetrics,
 }
 
@@ -79,9 +87,11 @@ impl<C> EthRequestHandler<C> {
 
 impl<C> EthRequestHandler<C>
 where
+    // 包含了BlockReader，HeaderReader以及ReceiptProvider
     C: BlockReader + HeaderProvider + ReceiptProvider,
 {
     /// Returns the list of requested headers
+    /// 返回一系列请求的headers
     fn get_headers_response(&self, request: GetBlockHeaders) -> Vec<Header> {
         let GetBlockHeaders { start_block, limit, skip, direction } = request;
 
@@ -235,6 +245,7 @@ where
 }
 
 /// An endless future.
+/// 一个endless的future
 ///
 /// This should be spawned or used as part of `tokio::select!`.
 impl<C> Future for EthRequestHandler<C>
@@ -252,13 +263,16 @@ where
                 Poll::Ready(None) => return Poll::Ready(()),
                 Poll::Ready(Some(incoming)) => match incoming {
                     IncomingEthRequest::GetBlockHeaders { peer_id, request, response } => {
+                        // 获取了header request
                         this.on_headers_request(peer_id, request, response)
                     }
                     IncomingEthRequest::GetBlockBodies { peer_id, request, response } => {
+                        // 获取了body request
                         this.on_bodies_request(peer_id, request, response)
                     }
                     IncomingEthRequest::GetNodeData { .. } => {}
                     IncomingEthRequest::GetReceipts { peer_id, request, response } => {
+                        // 获取receipts requests
                         this.on_receipts_request(peer_id, request, response)
                     }
                 },
@@ -284,10 +298,12 @@ impl Borrow<(PeerId, GetBlockHeaders)> for RespondedGetBlockHeaders {
 }
 
 /// All `eth` request related to blocks delegated by the network.
+/// 所有的`eth`请求，和block相关
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum IncomingEthRequest {
     /// Request Block headers from the peer.
+    /// 从peer请求Block headers
     ///
     /// The response should be sent through the channel.
     GetBlockHeaders {
@@ -296,6 +312,7 @@ pub enum IncomingEthRequest {
         response: oneshot::Sender<RequestResult<BlockHeaders>>,
     },
     /// Request Block headers from the peer.
+    /// 从peer请求Block bodies
     ///
     /// The response should be sent through the channel.
     GetBlockBodies {
@@ -304,6 +321,7 @@ pub enum IncomingEthRequest {
         response: oneshot::Sender<RequestResult<BlockBodies>>,
     },
     /// Request Node Data from the peer.
+    /// 从peer请求Node Data
     ///
     /// The response should be sent through the channel.
     GetNodeData {
@@ -312,8 +330,10 @@ pub enum IncomingEthRequest {
         response: oneshot::Sender<RequestResult<NodeData>>,
     },
     /// Request Receipts from the peer.
+    /// 从peer请求Receipts
     ///
     /// The response should be sent through the channel.
+    /// response应该通过channel发送
     GetReceipts {
         peer_id: PeerId,
         request: GetReceipts,

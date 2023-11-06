@@ -11,18 +11,23 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// Configuration for the reth node.
+/// reth node的配置
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Config {
     /// Configuration for each stage in the pipeline.
+    /// 配置pipeline中的每个stage
     // TODO(onbjerg): Can we make this easier to maintain when we add/remove stages?
     pub stages: StageConfig,
     /// Configuration for pruning.
+    /// pruning的配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prune: Option<PruneConfig>,
     /// Configuration for the discovery service.
+    /// 对于discovery service的配置
     pub peers: PeersConfig,
     /// Configuration for peer sessions.
+    /// peer session的配置
     pub sessions: SessionsConfig,
 }
 
@@ -50,6 +55,7 @@ impl Config {
 }
 
 /// Configuration for each stage in the pipeline.
+/// 配置pipeline中的每个stage
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct StageConfig {

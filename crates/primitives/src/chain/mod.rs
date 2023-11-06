@@ -73,6 +73,7 @@ impl Chain {
     }
 
     /// Returns the address of the public DNS node list for the given chain.
+    /// 返回给定chain的public DNS node list的地址
     ///
     /// See also <https://github.com/ethereum/discv4-dns-lists>
     pub fn public_dns_network_protocol(self) -> Option<String> {

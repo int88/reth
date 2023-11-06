@@ -80,6 +80,7 @@ impl NetworkHandle {
     }
 
     /// Creates a new [`NetworkEvent`] listener channel.
+    /// 创建一个新的[`NetworkEvent`]的listener channel
     pub fn event_listener(&self) -> UnboundedReceiverStream<NetworkEvent> {
         let (tx, rx) = mpsc::unbounded_channel();
         let _ = self.manager().send(NetworkHandleMessage::EventListener(tx));
@@ -133,6 +134,7 @@ impl NetworkHandle {
     }
 
     /// Announce a block over devp2p
+    /// 声明一个block，通过devp2p
     ///
     /// Caution: in PoS this is a noop, since new block are no longer announced over devp2p, but are
     /// instead sent to node node by the CL. However, they can still be requested over devp2p, but
@@ -142,16 +144,19 @@ impl NetworkHandle {
     }
 
     /// Sends a [`PeerRequest`] to the given peer's session.
+    /// 发送一个[`PeerRequest`]到给定的peer的session
     pub fn send_request(&self, peer_id: PeerId, request: PeerRequest) {
         self.send_message(NetworkHandleMessage::EthRequest { peer_id, request })
     }
 
     /// Send transactions hashes to the peer.
+    /// 发送txs hashes到peer
     pub fn send_transactions_hashes(&self, peer_id: PeerId, msg: NewPooledTransactionHashes) {
         self.send_message(NetworkHandleMessage::SendPooledTransactionHashes { peer_id, msg })
     }
 
     /// Send full transactions to the peer
+    /// 发送完整的txs到peer
     pub fn send_transactions(&self, peer_id: PeerId, msg: Vec<Arc<TransactionSigned>>) {
         self.send_message(NetworkHandleMessage::SendTransaction {
             peer_id,
@@ -302,6 +307,7 @@ impl NetworkSyncUpdater for NetworkHandle {
 #[derive(Debug)]
 struct NetworkInner {
     /// Number of active peer sessions the node's currently handling.
+    /// node当前处理的active peer sessions的数目
     num_active_peers: Arc<AtomicUsize>,
     /// Sender half of the message channel to the [`crate::NetworkManager`].
     to_manager_tx: UnboundedSender<NetworkHandleMessage>,
@@ -310,14 +316,17 @@ struct NetworkInner {
     /// The identifier used by this node.
     local_peer_id: PeerId,
     /// Access to the all the nodes.
+    /// 访问所有的nodes
     peers: PeersHandle,
     /// The mode of the network
     network_mode: NetworkMode,
     /// Used to measure inbound & outbound bandwidth across network streams (currently unused)
     bandwidth_meter: BandwidthMeter,
     /// Represents if the network is currently syncing.
+    /// 代表network当前正在同步
     is_syncing: Arc<AtomicBool>,
     /// Used to differentiate between an initial pipeline sync or a live sync
+    /// 用于在初始的pipeline sync或者一个live sync之间区分
     initial_sync_done: Arc<AtomicBool>,
     /// The chain id
     chain_id: Arc<AtomicU64>,

@@ -7,6 +7,7 @@ use std::{
 
 use crate::metrics::BlockBufferMetrics;
 /// Type that contains blocks by number and hash.
+/// 包含blocks的类型，通过number以及hash，将number作为key，有一系列的blocks，以block hash作为键值
 pub type BufferedBlocks = BTreeMap<BlockNumber, HashMap<BlockHash, SealedBlockWithSenders>>;
 
 /// Contains the Tree of pending blocks that are not executed but buffered
@@ -65,10 +66,12 @@ impl BlockBuffer {
     }
 
     /// Insert a correct block inside the buffer.
+    /// 在buffer中插入一个正确的block
     pub fn insert_block(&mut self, block: SealedBlockWithSenders) {
         let num_hash = block.num_hash();
 
         self.parent_to_child.entry(block.parent_hash).or_default().insert(block.num_hash());
+        // hash到number到映射
         self.hash_to_num.insert(block.hash, block.number);
         self.blocks.entry(block.number).or_default().insert(block.hash, block);
 
@@ -76,8 +79,10 @@ impl BlockBuffer {
             self.lru.push(num_hash, ()).filter(|(b, _)| *b != num_hash)
         {
             // evict the block if limit is hit
+            // 如果到达了limit，驱逐block
             if let Some(evicted_block) = self.remove_from_blocks(&evicted_num_hash) {
                 // evict the block if limit is hit
+                // 如果到达了limit，驱逐block
                 self.remove_from_parent(evicted_block.parent_hash, &evicted_num_hash);
             }
         }
@@ -85,13 +90,18 @@ impl BlockBuffer {
     }
 
     /// Removes the given block from the buffer and also all the children of the block.
+    /// 从buffer中移除给定的block以及这个block的所有children
     ///
     /// This is used to get all the blocks that are dependent on the block that is included.
+    /// 这用于获取所有依赖于这个block的blocks
     ///
     /// Note: that order of returned blocks is important and the blocks with lower block number
     /// in the chain will come first so that they can be executed in the correct order.
+    /// 注意：返回的blocks的顺序很重要，并且chain中有着lower block
+    /// number的会首先到来，这样他们能以正确的顺序执行
     pub fn remove_with_children(&mut self, parent: BlockNumHash) -> Vec<SealedBlockWithSenders> {
         // remove parent block if present
+        // 移除parent block，如果存在的话
         let mut taken = Vec::new();
         if let Some(block) = self.remove_from_blocks(&parent) {
             taken.push(block);
@@ -147,11 +157,13 @@ impl BlockBuffer {
     }
 
     /// Return a reference to the lowest ancestor of the given block in the buffer.
+    /// 返回buffer中给定block的lowest ancestor的一个引用
     pub fn lowest_ancestor(&self, hash: &BlockHash) -> Option<&SealedBlockWithSenders> {
         let mut current_block = self.block_by_hash(hash)?;
         while let Some(block) = self
             .blocks
             .get(&(current_block.number - 1))
+            // 从blocks中获取current_block的parent
             .and_then(|blocks| blocks.get(&current_block.parent_hash))
         {
             current_block = block;
@@ -175,13 +187,16 @@ impl BlockBuffer {
     }
 
     /// Remove from parent child connection. Dont touch childrens.
+    /// 从parent child connection中移除，不要管childrens
     fn remove_from_parent(&mut self, parent: BlockHash, block: &BlockNumHash) {
         self.remove_from_hash_to_num(&parent);
 
         // remove from parent to child connection, but only for this block parent.
+        // 从parent to child的connection中移除，但是只对于block parent
         if let hash_map::Entry::Occupied(mut entry) = self.parent_to_child.entry(parent) {
             entry.get_mut().remove(block);
             // if set is empty remove block entry.
+            // 如果set为空，移除block entry
             if entry.get().is_empty() {
                 entry.remove();
             }
@@ -189,17 +204,21 @@ impl BlockBuffer {
     }
 
     /// Remove block from `self.blocks`, This will also remove block from `self.lru`.
+    /// 从`self.blocks`中移除block，这也会从`self.lru`中移除block
     ///
     /// Note: This function will not remove block from the `self.parent_to_child` connection.
+    /// 注意：这个函数不回从`self.parent_to_child` connection移除block
     fn remove_from_blocks(&mut self, block: &BlockNumHash) -> Option<SealedBlockWithSenders> {
         self.remove_from_hash_to_num(&block.hash);
 
         if let Entry::Occupied(mut entry) = self.blocks.entry(block.number) {
             let ret = entry.get_mut().remove(&block.hash);
             // if set is empty remove block entry.
+            // 如果set为空，移除block entry
             if entry.get().is_empty() {
                 entry.remove();
             }
+            // 从lru中pop
             self.lru.pop(block);
             return ret
         };
@@ -217,9 +236,12 @@ impl BlockBuffer {
         let mut removed_blocks = Vec::new();
         while let Some(parent_num_hash) = remove_parent_children.pop() {
             // get this child blocks children and add them to the remove list.
+            // 获取这个parent block的children并且将它们加入到remove list
             if let Some(parent_childrens) = self.parent_to_child.remove(&parent_num_hash.hash) {
                 // remove child from buffer
+                // 从buffer中移除child
                 for child in parent_childrens.iter() {
+                    // 从blocks中移除
                     if let Some(block) = self.remove_from_blocks(child) {
                         removed_blocks.push(block);
                     }

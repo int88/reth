@@ -117,6 +117,7 @@ impl From<BuiltPayload> for ExecutionPayloadEnvelopeV3 {
 }
 
 /// Container type for all components required to build a payload.
+/// 容器类型，对于所有需要构建一个payload的组件需要的
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PayloadBuilderAttributes {
     /// Id of the payload

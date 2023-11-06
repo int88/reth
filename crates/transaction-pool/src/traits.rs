@@ -28,10 +28,13 @@ use reth_primitives::kzg::KzgSettings;
 use serde::{Deserialize, Serialize};
 
 /// General purpose abstraction of a transaction-pool.
+/// 通用的tx-pool的抽象
 ///
 /// This is intended to be used by API-consumers such as RPC that need inject new incoming,
 /// unverified transactions. And by block production that needs to get transactions to execute in a
 /// new block.
+/// 主要被API-consumers，例如RPC使用，需要注入新的incoming, unverified txs，被block
+/// production使用，需要获取txs进行执行，在新的block
 ///
 /// Note: This requires `Clone` for convenience, since it is assumed that this will be implemented
 /// for a wrapped `Arc` type, see also [`Pool`](crate::Pool).
@@ -50,9 +53,11 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn block_info(&self) -> BlockInfo;
 
     /// Imports an _external_ transaction.
+    /// 导入一个外部的tx
     ///
     /// This is intended to be used by the network to insert incoming transactions received over the
     /// p2p network.
+    /// 这是由network使用来插入incoming txs，从p2p network接收
     ///
     /// Consumer: P2P
     async fn add_external_transaction(&self, transaction: Self::Transaction) -> PoolResult<TxHash> {
@@ -60,6 +65,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Imports all _external_ transactions
+    /// 导入所有外部的txs
     ///
     ///
     /// Consumer: Utility
@@ -71,6 +77,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Adds an _unvalidated_ transaction into the pool and subscribe to state changes.
+    /// 添加一个未被校验的tx到pool并且订阅state变更
     ///
     /// This is the same as [TransactionPool::add_transaction] but returns an event stream for the
     /// given transaction.
@@ -115,6 +122,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ///
     /// Note: This is intended for networking and will __only__ yield transactions that are allowed
     /// to be propagated over the network.
+    /// 注意：这用于networking并且只会生成txs，允许在network传播
     ///
     /// Consumer: RPC/P2P
     fn pending_transactions_listener(&self) -> Receiver<TxHash> {
@@ -349,13 +357,17 @@ pub trait TransactionPoolExt: TransactionPool {
 }
 
 /// Determines what kind of new transactions should be emitted by a stream of transactions.
+/// 决定新的txs的类型，应该被一个stream of txs发送
 ///
 /// This gives control whether to include transactions that are allowed to be propagated.
+/// 这给控制，关于包含txs允许被传播
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionListenerKind {
     /// Any new pending transactions
+    /// 所有新的txs
     All,
     /// Only transactions that are allowed to be propagated.
+    /// 只有允许被传播的txs
     ///
     /// See also [ValidPoolTransaction]
     PropagateOnly,
@@ -464,22 +476,29 @@ pub struct NewBlobSidecar {
 }
 
 /// Where the transaction originates from.
+/// tx来自何处
 ///
 /// Depending on where the transaction was picked up, it affects how the transaction is handled
 /// internally, e.g. limits for simultaneous transaction of one sender.
+/// 依赖于tx来自何处，它影响tx如何在内部被处理，例如，限制一个sender的同步的tx
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionOrigin {
     /// Transaction is coming from a local source.
+    /// tx来自local source
     Local,
     /// Transaction has been received externally.
+    /// tx来自外部
     ///
     /// This is usually considered an "untrusted" source, for example received from another in the
     /// network.
+    /// 这通常被认为是不可信的source，例如接收自另一个network
     External,
     /// Transaction is originated locally and is intended to remain private.
+    /// tx在本地生成并且需要保持private
     ///
     /// This type of transaction should not be propagated to the network. It's meant for
     /// private usage within the local node only.
+    /// 这种类型的tx不应该传播到network，这意味着这只在local node
     Private,
 }
 

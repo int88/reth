@@ -29,6 +29,7 @@ impl<C, Tx, Eth> NetworkBuilder<C, Tx, Eth> {
     }
 
     /// Consumes the type and returns all fields and also return a [`NetworkHandle`].
+    /// 消费类型并且返回所有的字段，并且同时返回一个[`NetworkHandle`]
     pub fn split_with_handle(self) -> (NetworkHandle, NetworkManager<C>, Tx, Eth) {
         let NetworkBuilder { network, transactions, request_handler } = self;
         let handle = network.handle().clone();
@@ -36,6 +37,7 @@ impl<C, Tx, Eth> NetworkBuilder<C, Tx, Eth> {
     }
 
     /// Creates a new [`TransactionsManager`] and wires it to the network.
+    /// 创建一个新的 [`TransactionsManager`]并且和network相关联
     pub fn transactions<Pool: TransactionPool>(
         self,
         pool: Pool,
@@ -44,19 +46,23 @@ impl<C, Tx, Eth> NetworkBuilder<C, Tx, Eth> {
         let (tx, rx) = mpsc::unbounded_channel();
         network.set_transactions(tx);
         let handle = network.handle().clone();
+        // 构建新的tx manager
         let transactions = TransactionsManager::new(handle, pool, rx);
         NetworkBuilder { network, request_handler, transactions }
     }
 
     /// Creates a new [`EthRequestHandler`] and wires it to the network.
+    /// 创建一个新的[`EthRequestHandler`]并且和network关联
     pub fn request_handler<Client>(
         self,
         client: Client,
     ) -> NetworkBuilder<C, Tx, EthRequestHandler<Client>> {
         let NetworkBuilder { mut network, transactions, .. } = self;
         let (tx, rx) = mpsc::channel(ETH_REQUEST_CHANNEL_CAPACITY);
+        // 设置eth request handler
         network.set_eth_request_handler(tx);
         let peers = network.handle().peers_handle().clone();
+        // 构建NetworkBuilder
         let request_handler = EthRequestHandler::new(client, peers, rx);
         NetworkBuilder { network, request_handler, transactions }
     }

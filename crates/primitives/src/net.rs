@@ -29,12 +29,16 @@ use url::{Host, Url};
 )]
 pub struct NodeRecord {
     /// The Address of a node.
+    /// 一个node的地址
     pub address: IpAddr,
     /// TCP port of the port that accepts connections.
+    /// TCP端口用于接收连接
     pub tcp_port: u16,
     /// UDP discovery port.
+    /// UDP发现端口
     pub udp_port: u16,
     /// Public key of the discovery service
+    /// discovery service的Public key
     pub id: PeerId,
 }
 

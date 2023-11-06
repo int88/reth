@@ -25,6 +25,7 @@ use std::{
 
 /// The [TestTransaction] is used as an internal
 /// database for testing stage implementation.
+///  [TestTransaction]用于作为一个内部的db，用于测试stage的实现
 ///
 /// ```rust,ignore
 /// let tx = TestTransaction::default();
@@ -41,7 +42,9 @@ pub struct TestTransaction {
 impl Default for TestTransaction {
     /// Create a new instance of [TestTransaction]
     fn default() -> Self {
+        // 创建rw db
         let tx = create_test_rw_db();
+        // 构建factory
         Self { tx: tx.clone(), path: None, factory: ProviderFactory::new(tx, MAINNET.clone()) }
     }
 }

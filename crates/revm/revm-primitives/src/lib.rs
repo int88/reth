@@ -1,4 +1,5 @@
 //! Revm utils and implementations specific to reth.
+//! Revm工具以及reth相关的特定实现
 
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",
@@ -12,6 +13,7 @@
 pub mod config;
 
 /// Helpers for configuring revm [Env](revm::primitives::Env)
+/// Helpers用于配置revm
 pub mod env;
 
 /// Helpers for type compatibility between reth and revm types

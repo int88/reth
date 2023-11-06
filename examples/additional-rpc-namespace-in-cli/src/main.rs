@@ -1,4 +1,5 @@
 //! Example of how to use additional rpc namespaces in the reth CLI
+//! 示例关于如何在reth CLI使用额外的rpc namespaces
 //!
 //! Run with
 //!
@@ -7,6 +8,7 @@
 //! ```
 //!
 //! This installs an additional RPC method `txpoolExt_transactionCount` that can queried via [cast](https://github.com/foundry-rs/foundry)
+//! 安装一个额外的RPC方法`txpoolExt_transactionCount`
 //!
 //! ```sh
 //! cast rpc txpoolExt_transactionCount
@@ -34,6 +36,7 @@ fn main() {
 }
 
 /// The type that tells the reth CLI what extensions to use
+/// 这个类型告诉reth CLI使用什么扩展
 struct MyRethCliExt;
 
 impl RethCliExt for MyRethCliExt {

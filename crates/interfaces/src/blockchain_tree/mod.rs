@@ -174,14 +174,19 @@ pub enum BlockStatus {
 }
 
 /// How a payload was inserted if it was valid.
+/// 一个payload如何被插入，如果它是合法的
 ///
 /// If the payload was valid, but has already been seen, [`InsertPayloadOk::AlreadySeen(_)`] is
 /// returned, otherwise [`InsertPayloadOk::Inserted(_)`] is returned.
+/// 如果payload是合法的，但是已经被看到过[`InsertPayloadOk::AlreadySeen(_)`]会返回，
+/// 否则[`InsertPayloadOk::Inserted(_)`]被返回
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum InsertPayloadOk {
     /// The payload was valid, but we have already seen it.
+    /// payload是合法的，但是我们已经见过他了
     AlreadySeen(BlockStatus),
     /// The payload was valid and inserted into the tree.
+    /// payload是合法的并且被插入到tree中
     Inserted(BlockStatus),
 }
 

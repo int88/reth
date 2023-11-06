@@ -14,6 +14,7 @@ use std::collections::BTreeMap;
 pub use target::{PruneModes, MINIMUM_PRUNING_DISTANCE};
 
 /// Configuration for pruning receipts not associated with logs emitted by the specified contracts.
+/// 配置用于清理receipts，由特定的contracts发出和logs不相关
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ReceiptsLogPruneConfig(pub BTreeMap<Address, PruneMode>);
 

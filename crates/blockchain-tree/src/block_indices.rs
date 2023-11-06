@@ -100,9 +100,12 @@ impl BlockIndices {
     }
 
     /// Returns all pending block hashes.
+    /// 返回所有的pending block hashes
     ///
     /// Pending blocks are considered blocks that are extending the canonical tip by one block
     /// number and have their parent hash set to the canonical tip.
+    /// Pending blocks被认为是扩展canonical tip的blocks，扩展了一个block并且它们的parent
+    /// hashes是canonical tip
     pub fn pending_blocks(&self) -> (BlockNumber, Vec<BlockHash>) {
         let canonical_tip = self.canonical_tip();
         let pending_blocks = self
@@ -172,6 +175,8 @@ impl BlockIndices {
     /// Update all block hashes. iterate over present and new list of canonical hashes and compare
     /// them. Remove all missmatches, disconnect them and return all chains that needs to be
     /// removed.
+    /// 更新所有的block hashes，迭代新的canonical
+    /// hashes并且比较它们，移除所有的mismatches，disconnect它们并且返回所有需要移除的chains
     pub(crate) fn update_block_hashes(
         &mut self,
         hashes: BTreeMap<u64, BlockHash>,
@@ -339,12 +344,14 @@ impl BlockIndices {
     }
 
     /// this is function that is going to remove N number of last canonical hashes.
+    /// 这个函数用于移除N个last canonical hashes
     ///
     /// NOTE: This is not safe standalone, as it will not disconnect
     /// blocks that depend on unwinded canonical chain. And should be
     /// used when canonical chain is reinserted inside Tree.
     pub(crate) fn unwind_canonical_chain(&mut self, unwind_to: BlockNumber) {
         // this will remove all blocks numbers that are going to be replaced.
+        // 这会移除所有的block numbers，需要被移除
         self.canonical_chain.retain(|num, _| *num <= unwind_to);
     }
 
@@ -410,6 +417,7 @@ impl BlockIndices {
     }
 
     /// get canonical tip
+    /// 获取canonical tip
     #[inline]
     pub fn canonical_tip(&self) -> BlockNumHash {
         self.canonical_chain.tip()

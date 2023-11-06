@@ -37,6 +37,7 @@ impl<Client> FullBlockClient<Client> {
     }
 
     /// Returns a client with Test consensus
+    /// 返回一个client，有着Test consensus
     #[cfg(feature = "test-utils")]
     pub fn test_client(client: Client) -> Self {
         Self::new(client, Arc::new(crate::test_utils::TestConsensus::default()))
@@ -48,11 +49,13 @@ where
     Client: BodiesClient + HeadersClient + Clone,
 {
     /// Returns a future that fetches the [SealedBlock] for the given hash.
+    /// 返回一个future，用给定的hash获取[SealedBlock]
     ///
     /// Note: this future is cancel safe
     ///
     /// Caution: This does no validation of body (transactions) response but guarantees that the
     /// [SealedHeader] matches the requested hash.
+    /// 注意：不保证body response的校验（txs），但是确保[SealedHeder]匹配请求的hash
     pub fn get_full_block(&self, hash: H256) -> FetchFullBlockFuture<Client> {
         let client = self.client.clone();
         FetchFullBlockFuture {
@@ -68,6 +71,7 @@ where
     }
 
     /// Returns a future that fetches [SealedBlock]s for the given hash and count.
+    /// 返回一个future，获取[SealedBlock]，对于给定的hash和count
     ///
     /// Note: this future is cancel safe
     ///

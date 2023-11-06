@@ -2,6 +2,7 @@ use reth_interfaces::RethResult;
 use reth_primitives::{PruneCheckpoint, PrunePart};
 
 /// The trait for fetching prune checkpoint related data.
+/// trait用于获取prune checkpoint相关的数据
 #[auto_impl::auto_impl(&, Arc)]
 pub trait PruneCheckpointReader: Send + Sync {
     /// Fetch the checkpoint for the given prune part.

@@ -19,6 +19,7 @@ pub trait HeaderProvider: Send + Sync {
     fn header_by_number(&self, num: u64) -> RethResult<Option<Header>>;
 
     /// Get header by block number or hash
+    /// 通过block number或者hash获取header
     fn header_by_hash_or_number(
         &self,
         hash_or_num: BlockHashOrNumber,
@@ -40,6 +41,7 @@ pub trait HeaderProvider: Send + Sync {
     fn headers_range(&self, range: impl RangeBounds<BlockNumber>) -> RethResult<Vec<Header>>;
 
     /// Get headers in range of block numbers
+    /// 获取headers，根据一系列的block numbers
     fn sealed_headers_range(
         &self,
         range: impl RangeBounds<BlockNumber>,

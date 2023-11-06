@@ -156,6 +156,7 @@ impl Header {
     }
 
     /// Heavy function that will calculate hash of data and will *not* save the change to metadata.
+    /// Heavy function，需要计算hash of data并且不会保存change到metadata
     /// Use [`Header::seal`], [`SealedHeader`] and unlock if you need hash to be persistent.
     pub fn hash_slow(&self) -> H256 {
         let mut out = BytesMut::new();
@@ -504,8 +505,10 @@ impl Decodable for Header {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SealedHeader {
     /// Locked Header fields.
+    /// 锁定的Header fields
     pub header: Header,
     /// Locked Header hash.
+    /// 锁定的Header hash
     pub hash: BlockHash,
 }
 

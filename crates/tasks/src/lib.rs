@@ -36,9 +36,11 @@ pub mod metrics;
 pub mod shutdown;
 
 /// A type that can spawn tasks.
+/// 一个类型可以生成tasks
 ///
 /// The main purpose of this type is to abstract over [TaskExecutor] so it's more convenient to
 /// provide default impls for testing.
+/// 这个类型的主要作用是抽象[TaskExecutor]，这样更方便提供默认的impls用于测试
 ///
 ///
 /// # Examples

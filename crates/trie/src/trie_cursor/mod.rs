@@ -11,6 +11,7 @@ pub use self::{
 };
 
 /// A cursor for navigating a trie that works with both Tables and DupSort tables.
+/// 一个cursor用于巡航一个trie，对于Tables和DupSort tables都能work
 pub trait TrieCursor<K: Key> {
     /// Move the cursor to the key and return if it is an exact match.
     fn seek_exact(&mut self, key: K)

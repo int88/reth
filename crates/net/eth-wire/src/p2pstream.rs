@@ -89,6 +89,8 @@ where
 {
     /// Consumes the `UnauthedP2PStream` and returns a `P2PStream` after the `Hello` handshake is
     /// completed successfully. This also returns the `Hello` message sent by the remote peer.
+    /// 消费`UnauthedP2PStream`并且返回一个`P2PStream`在`Hello` handshake完成之后，这会返回`Hello`
+    /// message，发送给remote peer之后
     pub async fn handshake(
         mut self,
         hello: HelloMessage,

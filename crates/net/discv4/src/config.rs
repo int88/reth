@@ -51,6 +51,7 @@ pub struct Discv4Config {
     /// the filter will last indefinitely. Default is 1 hour.
     pub ban_duration: Option<Duration>,
     /// Nodes to boot from.
+    /// 开始启动的Nodes
     pub bootstrap_nodes: HashSet<NodeRecord>,
     /// Whether to randomly discover new peers.
     ///
@@ -288,6 +289,7 @@ impl Discv4ConfigBuilder {
     }
 
     /// Adds multiple boot nodes
+    /// 添加多个boot nodes
     pub fn add_boot_nodes(&mut self, nodes: impl IntoIterator<Item = NodeRecord>) -> &mut Self {
         self.config.bootstrap_nodes.extend(nodes);
         self

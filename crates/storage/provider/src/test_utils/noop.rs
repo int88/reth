@@ -19,6 +19,7 @@ use reth_revm_primitives::primitives::{BlockEnv, CfgEnv};
 use std::{ops::RangeBounds, sync::Arc};
 
 /// Supports various api interfaces for testing purposes.
+/// 测试各种api借口
 #[derive(Debug, Clone, Default, Copy)]
 #[non_exhaustive]
 pub struct NoopProvider;

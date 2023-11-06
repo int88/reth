@@ -1,4 +1,5 @@
 //! Transactions management for the p2p network.
+//! 对于p2p network中的tx管理
 
 use crate::{
     cache::LruCache,
@@ -52,10 +53,12 @@ const MAX_FULL_TRANSACTIONS_PACKET_SIZE: usize = 100 * 1024;
 const GET_POOLED_TRANSACTION_SOFT_LIMIT_NUM_HASHES: usize = 256;
 
 /// Softlimit for the response size of a GetPooledTransactions message (2MB)
+/// Softlimit对于一个GetPooledTransactions message（默认为2MB）
 const GET_POOLED_TRANSACTION_SOFT_LIMIT_SIZE: GetPooledTransactionLimit =
     GetPooledTransactionLimit::SizeSoftLimit(2 * 1024 * 1024);
 
 /// The future for inserting a function into the pool
+/// The future用于插入一个function到pool
 pub type PoolImportFuture = Pin<Box<dyn Future<Output = PoolResult<TxHash>> + Send + 'static>>;
 
 /// Api to interact with [`TransactionsManager`] task.
@@ -112,46 +115,63 @@ impl TransactionsHandle {
 }
 
 /// Manages transactions on top of the p2p network.
+/// 在p2p network之上管理txs
 ///
 /// This can be spawned to another task and is supposed to be run as background service while
 /// [`TransactionsHandle`] is used as frontend to send commands to.
+/// 这可以被生成为另一个task并且应该作为background
+/// service运行，同时[`TransactionsHandle`]被作为frontend，发送命令
 ///
 /// The [`TransactionsManager`] is responsible for:
 ///    - handling incoming eth messages for transactions.
+///    - 处理到来的eth messages，对于txs
 ///    - serving transaction requests.
+///    - 服务tx requests
 ///    - propagate transactions
+///    - 传播txs
 ///
 /// This type communicates with the [`NetworkManager`](crate::NetworkManager) in both directions.
 ///   - receives incoming network messages.
+///   - 接收到来的network messages
 ///   - sends messages to dispatch (responses, propagate tx)
+///   - 发送messages进行dispatch
 ///
 /// It is directly connected to the [`TransactionPool`] to retrieve requested transactions and
 /// propagate new transactions over the network.
+/// 它直接和[`TransactionPool`]相连来获取请求的txs并且传播新的tx到network
 #[derive(Debug)]
 #[must_use = "Manager does nothing unless polled."]
 pub struct TransactionsManager<Pool> {
     /// Access to the transaction pool.
+    /// 访问tx pool
     pool: Pool,
     /// Network access.
     network: NetworkHandle,
     /// Subscriptions to all network related events.
+    /// 订阅所有network相关的events
     ///
     /// From which we get all new incoming transaction related messages.
+    /// 从这里我们获得所有新的tx相关的messages
     network_events: UnboundedReceiverStream<NetworkEvent>,
     /// All currently active requests for pooled transactions.
     inflight_requests: FuturesUnordered<GetPooledTxRequestFut>,
     /// All currently pending transactions grouped by peers.
+    /// 当前所有的pending txs，通过peers绝活
     ///
     /// This way we can track incoming transactions and prevent multiple pool imports for the same
     /// transaction
+    /// 这我们可以追踪incoming txs并且防止多次的pool imports，对于同样的tx
     transactions_by_peers: HashMap<TxHash, Vec<PeerId>>,
     /// Transactions that are currently imported into the `Pool`
     pool_imports: FuturesUnordered<PoolImportFuture>,
     /// All the connected peers.
+    /// 所有连接的peers
     peers: HashMap<PeerId, Peer>,
     /// Send half for the command channel.
+    /// command channel的发送部分
     command_tx: mpsc::UnboundedSender<TransactionsCommand>,
     /// Incoming commands from [`TransactionsHandle`].
+    /// 来自[`TransactionsHandle`]的incoming commands
     command_rx: UnboundedReceiverStream<TransactionsCommand>,
     /// Incoming commands from [`TransactionsHandle`].
     pending_transactions: ReceiverStream<TxHash>,
@@ -163,8 +183,10 @@ pub struct TransactionsManager<Pool> {
 
 impl<Pool: TransactionPool> TransactionsManager<Pool> {
     /// Sets up a new instance.
+    /// 设置一个新的实例
     ///
     /// Note: This expects an existing [`NetworkManager`](crate::NetworkManager) instance.
+    /// 注意：这期望一个已经存在的[`NetworkManager`](crate::NetworkManager)实例
     pub fn new(
         network: NetworkHandle,
         pool: Pool,
@@ -175,6 +197,7 @@ impl<Pool: TransactionPool> TransactionsManager<Pool> {
 
         // install a listener for new pending transactions that are allowed to be propagated over
         // the network
+        // 安装一个listener，对于新的pending txs，允许通过网络进行传播
         let pending = pool.pending_transactions_listener();
 
         Self {
@@ -219,6 +242,7 @@ where
     }
 
     /// Request handler for an incoming request for transactions
+    /// Request handler，对于请求txs的incoming request
     fn on_get_pooled_transactions(
         &mut self,
         peer_id: PeerId,
@@ -228,10 +252,12 @@ where
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             let transactions = self
                 .pool
+                // 获取pooled tx
                 .get_pooled_transaction_elements(request.0, GET_POOLED_TRANSACTION_SOFT_LIMIT_SIZE);
 
             // we sent a response at which point we assume that the peer is aware of the
             // transactions
+            // 我们发送一个response，这时候我们假设peer已经意识到了txs
             peer.transactions.extend(transactions.iter().map(|tx| *tx.hash()));
 
             let resp = PooledTransactions(transactions);
@@ -457,11 +483,13 @@ where
     }
 
     /// Handles dedicated transaction events related to the `eth` protocol.
+    /// 处理专门的tx eevents，和`eth` protocol相关
     fn on_network_tx_event(&mut self, event: NetworkTransactionEvent) {
         match event {
             NetworkTransactionEvent::IncomingTransactions { peer_id, msg } => {
                 // ensure we didn't receive any blob transactions as these are disallowed to be
                 // broadcasted in full
+                // 确保我们没有接受任何blob txs，因为这些不允许以full的形式广播
 
                 let has_blob_txs = msg.has_eip4844();
 
@@ -471,6 +499,7 @@ where
                     .map(PooledTransactionsElement::try_from_broadcast)
                     .filter_map(Result::ok);
 
+                // 导入txs
                 self.import_transactions(peer_id, non_blob_txs, TransactionSource::Broadcast);
 
                 if has_blob_txs {
@@ -478,9 +507,11 @@ where
                 }
             }
             NetworkTransactionEvent::IncomingPooledTransactionHashes { peer_id, msg } => {
+                // 导入新的pooled tx
                 self.on_new_pooled_transaction_hashes(peer_id, msg)
             }
             NetworkTransactionEvent::GetPooledTransactions { peer_id, request, response } => {
+                // 获取pooled txs
                 self.on_get_pooled_transactions(peer_id, request, response)
             }
         }
@@ -501,6 +532,7 @@ where
     }
 
     /// Handles a received event related to common network events.
+    /// 处理一个接收到的event，和公共的network events相关
     fn on_network_event(&mut self, event: NetworkEvent) {
         match event {
             NetworkEvent::SessionClosed { peer_id, .. } => {
@@ -511,6 +543,7 @@ where
                 peer_id, client_version, messages, version, ..
             } => {
                 // insert a new peer into the peerset
+                // 插入一个新的peer到peerset
                 self.peers.insert(
                     peer_id,
                     Peer {
@@ -526,6 +559,8 @@ where
                 // Send a `NewPooledTransactionHashes` to the peer with up to
                 // `NEW_POOLED_TRANSACTION_HASHES_SOFT_LIMIT` transactions in the
                 // pool
+                // 发送一个`NewPooledTransactionHashes`到peer，
+                // pool中有直到`NEW_POOLED_TRANSACTION_HASHES_SOFT_LIMIT`个txs
                 if !self.network.is_initially_syncing() {
                     let peer = self.peers.get_mut(&peer_id).expect("is present; qed");
 
@@ -535,6 +570,7 @@ where
                         self.pool.pooled_transactions_max(NEW_POOLED_TRANSACTION_HASHES_SOFT_LIMIT);
                     if pooled_txs.is_empty() {
                         // do not send a message if there are no transactions in the pool
+                        // 不要发送message，如果pool中没有txs
                         return
                     }
 
@@ -552,6 +588,7 @@ where
     }
 
     /// Starts the import process for the given transactions.
+    /// 开始对于给定的txs的导入过程
     fn import_transactions(
         &mut self,
         peer_id: PeerId,
@@ -559,17 +596,20 @@ where
         source: TransactionSource,
     ) {
         // If the node is pipeline syncing, ignore transactions
+        // 如果node是pipeline syncing，忽略txs
         if self.network.is_initially_syncing() {
             return
         }
 
         // tracks the quality of the given transactions
+        // 追踪给定的txs的质量
         let mut has_bad_transactions = false;
         let mut num_already_seen = 0;
 
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             for tx in transactions {
                 // recover transaction
+                // 恢复tx
                 let tx = if let Ok(tx) = tx.try_into_ecrecovered() {
                     tx
                 } else {
@@ -581,6 +621,9 @@ where
                 // If we received the transactions as the response to our GetPooledTransactions
                 // requests (based on received `NewPooledTransactionHashes`) then we already
                 // recorded the hashes in [`Self::on_new_pooled_transaction_hashes`]
+                // 追踪peer知道这个tx，但是只有这是一个新的广播，如果我们接收到txs，
+                // 作为GetPooledTransactions请求的responses（基于接收的`NewPooledTransactionHashes`），那么我们已经记录hashes
+                // 在[`Self::on_new_pooled_transaction_hashes`]
                 if source.is_broadcast() && !peer.transactions.insert(*tx.hash()) {
                     num_already_seen += 1;
                 }
@@ -592,6 +635,7 @@ where
                     }
                     Entry::Vacant(entry) => {
                         // this is a new transaction that should be imported into the pool
+                        // 这是一个新的tx，应该被插入到Pool
                         let pool_transaction = <Pool::Transaction as FromRecoveredPooledTransaction>::from_recovered_transaction(tx);
 
                         let pool = self.pool.clone();
@@ -642,6 +686,7 @@ where
     }
 
     /// Clear the transaction
+    /// 清理tx
     fn on_good_import(&mut self, hash: TxHash) {
         self.transactions_by_peers.remove(&hash);
     }
@@ -657,6 +702,7 @@ where
 }
 
 /// An endless future.
+/// 一个endless future
 ///
 /// This should be spawned or used as part of `tokio::select!`.
 impl<Pool> Future for TransactionsManager<Pool>
@@ -670,6 +716,7 @@ where
         let this = self.get_mut();
 
         // drain network/peer related events
+        // 排干network/peer相关的events
         while let Poll::Ready(Some(event)) = this.network_events.poll_next_unpin(cx) {
             this.on_network_event(event);
         }
@@ -680,6 +727,7 @@ where
         }
 
         // drain incoming transaction events
+        // 排干到来的tx events
         while let Poll::Ready(Some(event)) = this.transaction_events.poll_next_unpin(cx) {
             this.on_network_tx_event(event);
         }
@@ -687,6 +735,7 @@ where
         this.update_request_metrics();
 
         // Advance all requests.
+        // 推进所有的requests
         while let Poll::Ready(Some(GetPooledTxResponse { peer_id, result })) =
             this.inflight_requests.poll_next_unpin(cx)
         {
@@ -708,6 +757,7 @@ where
         this.update_import_metrics();
 
         // Advance all imports
+        // 推进所有的imports
         while let Poll::Ready(Some(import_res)) = this.pool_imports.poll_next_unpin(cx) {
             match import_res {
                 Ok(hash) => {
@@ -732,6 +782,7 @@ where
         this.update_import_metrics();
 
         // handle and propagate new transactions
+        // 处理并且传播新的txs
         let mut new_txs = Vec::new();
         while let Poll::Ready(Some(hash)) = this.pending_transactions.poll_next_unpin(cx) {
             new_txs.push(hash);
@@ -741,6 +792,7 @@ where
         }
 
         // all channels are fully drained and import futures pending
+        // 所有的channels都被排干了并且导入future pending
 
         Poll::Pending
     }
@@ -797,6 +849,7 @@ impl FullTransactionsBuilder {
 
 /// A helper type to create the pooled transactions message based on the negotiated version of the
 /// session with the peer
+/// 一个helper类型来创建pooled txs message，基于协商的版本，和peer的session
 enum PooledTransactionsHashesBuilder {
     Eth66(NewPooledTransactionHashes66),
     Eth68(NewPooledTransactionHashes68),
@@ -849,8 +902,10 @@ impl PooledTransactionsHashesBuilder {
 /// How we received the transactions.
 enum TransactionSource {
     /// Transactions were broadcast to us via [`Transactions`] message.
+    /// 被广播给我们的txs，通过[`Transactions`] message
     Broadcast,
     /// Transactions were sent as the response of [`GetPooledTxRequest`] issued by us.
+    /// Txs被发送，作为[`GetPooledTxRequest`]的response
     Response,
 }
 
@@ -908,9 +963,11 @@ impl Future for GetPooledTxRequestFut {
 }
 
 /// Tracks a single peer
+/// 追踪单个peer
 #[derive(Debug)]
 struct Peer {
     /// Keeps track of transactions that we know the peer has seen.
+    /// 追踪peer已经看到的txs
     transactions: LruCache<H256>,
     /// A communication channel directly to the peer's session task.
     request_tx: PeerRequestSender,
@@ -922,6 +979,7 @@ struct Peer {
 }
 
 /// Commands to send to the [`TransactionsManager`]
+/// 发送到[`TransactionsManager`]的Commands
 #[derive(Debug)]
 enum TransactionsCommand {
     /// Propagate a transaction hash to the network.
@@ -939,12 +997,15 @@ enum TransactionsCommand {
 }
 
 /// All events related to transactions emitted by the network.
+/// 所有和txs相关的events，由network发射
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum NetworkTransactionEvent {
     /// Received list of transactions from the given peer.
+    /// 从给定的peer接收到一系列的txs
     ///
     /// This represents transactions that were broadcasted to use from the peer.
+    /// 这代表来自peer用于广播的txs
     IncomingTransactions { peer_id: PeerId, msg: Transactions },
     /// Received list of transactions hashes to the given peer.
     IncomingPooledTransactionHashes { peer_id: PeerId, msg: NewPooledTransactionHashes },
@@ -982,6 +1043,7 @@ mod tests {
         let handle = net.spawn();
 
         let listener0 = handle0.event_listener();
+        // 添加peer
         handle0.add_peer(*handle1.peer_id(), handle1.local_addr());
         let secret_key = SecretKey::new(&mut rand::thread_rng());
 
@@ -1001,14 +1063,17 @@ mod tests {
         tokio::task::spawn(network);
 
         // go to syncing (pipeline sync)
+        // 开始syncing（pipeline sync）
         network_handle.update_sync_state(SyncState::Syncing);
         assert!(NetworkInfo::is_syncing(&network_handle));
         assert!(NetworkInfo::is_initially_syncing(&network_handle));
 
         // wait for all initiator connections
+        // 等待所有的initiator connections
         let mut established = listener0.take(2);
         while let Some(ev) = established.next().await {
             match ev {
+                // 建立session的事件
                 NetworkEvent::SessionEstablished {
                     peer_id,
                     remote_addr,
@@ -1019,6 +1084,7 @@ mod tests {
                     version,
                 } => {
                     // to insert a new peer in transactions peerset
+                    // 添加一个新的peer到txs peerset
                     transactions.on_network_event(NetworkEvent::SessionEstablished {
                         peer_id,
                         remote_addr,
@@ -1029,6 +1095,7 @@ mod tests {
                         version,
                     })
                 }
+                // 添加peer的事件
                 NetworkEvent::PeerAdded(_peer_id) => continue,
                 ev => {
                     panic!("unexpected event {ev:?}")
@@ -1038,6 +1105,7 @@ mod tests {
         // random tx: <https://etherscan.io/getRawTx?tx=0x9448608d36e721ef403c53b00546068a6474d6cbab6816c3926de449898e7bce>
         let input = hex::decode("02f871018302a90f808504890aef60826b6c94ddf4c5025d1a5742cf12f74eec246d4432c295e487e09c3bbcc12b2b80c080a0f21a4eacd0bf8fea9c5105c543be5a1d8c796516875710fafafdf16d16d8ee23a001280915021bb446d1973501a67f93d2b38894a514b976e7b46dc2fe54598d76").unwrap();
         let signed_tx = TransactionSigned::decode(&mut &input[..]).unwrap();
+        // 一个新的tx
         transactions.on_network_tx_event(NetworkTransactionEvent::IncomingTransactions {
             peer_id: *handle1.peer_id(),
             msg: Transactions(vec![signed_tx.clone()]),
@@ -1047,6 +1115,7 @@ mod tests {
             Poll::Ready(())
         })
         .await;
+        // pool为空
         assert!(pool.is_empty());
         handle.terminate().await;
     }
@@ -1084,6 +1153,7 @@ mod tests {
         tokio::task::spawn(network);
 
         // go to syncing (pipeline sync) to idle and then to syncing (live)
+        // 从syncing（pipeline sync）到idle，之后到syncing（live）
         network_handle.update_sync_state(SyncState::Syncing);
         assert!(NetworkInfo::is_syncing(&network_handle));
         network_handle.update_sync_state(SyncState::Idle);
@@ -1092,6 +1162,7 @@ mod tests {
         assert!(NetworkInfo::is_syncing(&network_handle));
 
         // wait for all initiator connections
+        // 等待所有的initiator connections
         let mut established = listener0.take(2);
         while let Some(ev) = established.next().await {
             match ev {
@@ -1213,6 +1284,7 @@ mod tests {
         });
         assert_eq!(
             *handle1.peer_id(),
+            // 查看id是否匹配
             transactions.transactions_by_peers.get(&signed_tx.hash()).unwrap()[0]
         );
 
@@ -1224,6 +1296,7 @@ mod tests {
         .await;
 
         assert!(!pool.is_empty());
+        // 从pool中取出对应的hash不为空
         assert!(pool.get(&signed_tx.hash).is_some());
         handle.terminate().await;
     }
@@ -1293,6 +1366,7 @@ mod tests {
         handle.terminate().await;
 
         let tx = MockTransaction::eip1559();
+        // 在pool中加入tx
         let _ = transactions
             .pool
             .add_transaction(reth_transaction_pool::TransactionOrigin::External, tx.clone())
@@ -1302,6 +1376,7 @@ mod tests {
 
         let (send, receive) = oneshot::channel::<RequestResult<PooledTransactions>>();
 
+        // 获取到GetPooledTransactions请求
         transactions.on_network_tx_event(NetworkTransactionEvent::GetPooledTransactions {
             peer_id: *handle1.peer_id(),
             request,

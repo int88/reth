@@ -1,4 +1,5 @@
 //! A network implementation for testing purposes.
+//! 一个network的实现，用于测试
 
 use crate::{
     builder::ETH_REQUEST_CHANNEL_CAPACITY, error::NetworkError, eth_requests::EthRequestHandler,
@@ -24,9 +25,11 @@ use tokio::{
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
 /// A test network consisting of multiple peers.
+/// 一个test network，包含多个peers
 #[derive(Default)]
 pub struct Testnet<C> {
     /// All running peers in the network.
+    /// network中所有运行的peers
     peers: Vec<Peer<C>>,
 }
 
@@ -73,6 +76,7 @@ where
 
     /// Extend the list of peers with new peers that are configured with each of the given
     /// [`PeerConfig`]s.
+    /// 扩展一系列的peers，用新的peers，每个配置给定的[`PeerConfig`]
     pub async fn extend_peer_with_config(
         &mut self,
         configs: impl IntoIterator<Item = PeerConfig<C>>,
@@ -99,6 +103,7 @@ where
     }
 
     /// Returns all handles to the networks
+    /// 返回networks的所有handles
     pub fn handles(&self) -> impl Iterator<Item = NetworkHandle> + '_ {
         self.peers.iter().map(|p| p.handle())
     }
@@ -125,6 +130,7 @@ where
     C: BlockReader + HeaderProvider + Unpin + 'static,
 {
     /// Spawns the testnet to a separate task
+    /// 在另一个task生成testnet
     pub fn spawn(self) -> TestnetHandle<C> {
         let (tx, rx) = oneshot::channel::<oneshot::Sender<Self>>();
         let mut net = self;
@@ -147,11 +153,13 @@ where
 
 impl Testnet<NoopProvider> {
     /// Same as [`Self::try_create`] but panics on error
+    /// 和[`Self::try_create`]一样，但是在error的时候panics
     pub async fn create(num_peers: usize) -> Self {
         Self::try_create(num_peers).await.unwrap()
     }
 
     /// Creates a new [`Testnet`] with the given number of peers
+    /// 创建一个新的[`Testnet`]并且有着给定数目的peers
     pub async fn try_create(num_peers: usize) -> Result<Self, NetworkError> {
         let mut this = Testnet::default();
 
@@ -187,6 +195,7 @@ where
 }
 
 /// A handle to a [`Testnet`] that can be shared.
+/// 一个到[`Testnet`]的handle，可以被共享
 #[derive(Debug)]
 pub struct TestnetHandle<C> {
     _handle: JoinHandle<()>,
@@ -197,6 +206,7 @@ pub struct TestnetHandle<C> {
 
 impl<C> TestnetHandle<C> {
     /// Terminates the task and returns the [`Testnet`] back.
+    /// 终止task并且返回[`Testnet`]
     pub async fn terminate(self) -> Testnet<C> {
         let (tx, rx) = oneshot::channel();
         self.terminate.send(tx).unwrap();
@@ -205,6 +215,7 @@ impl<C> TestnetHandle<C> {
 }
 
 /// A peer in the [`Testnet`].
+/// [`Testnet`]中的一个peer
 #[pin_project]
 #[derive(Debug)]
 pub struct Peer<C> {

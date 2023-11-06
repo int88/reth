@@ -1,10 +1,13 @@
 /// Shared abstractions for downloader implementations.
+/// 共享的抽象，用于downloader的实现
 pub mod download;
 
 /// Traits for implementing P2P block body clients.
+/// Traits用于实现P2P block body clients
 pub mod bodies;
 
 /// A downloader that combines two different downloaders/client implementations.
+/// 一个downloader，组合了两种不同的downloader/client实现
 pub mod either;
 
 /// An implementation that uses headers and bodies traits to download full blocks

@@ -27,25 +27,33 @@ use tracing::{debug, error, instrument, trace};
 /// Result of [Pruner::run] execution.
 ///
 /// Returns `true` if pruning has been completed up to the target block,
+/// 返回`true`，如果pruning已经完成到了target block
 /// and `false` if there's more data to prune in further runs.
+/// 返回`false`如果后续有更多的pruner要运行
 pub type PrunerResult = Result<bool, PrunerError>;
 
 /// The pruner type itself with the result of [Pruner::run]
+/// pruner类型自身，有[Pruner::run]的结果
 pub type PrunerWithResult<DB> = (Pruner<DB>, PrunerResult);
 
 /// Pruning routine. Main pruning logic happens in [Pruner::run].
+/// Pruning的例程，主要的逻辑在[Pruner::run]
 #[derive(Debug)]
 pub struct Pruner<DB> {
     metrics: Metrics,
     provider_factory: ProviderFactory<DB>,
     /// Minimum pruning interval measured in blocks. All prune parts are checked and, if needed,
     /// pruned, when the chain advances by the specified number of blocks.
+    /// 以blocks计算的最小的pruning间隔，所有prune
+    /// parts都被校验，如果需要的话，被pruned，当chain移动了特定的blocks的数目
     min_block_interval: usize,
     /// Last pruned block number. Used in conjunction with `min_block_interval` to determine
     /// when the pruning needs to be initiated.
+    /// 最后被pruned block number，和`min_block_interval`搭配使用，来决定什么时候需要初始化pruning
     last_pruned_block_number: Option<BlockNumber>,
     modes: PruneModes,
     /// Maximum entries to prune per block, per prune part.
+    /// 每个block，每个pruner需要清理的最大的entries
     batch_sizes: PruneBatchSizes,
     listeners: EventListeners<PrunerEvent>,
 }
@@ -975,22 +983,27 @@ mod tests {
         let tx = TestTransaction::default();
         let mut rng = generators::rng();
 
+        // 生成随机的blocks并加入
         let blocks = random_block_range(&mut rng, 0..=100, H256::zero(), 0..10);
         tx.insert_blocks(blocks.iter(), None).expect("insert blocks");
 
         let mut receipts = Vec::new();
         for block in &blocks {
             for transaction in &block.body {
+                // 生成随机的receipt
                 receipts
                     .push((receipts.len() as u64, random_receipt(&mut rng, transaction, Some(0))));
             }
         }
+        // 插入receipts
         tx.insert_receipts(receipts).expect("insert receipts");
 
+        // tx数目一致
         assert_eq!(
             tx.table::<tables::Transactions>().unwrap().len(),
             blocks.iter().map(|block| block.body.len()).sum::<usize>()
         );
+        // tx和receipts数目一致
         assert_eq!(
             tx.table::<tables::Transactions>().unwrap().len(),
             tx.table::<tables::Receipts>().unwrap().len()
@@ -998,6 +1011,7 @@ mod tests {
 
         let test_prune = |to_block: BlockNumber| {
             let prune_mode = PruneMode::Before(to_block);
+            // 构建新的pruner
             let pruner = Pruner::new(
                 tx.inner_raw(),
                 MAINNET.clone(),
@@ -1037,6 +1051,7 @@ mod tests {
                 .0;
 
             let provider = tx.inner_rw();
+            // 对receipts进行prune
             let result = pruner.prune_receipts(&provider, to_block, prune_mode);
             assert_matches!(result, Ok(_));
             let done = result.unwrap();
@@ -1050,6 +1065,7 @@ mod tests {
                 blocks.iter().map(|block| block.body.len()).sum::<usize>() -
                     (last_pruned_tx_number + 1)
             );
+            // 获取prune的checkpoint
             assert_eq!(
                 tx.inner().get_prune_checkpoint(PrunePart::Receipts).unwrap(),
                 Some(PruneCheckpoint {

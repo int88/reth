@@ -131,6 +131,7 @@ pub fn init_db<P: AsRef<Path>>(path: P, log_level: Option<LogLevel>) -> eyre::Re
 }
 
 /// Opens up an existing database. Read only mode. It doesn't create it or create tables if missing.
+/// 打开一个已经存在的db，只读模式，它不创建db或者table，如果不存在的话
 pub fn open_db_read_only(path: &Path, log_level: Option<LogLevel>) -> eyre::Result<DatabaseEnvRO> {
     #[cfg(feature = "mdbx")]
     {

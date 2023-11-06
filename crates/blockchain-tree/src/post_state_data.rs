@@ -37,15 +37,19 @@ impl<'a> BundleStateDataProvider for BundleStateDataRef<'a> {
 }
 
 /// Structure that contains data needs to implement [`BundleStateDataProvider`]
+/// 结构体包含了数据，用于实现[`BundleStateDataProvider`]
 #[derive(Clone, Debug)]
 pub struct BundleStateData {
     /// Post state with changes
+    /// 有changes的post state
     pub state: BundleStateWithReceipts,
     /// Parent block hashes needs for evm BLOCKHASH opcode.
+    /// 对于evm BLOCKHASH opcode需要的parent block hashes
     /// NOTE: it does not mean that all hashes are there but all until finalized are there.
     /// Other hashes can be obtained from provider
     pub parent_block_hashed: BTreeMap<BlockNumber, BlockHash>,
     /// Canonical block where state forked from.
+    /// state分叉而来的caonical block hashes
     pub canonical_fork: ForkBlock,
 }
 

@@ -32,6 +32,7 @@ pub struct HelloMessage {
 
 impl HelloMessage {
     /// Starts a new `HelloMessageBuilder`
+    /// 启动一个新的`HelloMessageBuilder`
     ///
     /// ```
     /// use secp256k1::{SECP256K1, SecretKey};

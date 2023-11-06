@@ -1,4 +1,5 @@
 //! The ECIES Stream implementation which wraps over [`AsyncRead`] and [`AsyncWrite`].
+//! ECIES Stream的实现，对[`AsyncRead`]和[`AsyncWrite`]
 use crate::{
     codec::ECIESCodec, error::ECIESErrorImpl, ECIESError, EgressECIESValue, IngressECIESValue,
 };

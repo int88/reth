@@ -100,6 +100,7 @@ pub use transaction::{
 pub use withdrawal::Withdrawal;
 
 /// A block hash.
+/// 一个block hash
 pub type BlockHash = H256;
 /// A block number.
 pub type BlockNumber = u64;

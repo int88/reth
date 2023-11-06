@@ -35,36 +35,48 @@ use tracing::debug;
 const PEER_BLOCK_CACHE_LIMIT: usize = 512;
 
 /// The [`NetworkState`] keeps track of the state of all peers in the network.
+/// [`NetworkState`]追踪network中所有peers的state
 ///
 /// This includes:
 ///   - [`Discovery`]: manages the discovery protocol, essentially a stream of discovery updates
+///   - [`Discovery`]: 管理discovery协议，一系列的discovery updates
 ///   - [`PeersManager`]: keeps track of connected peers and issues new outgoing connections
 ///     depending on the configured capacity.
+///   - [`PeersManager`]：追踪一系列的peers并且发出新的outgoing connections，依赖于配置的capacity
 ///   - [`StateFetcher`]: streams download request (received from outside via channel) which are
 ///     then send to the session of the peer.
+///   - [`StateFetcher`]：streams下载请求（通过channel从outside接收），之后送给peer的session
 ///
 /// This type is also responsible for responding for received request.
+/// 这个类型负责响应接收到的请求
 #[derive(Debug)]
 pub struct NetworkState<C> {
     /// All active peers and their state.
+    /// 所有的active peers以及他们的state
     active_peers: HashMap<PeerId, ActivePeer>,
     /// Manages connections to peers.
+    /// 管理到peers的连接
     peers_manager: PeersManager,
     /// Buffered messages until polled.
+    /// 缓存的messages直到拉取
     queued_messages: VecDeque<StateAction>,
     /// The client type that can interact with the chain.
+    /// client类型用于和chain进行交互
     ///
     /// This type is used to fetch the block number after we established a session and received the
     /// [Status] block hash.
+    /// 这个类型用于拉取block number，在我们建立一个session并且接收到[Status] block hash之后
     client: C,
     /// Network discovery.
     discovery: Discovery,
     /// The genesis hash of the network we're on
     genesis_hash: H256,
     /// The type that handles requests.
+    /// 处理请求的类型
     ///
     /// The fetcher streams RLPx related requests on a per-peer basis to this type. This type will
     /// then queue in the request and notify the fetcher once the result has been received.
+    /// 这个类型会将请求排队并且通知fetcher，一旦结果被接收
     state_fetcher: StateFetcher,
 }
 

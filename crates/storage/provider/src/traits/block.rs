@@ -13,21 +13,27 @@ use reth_primitives::{
 use std::ops::RangeInclusive;
 
 /// A helper enum that represents the origin of the requested block.
+/// 一个helper enum，代表请求的block的origin
 ///
 /// This helper type's sole purpose is to give the caller more control over from where blocks can be
 /// fetched.
+/// 这个helper类型的唯一目的是给调用者更多权限，关于可以获取哪来的blocks
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum BlockSource {
     /// Check all available sources.
+    /// 检查所有可用的sources
     ///
     /// Note: it's expected that looking up pending blocks is faster than looking up blocks in the
     /// database so this prioritizes Pending > Database.
+    /// 注意：期望查找pending blocks比查找在db中的blocks更快，因此Pending的优先级大于DB
     #[default]
     Any,
     /// The block was fetched from the pending block source, the blockchain tree that buffers
     /// blocks that are not yet finalized.
+    /// block从pending block source获取，blockchain tree缓存还没有finalized blocks
     Pending,
     /// The block was fetched from the database.
+    /// block取自db
     Database,
 }
 
@@ -60,10 +66,13 @@ pub trait BlockReader:
     + Sync
 {
     /// Tries to find in the given block source.
+    /// 试着在给定的block source中查找
     ///
     /// Note: this only operates on the hash because the number might be ambiguous.
+    /// 注意：这只在hash上操作，因为number可能冲突
     ///
     /// Returns `None` if block is not found.
+    /// 返回`None`，如果block没找到
     fn find_block_by_hash(&self, hash: H256, source: BlockSource) -> RethResult<Option<Block>>;
 
     /// Returns the block with given id from the database.
@@ -81,6 +90,7 @@ pub trait BlockReader:
     fn pending_block_and_receipts(&self) -> RethResult<Option<(SealedBlock, Vec<Receipt>)>>;
 
     /// Returns the ommers/uncle headers of the given block from the database.
+    /// 返回ommers/uncle header，对于给定的block，从db中
     ///
     /// Returns `None` if block is not found.
     fn ommers(&self, id: BlockHashOrNumber) -> RethResult<Option<Vec<Header>>>;
@@ -231,6 +241,7 @@ pub trait BlockExecutionWriter: BlockWriter + BlockReader + Send + Sync {
     }
 
     /// Return range of blocks and its execution result
+    /// 返回一系列的blocks以及它们的执行结果
     fn get_or_take_block_and_execution_range<const TAKE: bool>(
         &self,
         chain_spec: &ChainSpec,

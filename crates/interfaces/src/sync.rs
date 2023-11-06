@@ -3,12 +3,15 @@ use reth_primitives::Head;
 
 /// A type that provides information about whether the node is currently syncing and the network is
 /// currently serving syncing related requests.
+/// 一个类型用于提供信息，关于node当前是否在syncing并且network当前在服务syncing相关的请求
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait SyncStateProvider: Send + Sync {
     /// Returns `true` if the network is undergoing sync.
+    /// 返回`true`，如果network处于sync
     fn is_syncing(&self) -> bool;
 
     /// Returns `true` if the network is undergoing an initial (pipeline) sync.
+    /// 返回`true`，如果network处于一个initial (pipeline) sync
     fn is_initially_syncing(&self) -> bool;
 }
 

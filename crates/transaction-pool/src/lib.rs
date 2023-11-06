@@ -247,6 +247,7 @@ where
     S: BlobStore,
 {
     /// Create a new transaction pool instance.
+    /// 创建一个新的tx pool实例
     pub fn new(validator: V, ordering: T, blob_store: S, config: PoolConfig) -> Self {
         Self { pool: Arc::new(PoolInner::new(validator, ordering, blob_store, config)) }
     }

@@ -50,9 +50,11 @@ use std::{
 };
 
 /// A [`DatabaseProvider`] that holds a read-only database transaction.
+/// 一个[`DatabaseProvider`]维护一个只读的db transaction
 pub type DatabaseProviderRO<'this, DB> = DatabaseProvider<'this, <DB as DatabaseGAT<'this>>::TX>;
 
 /// A [`DatabaseProvider`] that holds a read-write database transaction.
+/// [`DatabaseProvider`]维护一个读写的db transaction
 ///
 /// Ideally this would be an alias type. However, there's some weird compiler error (<https://github.com/rust-lang/rust/issues/102211>), that forces us to wrap this in a struct instead.
 /// Once that issue is solved, we can probably revert back to being an alias type.
@@ -800,6 +802,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> DatabaseProvider<'this, TX> {
 
 impl<'this, TX: DbTx<'this>> AccountReader for DatabaseProvider<'this, TX> {
     fn basic_account(&self, address: Address) -> RethResult<Option<Account>> {
+        // 从table PlainAccountState，根据地址获取状态
         Ok(self.tx.get::<tables::PlainAccountState>(address)?)
     }
 }
@@ -1219,6 +1222,7 @@ impl<'this, TX: DbTx<'this>> TransactionsProvider for DatabaseProvider<'this, TX
     ) -> RethResult<Vec<TransactionSignedNoHash>> {
         Ok(self
             .tx
+            // 从Transactions table中读取
             .cursor_read::<tables::Transactions>()?
             .walk_range(range)?
             .map(|entry| entry.map(|tx| tx.1))

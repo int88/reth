@@ -258,14 +258,18 @@ impl<'a, 'b, TX: DbTx<'a>> StateProvider for HistoricalStateProviderRef<'a, 'b, 
 }
 
 /// State provider for a given block number.
+/// 对于给定block number的state provider
 /// For more detailed description, see [HistoricalStateProviderRef].
 #[derive(Debug)]
 pub struct HistoricalStateProvider<'a, TX: DbTx<'a>> {
     /// Database transaction
+    /// db的tx
     tx: TX,
     /// State at the block number is the main indexer of the state.
+    /// 在block number的state，是state的main indexer
     block_number: BlockNumber,
     /// Lowest blocks at which different parts of the state are available.
+    /// 最小的blocks，state的不同部分是可用的
     lowest_available_blocks: LowestAvailableBlocks,
     /// Phantom lifetime `'a`
     _phantom: PhantomData<&'a TX>,

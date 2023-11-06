@@ -20,9 +20,11 @@ pub struct TreeMetrics {
 }
 
 /// Metrics for the blockchain tree block buffer
+/// 对于blockchain tree block buffer的Metrics
 #[derive(Metrics)]
 #[metrics(scope = "blockchain_tree.block_buffer")]
 pub struct BlockBufferMetrics {
     /// Total blocks in the block buffer
+    /// 这个block buffer中所有的blocks
     pub blocks: Gauge,
 }

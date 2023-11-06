@@ -311,6 +311,7 @@ table!(
 
 table!(
     /// Stores the current state of an [`Account`].
+    /// 存储一个[`Account`]的当前的状态
     ( PlainAccountState ) Address | Account
 );
 
@@ -388,6 +389,7 @@ table!(
 dupsort!(
     /// Stores the current storage values indexed with `keccak256(Address)` and
     /// hash of storage key `keccak256(key)`.
+    /// 存储当前的storage value，按照`keccak256(Address)`作为索引
     /// This table is in preparation for merkelization and calculation of state root.
     /// Benefit for merklization is that hashed addresses/keys are sorted.
     ( HashedStorage ) H256 | [H256] StorageEntry

@@ -45,6 +45,7 @@ pub trait TransactionsProvider: BlockNumReader + Send + Sync {
     ) -> RethResult<Option<Vec<TransactionSigned>>>;
 
     /// Get transactions by block range.
+    /// 通过block range获取txs
     fn transactions_by_block_range(
         &self,
         range: impl RangeBounds<BlockNumber>,
@@ -62,7 +63,9 @@ pub trait TransactionsProvider: BlockNumReader + Send + Sync {
     fn senders_by_tx_range(&self, range: impl RangeBounds<TxNumber>) -> RethResult<Vec<Address>>;
 
     /// Get transaction sender.
+    /// 获取tx sender
     ///
     /// Returns None if the transaction is not found.
+    /// 返回None，如果tx没有找到
     fn transaction_sender(&self, id: TxNumber) -> RethResult<Option<Address>>;
 }

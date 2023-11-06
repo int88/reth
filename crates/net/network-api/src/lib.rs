@@ -64,9 +64,11 @@ pub trait PeersInfo: Send + Sync {
 }
 
 /// Provides an API for managing the peers of the network.
+/// 提供一个API用于管理network中的peers
 #[async_trait]
 pub trait Peers: PeersInfo {
     /// Adds a peer to the peer set.
+    /// 添加一个peer到peer set
     fn add_peer(&self, peer: PeerId, addr: SocketAddr) {
         self.add_peer_kind(peer, PeerKind::Basic, addr);
     }

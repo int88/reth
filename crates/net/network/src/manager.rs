@@ -2,6 +2,7 @@
 //!
 //! The [`NetworkManager`] contains the state of the network as a whole. It controls how connections
 //! are handled and keeps track of connections to peers.
+//! [`NetworkManager`]包含network的state，作为一个整体，它控制连接如何被处理并且追踪到peers的连接
 //!
 //! ## Capabilities
 //!
@@ -60,8 +61,10 @@ use tracing::{debug, error, trace, warn};
 /// Manages the _entire_ state of the network.
 ///
 /// This is an endless [`Future`] that consistently drives the state of the entire network forward.
+/// 这是一个endless [`Future`]，持续驱动整个network的状态向前
 ///
 /// The [`NetworkManager`] is the container type for all parts involved with advancing the network.
+///  [`NetworkManager`]是容器类型，对于所有相关部分，推动network的前进
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// ```mermaid
 ///  graph TB
@@ -89,20 +92,26 @@ use tracing::{debug, error, trace, warn};
 #[must_use = "The NetworkManager does nothing unless polled"]
 pub struct NetworkManager<C> {
     /// The type that manages the actual network part, which includes connections.
+    /// 这个类型管理真正的network部分，包含连接
     swarm: Swarm<C>,
     /// Underlying network handle that can be shared.
+    /// 底层的network handle，可以被共享
     handle: NetworkHandle,
     /// Receiver half of the command channel set up between this type and the [`NetworkHandle`]
     from_handle_rx: UnboundedReceiverStream<NetworkHandleMessage>,
     /// Handles block imports according to the `eth` protocol.
+    /// 处理block的imports，根据`eth`协议
     block_import: Box<dyn BlockImport>,
     /// All listeners for high level network events.
+    /// 所有listeners，对于high level的network事件
     event_listeners: EventListeners<NetworkEvent>,
     /// Sender half to send events to the
     /// [`TransactionsManager`](crate::transactions::TransactionsManager) task, if configured.
     to_transactions_manager: Option<UnboundedMeteredSender<NetworkTransactionEvent>>,
     /// Sender half to send events to the
     /// [`EthRequestHandler`](crate::eth_requests::EthRequestHandler) task, if configured.
+    /// 发送部分，用于发送evnets到 [`EthRequestHandler`](crate::eth_requests::EthRequestHandler)
+    /// task，如果配置了的话
     ///
     /// The channel that originally receives and bundles all requests from all sessions is already
     /// bounded. However, since handling an eth request is more I/O intensive than delegating
@@ -116,9 +125,11 @@ pub struct NetworkManager<C> {
     /// [`ETH_REQUEST_CHANNEL_CAPACITY`](crate::builder::ETH_REQUEST_CHANNEL_CAPACITY)
     to_eth_request_handler: Option<mpsc::Sender<IncomingEthRequest>>,
     /// Tracks the number of active session (connected peers).
+    /// 追踪active session的数目
     ///
     /// This is updated via internal events and shared via `Arc` with the [`NetworkHandle`]
     /// Updated by the `NetworkWorker` and loaded by the `NetworkService`.
+    /// 由`NetworkWorker`更新并且由`NetworkService`加载
     num_active_peers: Arc<AtomicUsize>,
     /// Metrics for the Network
     metrics: NetworkMetrics,
@@ -130,6 +141,8 @@ pub struct NetworkManager<C> {
 impl<C> NetworkManager<C> {
     /// Sets the dedicated channel for events indented for the
     /// [`TransactionsManager`](crate::transactions::TransactionsManager).
+    /// 设置专门的channel，用于events，对于
+    /// [`TransactionsManager`](crate::transactions::TransactionsManager)
     pub fn set_transactions(&mut self, tx: mpsc::UnboundedSender<NetworkTransactionEvent>) {
         self.to_transactions_manager =
             Some(UnboundedMeteredSender::new(tx, NETWORK_POOL_TRANSACTIONS_SCOPE));
@@ -137,13 +150,17 @@ impl<C> NetworkManager<C> {
 
     /// Sets the dedicated channel for events indented for the
     /// [`EthRequestHandler`](crate::eth_requests::EthRequestHandler).
+    /// 设置专用的channel，对于events，
+    /// 用于[`EthRequestHandler`](crate::eth_requests::EthRequestHandler)
     pub fn set_eth_request_handler(&mut self, tx: mpsc::Sender<IncomingEthRequest>) {
         self.to_eth_request_handler = Some(tx);
     }
 
     /// Returns the [`NetworkHandle`] that can be cloned and shared.
+    /// 返回[`NetworkHandle`]可以被克隆和共享
     ///
     /// The [`NetworkHandle`] can be used to interact with this [`NetworkManager`]
+    /// [`NetworkHandle`]可以用于和[`NetworkManager`]进行交互
     pub fn handle(&self) -> &NetworkHandle {
         &self.handle
     }
@@ -160,10 +177,13 @@ where
     C: BlockNumReader,
 {
     /// Creates the manager of a new network.
+    /// 创建manager，对于一个新的network
     ///
     /// The [`NetworkManager`] is an endless future that needs to be polled in order to advance the
     /// state of the entire network.
+    /// [`NetworkManager`]是一个endless future，需要被轮询，为了推动整个network的状态
     pub async fn new(config: NetworkConfig<C>) -> Result<Self, NetworkError> {
+        // 获取各种配置
         let NetworkConfig {
             client,
             secret_key,
@@ -184,6 +204,7 @@ where
             ..
         } = config;
 
+        // 构建peers manager
         let peers_manager = PeersManager::new(peers_config);
         let peers_handle = peers_manager.handle();
 
@@ -203,6 +224,7 @@ where
             Discovery::new(discovery_addr, secret_key, discovery_v4_config, dns_discovery_config)
                 .await?;
         // need to retrieve the addr here since provided port could be `0`
+        // 需要获取addr，因为提供的port可以为`0`
         let local_peer_id = discovery.local_id();
 
         let num_active_peers = Arc::new(AtomicUsize::new(0));
@@ -230,6 +252,7 @@ where
 
         let (to_manager_tx, from_handle_rx) = mpsc::unbounded_channel();
 
+        // 构建network handle
         let handle = NetworkHandle::new(
             Arc::clone(&num_active_peers),
             listener_address,
@@ -429,6 +452,7 @@ where
     }
 
     /// Invoked after a `NewBlock` message from the peer was validated
+    /// 当来自peer的`NewBlock` message被校验之后被调用
     fn on_block_import_result(&mut self, outcome: BlockImportOutcome) {
         let BlockImportOutcome { peer, result } = outcome;
         match result {
@@ -598,11 +622,13 @@ where
         let this = self.get_mut();
 
         // poll new block imports
+        // 轮询新的block imports
         while let Poll::Ready(outcome) = this.block_import.poll(cx) {
             this.on_block_import_result(outcome);
         }
 
         // process incoming messages from a handle
+        // 从一个handle处理incoming messages
         loop {
             match this.from_handle_rx.poll_next_unpin(cx) {
                 Poll::Pending => break,
@@ -877,6 +903,7 @@ where
             }
 
             // ensure we still have enough budget for another iteration
+            // 确保我们依然有足够的budget，对于另一个迭代
             budget -= 1;
             if budget == 0 {
                 // make sure we're woken up again
@@ -890,6 +917,7 @@ where
 }
 
 /// (Non-exhaustive) Events emitted by the network that are of interest for subscribers.
+/// network发出的Events，subscribers对此感兴趣
 ///
 /// This includes any event types that may be relevant to tasks, for metrics, keep track of peers
 /// etc.
@@ -903,6 +931,7 @@ pub enum NetworkEvent {
         reason: Option<DisconnectReason>,
     },
     /// Established a new session with the given peer.
+    /// 和给定的peer建立一个新的session
     SessionEstablished {
         /// The identifier of the peer to which a session was established.
         peer_id: PeerId,
@@ -920,6 +949,7 @@ pub enum NetworkEvent {
         version: EthVersion,
     },
     /// Event emitted when a new peer is added
+    /// 当一个新的peer被加入的时候发射
     PeerAdded(PeerId),
     /// Event emitted when a new peer is removed
     PeerRemoved(PeerId),

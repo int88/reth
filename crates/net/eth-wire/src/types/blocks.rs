@@ -8,6 +8,7 @@ use reth_rlp::{RlpDecodable, RlpDecodableWrapper, RlpEncodable, RlpEncodableWrap
 use serde::{Deserialize, Serialize};
 
 /// A request for a peer to return block headers starting at the requested block.
+/// 请求一个peer，返回block headers，从请求的block开始
 /// The peer must return at most [`limit`](#structfield.limit) headers.
 /// If the [`reverse`](#structfield.reverse) field is `true`, the headers will be returned starting
 /// at [`start_block`](#structfield.start_block), traversing towards the genesis block.
@@ -57,6 +58,7 @@ impl From<Vec<Header>> for BlockHeaders {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GetBlockBodies(
     /// The block hashes to request bodies for.
+    /// block hashes，对于请求的bodies
     pub Vec<H256>,
 );
 

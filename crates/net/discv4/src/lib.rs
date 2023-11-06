@@ -153,6 +153,7 @@ pub struct Discv4 {
 impl Discv4 {
     /// Same as [`Self::bind`] but also spawns the service onto a new task,
     /// [`Discv4Service::spawn()`]
+    /// 和[`Self::bind`]一样，但是同时生成service到一个新的task，用[`Discv4Service::spawn()`]
     pub async fn spawn(
         local_address: SocketAddr,
         local_enr: NodeRecord,
@@ -185,6 +186,7 @@ impl Discv4 {
     }
 
     /// Binds a new UdpSocket and creates the service
+    /// 绑定一个新的UdpSocket并且创建service
     ///
     /// ```
     /// # use std::io;
@@ -370,6 +372,7 @@ impl Discv4 {
     }
 
     /// Returns the receiver half of new listener channel that streams [`DiscoveryUpdate`]s.
+    /// 返回receiver部分，对于新的listener channel，对[`DiscoveryUpdate`]的流
     pub async fn update_stream(&self) -> Result<ReceiverStream<DiscoveryUpdate>, Discv4Error> {
         let (tx, rx) = oneshot::channel();
         let cmd = Discv4Command::Updates(tx);
@@ -379,6 +382,7 @@ impl Discv4 {
 }
 
 /// Manages discv4 peer discovery over UDP.
+/// 管理discv4的peer discovery，通过UDP
 #[must_use = "Stream does nothing unless polled"]
 #[allow(missing_debug_implementations)]
 pub struct Discv4Service {
@@ -445,6 +449,7 @@ pub struct Discv4Service {
 
 impl Discv4Service {
     /// Create a new instance for a bound [`UdpSocket`].
+    /// 创建一个新的instance，对于一个bound [`UdpSocket`]
     pub(crate) fn new(
         socket: UdpSocket,
         local_address: SocketAddr,
@@ -606,10 +611,13 @@ impl Discv4Service {
     }
 
     /// Bootstraps the local node to join the DHT.
+    /// 启动local node，加入到DHT
     ///
     /// Bootstrapping is a multi-step operation that starts with a lookup of the local node's
     /// own ID in the DHT. This introduces the local node to the other nodes
     /// in the DHT and populates its routing table with the closest proven neighbours.
+    /// Bootstrapping是一个多个步骤的操作，从找到local node的own ID开始，这介绍local
+    /// node给其他nodes，在DHT中，并且填充它的routing table，用最近的proven neighbours
     ///
     /// This is similar to adding all bootnodes via [`Self::add_node`], but does not fire a
     /// [`DiscoveryUpdate::Added`] event for the given bootnodes. So boot nodes don't appear in the
@@ -643,6 +651,7 @@ impl Discv4Service {
     }
 
     /// Spawns this services onto a new task
+    /// 生成这个services进入一个新的task
     ///
     /// Note: requires a running runtime
     pub fn spawn(mut self) -> JoinHandle<()> {
@@ -2019,9 +2028,11 @@ enum PingReason {
 }
 
 /// Represents node related updates state changes in the underlying node table
+/// 代表node State相关的更新，在底层的node table
 #[derive(Debug, Clone)]
 pub enum DiscoveryUpdate {
     /// A new node was discovered _and_ added to the table.
+    /// 一个新的node被发现并且加入到table
     Added(NodeRecord),
     /// A new node was discovered but _not_ added to the table because it is currently full.
     DiscoveredAtCapacity(NodeRecord),
@@ -2030,6 +2041,7 @@ pub enum DiscoveryUpdate {
     /// Node that was removed from the table
     Removed(PeerId),
     /// A series of updates
+    /// 一系列的更新
     Batch(Vec<DiscoveryUpdate>),
 }
 

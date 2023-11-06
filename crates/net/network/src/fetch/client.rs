@@ -22,6 +22,7 @@ use tokio::sync::{
 };
 
 /// Front-end API for fetching data from the network.
+/// 从network中获取data的Front-end API
 ///
 /// Following diagram illustrates how a request, See [`HeadersClient::get_headers`] and
 /// [`BodiesClient::get_block_bodies`] is handled internally.

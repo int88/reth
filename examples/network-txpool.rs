@@ -1,5 +1,6 @@
 //! Example of how to use the network as a standalone component together with a transaction pool and
 //! a custom pool validator.
+//! 例子关于如何使用network作为一个独立的component，伴随着一个tx pool和自定义的pool validator
 //!
 //! Run with
 //!
@@ -18,9 +19,12 @@ use reth_transaction_pool::{
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     // This block provider implementation is used for testing purposes.
+    // 这个block provider的实现用于测试
     // NOTE: This also means that we don't have access to the blockchain and are not able to serve
     // any requests for headers or bodies which can result in dropped connections initiated by
     // remote or able to validate transaction against the latest state.
+    // 注意：这也意味着我们对于blockchain没有访问权限，不能服务任何对于headers或者bodies的请求，
+    // 这导致由rmoete初始化的连接被drop，或者能对最新的state对tx进行validate
     let client = NoopProvider::default();
 
     let pool = reth_transaction_pool::Pool::new(
@@ -34,9 +38,11 @@ async fn main() -> eyre::Result<()> {
     let local_key = rng_secret_key();
 
     // Configure the network
+    // 构建network
     let config = NetworkConfig::builder(local_key).mainnet_boot_nodes().build(client);
 
     // create the network instance
+    // 创建network实例
     let (_handle, network, txpool, _) =
         NetworkManager::builder(config).await?.transactions(pool.clone()).split_with_handle();
 
@@ -46,6 +52,7 @@ async fn main() -> eyre::Result<()> {
     tokio::task::spawn(txpool);
 
     // listen for new transactions
+    // 监听新的 txs
     let mut txs = pool.pending_transactions_listener_for(TransactionListenerKind::All);
 
     while let Some(tx) = txs.recv().await {

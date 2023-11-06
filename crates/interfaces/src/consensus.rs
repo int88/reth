@@ -161,6 +161,7 @@ pub enum ConsensusError {
     },
 
     /// Error when the block number does not match the parent block number.
+    /// 当block number不匹配parent block nuber时发出
     #[error(
         "Block number {block_number} does not match parent block number {parent_block_number}"
     )]

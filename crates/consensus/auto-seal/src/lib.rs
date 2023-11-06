@@ -1,11 +1,14 @@
 //! A [Consensus] implementation for local testing purposes
 //! that automatically seals blocks.
+//! 一个[Consensus]实现，用于本地的测试，自动seals blocks
 //!
 //! The Mining task polls a [MiningMode], and will return a list of transactions that are ready to
 //! be mined.
+//! Mining task轮询一个[MiningMode]，并且会返回一系列的txs，准备好被mined
 //!
 //! These downloaders poll the miner, assemble the block, and return transactions that are ready to
 //! be mined.
+//! 这些downloaders轮询miner，构建block并且返回txs，准备mining
 
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",

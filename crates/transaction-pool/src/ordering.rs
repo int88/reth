@@ -45,9 +45,12 @@ pub trait TransactionOrdering: Send + Sync + 'static {
 }
 
 /// Default ordering for the pool.
+/// 默认的排序，对于Pool
 ///
 /// The transactions are ordered by their coinbase tip.
+/// txs通过它们的coinbase tip排序
 /// The higher the coinbase tip is, the higher the priority of the transaction.
+/// coinbase tip越高，tx的priority越高
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct CoinbaseTipOrdering<T>(PhantomData<T>);

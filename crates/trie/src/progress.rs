@@ -6,12 +6,16 @@ use reth_primitives::{
 };
 
 /// The progress of the state root computation.
+/// state root计算的进程
 #[derive(Debug)]
 pub enum StateRootProgress {
     /// The complete state root computation with updates and computed root.
+    /// 完整的state root计算，对于updates和计算的root
     Complete(H256, usize, TrieUpdates),
     /// The intermediate progress of state root computation.
+    /// state root计算的中间进程
     /// Contains the walker stack, the hash builder and the trie updates.
+    /// 包含walker stack，hash builder以及trie updates
     Progress(Box<IntermediateStateRootState>, usize, TrieUpdates),
 }
 

@@ -87,12 +87,14 @@ impl<DB: Clone> Clone for ProviderFactory<DB> {
 
 impl<DB: Database> ProviderFactory<DB> {
     /// Storage provider for latest block
+    /// 对于最新的block的Storage provider
     pub fn latest(&self) -> RethResult<StateProviderBox<'_>> {
         trace!(target: "providers::db", "Returning latest state provider");
         Ok(Box::new(LatestStateProvider::new(self.db.tx()?)))
     }
 
     /// Storage provider for state at that given block
+    /// 在给定block的storage provider
     fn state_provider_by_block_number(
         &self,
         mut block_number: BlockNumber,
