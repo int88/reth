@@ -5,20 +5,26 @@ use clap::Args;
 use humantime::parse_duration;
 
 /// Parameters for Dev testnet configuration
+/// 参数，对于Dev testnet的配置
 #[derive(Debug, Args, PartialEq, Default, Clone, Copy)]
 #[command(next_help_heading = "Dev testnet")]
 pub struct DevArgs {
     /// Start the node in dev mode
+    /// 开始node，以dev模式
     ///
     /// This mode uses a local proof-of-authority consensus engine with either fixed block times
     /// or automatically mined blocks.
+    /// 这个模式使用
     /// Disables network discovery and enables local http server.
+    /// 禁止network discovery并且使能本地的http server
     /// Prefunds 20 accounts derived by mnemonic "test test test test test test test test test test
     /// test junk" with 10 000 ETH each.
+    /// 预支资金给20个accounts，衍生自"test test"，有10000个ETH
     #[arg(long = "dev", alias = "auto-mine", help_heading = "Dev testnet", verbatim_doc_comment)]
     pub dev: bool,
 
     /// How many transactions to mine per block.
+    /// 每个block挖掘多少个txs
     #[arg(
         long = "dev.block-max-transactions",
         help_heading = "Dev testnet",
@@ -27,6 +33,7 @@ pub struct DevArgs {
     pub block_max_transactions: Option<usize>,
 
     /// Interval between blocks.
+    /// blocks之间的interval
     ///
     /// Parses strings using [humantime::parse_duration]
     /// --dev.block_time 12s

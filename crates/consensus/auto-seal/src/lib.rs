@@ -56,6 +56,7 @@ pub use mode::{FixedBlockTimeMiner, MiningMode, ReadyTransactionMiner};
 pub use task::MiningTask;
 
 /// A consensus implementation intended for local development and testing purposes.
+/// 一个consensus实现，用于本地的开发和测试
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct AutoSealConsensus {
@@ -65,12 +66,14 @@ pub struct AutoSealConsensus {
 
 impl AutoSealConsensus {
     /// Create a new instance of [AutoSealConsensus]
+    /// 创建[AutoSealConsensus]的实例
     pub fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { chain_spec }
     }
 }
 
 impl Consensus for AutoSealConsensus {
+    // 全部返回OK
     fn validate_header(&self, _header: &SealedHeader) -> Result<(), ConsensusError> {
         Ok(())
     }
@@ -97,6 +100,7 @@ impl Consensus for AutoSealConsensus {
 }
 
 /// Builder type for configuring the setup
+/// Builder类型用于配置setup
 #[derive(Debug)]
 pub struct AutoSealBuilder<Client, Pool> {
     client: Client,
@@ -115,6 +119,7 @@ where
     Client: BlockReaderIdExt,
 {
     /// Creates a new builder instance to configure all parts.
+    /// 创建一个新的builder实例，配置所有部分
     pub fn new(
         chain_spec: Arc<ChainSpec>,
         client: Client,
@@ -123,6 +128,7 @@ where
         canon_state_notification: CanonStateNotificationSender,
         mode: MiningMode,
     ) -> Self {
+        // 获取latest header
         let latest_header = client
             .latest_header()
             .ok()
@@ -132,6 +138,7 @@ where
         Self {
             storage: Storage::new(latest_header),
             client,
+            // 构建Auto Seal Consensus
             consensus: AutoSealConsensus::new(chain_spec),
             pool,
             mode,
@@ -141,17 +148,20 @@ where
     }
 
     /// Sets the [MiningMode] it operates in, default is [MiningMode::Auto]
+    /// 构建[MiningMode]，默认为[MiningMode::Auto]
     pub fn mode(mut self, mode: MiningMode) -> Self {
         self.mode = mode;
         self
     }
 
     /// Consumes the type and returns all components
+    /// 构建类型并且返回所有组件
     #[track_caller]
     pub fn build(self) -> (AutoSealConsensus, AutoSealClient, MiningTask<Client, Pool>) {
         let Self { client, consensus, pool, mode, storage, to_engine, canon_state_notification } =
             self;
         let auto_client = AutoSealClient::new(storage.clone());
+        // 构建mining task
         let task = MiningTask::new(
             Arc::clone(&consensus.chain_spec),
             mode,
@@ -166,6 +176,7 @@ where
 }
 
 /// In memory storage
+/// 内存中的storage
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Storage {
     inner: Arc<RwLock<StorageInner>>,
@@ -188,30 +199,39 @@ impl Storage {
     }
 
     /// Returns the write lock of the storage
+    /// 返回storage的写锁
     pub(crate) async fn write(&self) -> RwLockWriteGuard<'_, StorageInner> {
         self.inner.write().await
     }
 
     /// Returns the read lock of the storage
+    /// 返回storage的读锁
     pub(crate) async fn read(&self) -> RwLockReadGuard<'_, StorageInner> {
         self.inner.read().await
     }
 }
 
 /// In-memory storage for the chain the auto seal engine is building.
+/// 内存中的storage，对于chain，构建seal engine
 #[derive(Default, Debug)]
 pub(crate) struct StorageInner {
     /// Headers buffered for download.
+    /// 缓存的headers用于下载
     pub(crate) headers: HashMap<BlockNumber, Header>,
     /// A mapping between block hash and number.
+    /// block hash和number的映射
     pub(crate) hash_to_number: HashMap<BlockHash, BlockNumber>,
     /// Bodies buffered for download.
+    /// 缓存的bodies用于下载
     pub(crate) bodies: HashMap<BlockHash, BlockBody>,
     /// Tracks best block
+    /// 追踪最好的block
     pub(crate) best_block: u64,
     /// Tracks hash of best block
+    /// 追踪最好的block的hash
     pub(crate) best_hash: H256,
     /// The total difficulty of the chain until this block
+    /// 直到这个block的td
     pub(crate) total_difficulty: U256,
 }
 
@@ -219,6 +239,7 @@ pub(crate) struct StorageInner {
 
 impl StorageInner {
     /// Returns the block hash for the given block number if it exists.
+    /// 返回给定block number的block hash，如果存在的话
     pub(crate) fn block_hash(&self, num: u64) -> Option<BlockHash> {
         self.hash_to_number.iter().find_map(|(k, v)| num.eq(v).then_some(*k))
     }
@@ -236,6 +257,7 @@ impl StorageInner {
     }
 
     /// Inserts a new header+body pair
+    /// 插入新的header+body pair
     pub(crate) fn insert_new_block(&mut self, mut header: Header, body: BlockBody) {
         header.number = self.best_block + 1;
         header.parent_hash = self.best_hash;
@@ -244,6 +266,7 @@ impl StorageInner {
         self.best_block = header.number;
         self.total_difficulty += header.difficulty;
 
+        // 插入新的blcok
         trace!(target: "consensus::auto", num=self.best_block, hash=?self.best_hash, "inserting new block");
         self.headers.insert(header.number, header);
         self.bodies.insert(self.best_hash, body);
@@ -252,12 +275,14 @@ impl StorageInner {
 
     /// Fills in pre-execution header fields based on the current best block and given
     /// transactions.
+    /// 填充pre-execution header字段，基于当前的best block以及给定的tx
     pub(crate) fn build_header_template(
         &self,
         transactions: &Vec<TransactionSigned>,
         chain_spec: Arc<ChainSpec>,
     ) -> Header {
         // check previous block for base fee
+        // 检查之前的block，对于base fee
         let base_fee_per_gas = self
             .headers
             .get(&self.best_block)
@@ -296,8 +321,10 @@ impl StorageInner {
     }
 
     /// Executes the block with the given block and senders, on the provided [EVMProcessor].
+    /// 执行给定block以及senders的block，在提供的[EVMProcessor]
     ///
     /// This returns the poststate from execution and post-block changes, as well as the gas used.
+    /// 这返回execution以及post-block changes之后的postate，以及使用的gas
     pub(crate) fn execute(
         &mut self,
         block: &Block,
@@ -308,25 +335,32 @@ impl StorageInner {
         // TODO: there isn't really a parent beacon block root here, so not sure whether or not to
         // call the 4788 beacon contract
 
+        // 执行txs
         let (receipts, gas_used) =
             executor.execute_transactions(block, U256::ZERO, Some(senders))?;
 
         // Save receipts.
+        // 保存receipts
         executor.save_receipts(receipts)?;
 
         // add post execution state change
         // Withdrawals, rewards etc.
+        // 添加post execution state change，withdrawals以及rewards
         executor.apply_post_execution_state_change(block, U256::ZERO)?;
 
         // merge transitions
+        // 合并txs
         executor.db_mut().merge_transitions(BundleRetention::Reverts);
 
         // apply post block changes
+        // 应用post block changes
         Ok((executor.take_output_state(), gas_used))
     }
 
     /// Fills in the post-execution header fields based on the given BundleState and gas used.
     /// In doing this, the state root is calculated and the final header is returned.
+    /// 填充post-execution header字段，基于给定的BundleState以及使用的gas，为了做他，state
+    /// root被计算并且返回final header
     pub(crate) fn complete_header<S: StateProviderFactory>(
         &self,
         mut header: Header,
@@ -360,16 +394,20 @@ impl StorageInner {
     }
 
     /// Builds and executes a new block with the given transactions, on the provided [EVMProcessor].
+    /// 构建并且执行一个新的block，用给定的txs，在提供的[EVMProcessor]
     ///
     /// This returns the header of the executed block, as well as the poststate from execution.
+    /// 这返回执行的block的header，以及执行的poststate
     pub(crate) fn build_and_execute(
         &mut self,
         transactions: Vec<TransactionSigned>,
         client: &impl StateProviderFactory,
         chain_spec: Arc<ChainSpec>,
     ) -> Result<(SealedHeader, BundleStateWithReceipts), BlockExecutionError> {
+        // 构建header
         let header = self.build_header_template(&transactions, chain_spec.clone());
 
+        // 构建block
         let block = Block { header, body: transactions, ommers: vec![], withdrawals: None };
 
         let senders = TransactionSigned::recover_signers(&block.body, block.body.len())
@@ -378,28 +416,35 @@ impl StorageInner {
         trace!(target: "consensus::auto", transactions=?&block.body, "executing transactions");
 
         // now execute the block
+        // 现在执行block
         let db = State::builder()
             .with_database_boxed(Box::new(StateProviderDatabase::new(client.latest().unwrap())))
             .with_bundle_update()
             .build();
+        // 构建EVMProcessor
         let mut executor = EVMProcessor::new_with_state(chain_spec, db);
 
+        // 执行
         let (bundle_state, gas_used) = self.execute(&block, &mut executor, senders)?;
 
         let Block { header, body, .. } = block;
         let body = BlockBody { transactions: body, ommers: vec![], withdrawals: None };
 
+        // 执行block，计算state root并且完成header
         trace!(target: "consensus::auto", ?bundle_state, ?header, ?body, "executed block, calculating state root and completing header");
 
         // fill in the rest of the fields
+        // 填充剩余字段
         let header = self.complete_header(header, &bundle_state, client, gas_used)?;
 
         trace!(target: "consensus::auto", root=?header.state_root, ?body, "calculated root");
 
         // finally insert into storage
+        // 最后插入到storage
         self.insert_new_block(header.clone(), body);
 
         // set new header with hash that should have been updated by insert_new_block
+        // 用hash设置新的header，应该通过insert_new_block更新
         let new_header = header.seal(self.best_hash);
 
         Ok((new_header, bundle_state))

@@ -30,24 +30,29 @@ use tokio_stream::wrappers::ReceiverStream;
 #[derive(Debug)]
 pub struct Discovery {
     /// All nodes discovered via discovery protocol.
+    /// 通过discovery protocol发现的所有nodes
     ///
     /// These nodes can be ephemeral and are updated via the discovery protocol.
+    /// 这些nodes可以是临时的并且通过discovery protocol更新
     discovered_nodes: HashMap<PeerId, SocketAddr>,
     /// Local ENR of the discovery service.
     local_enr: NodeRecord,
     /// Handler to interact with the Discovery v4 service
     discv4: Option<Discv4>,
     /// All KAD table updates from the discv4 service.
+    /// 所有的KAD table更新，来自disv4 service
     discv4_updates: Option<ReceiverStream<DiscoveryUpdate>>,
     /// The handle to the spawned discv4 service
     _discv4_service: Option<JoinHandle<()>>,
     /// Handler to interact with the DNS discovery service
     _dns_discovery: Option<DnsDiscoveryHandle>,
     /// Updates from the DNS discovery service.
+    /// 来自DNS discovery service的更新
     dns_discovery_updates: Option<ReceiverStream<DnsNodeRecordUpdate>>,
     /// The handle to the spawned DNS discovery service
     _dns_disc_service: Option<JoinHandle<()>>,
     /// Events buffered until polled.
+    /// 缓存的Events，直到轮询
     queued_events: VecDeque<DiscoveryEvent>,
     /// List of listeners subscribed to discovery events.
     discovery_listeners: Vec<mpsc::UnboundedSender<DiscoveryEvent>>,
@@ -152,6 +157,7 @@ impl Discovery {
     }
 
     /// Add a node to the discv4 table.
+    /// 添加一个node到discv4 table
     pub(crate) fn add_discv4_node(&self, node: NodeRecord) {
         if let Some(discv4) = &self.discv4 {
             discv4.add_node(node);
@@ -159,6 +165,7 @@ impl Discovery {
     }
 
     /// Processes an incoming [NodeRecord] update from a discovery service
+    /// 处理一个到来的[NodeRecord]，更新自discovery service
     fn on_node_record_update(&mut self, record: NodeRecord, fork_id: Option<ForkId>) {
         let id = record.id;
         let addr = record.tcp_addr();
@@ -175,6 +182,7 @@ impl Discovery {
 
     fn on_discv4_update(&mut self, update: DiscoveryUpdate) {
         match update {
+            // 处理各种事件
             DiscoveryUpdate::Added(record) => {
                 self.on_node_record_update(record, None);
             }
@@ -198,22 +206,27 @@ impl Discovery {
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<DiscoveryEvent> {
         loop {
             // Drain all buffered events first
+            // 首先排干所有缓存的events
             if let Some(event) = self.queued_events.pop_front() {
                 self.notify_listeners(&event);
                 return Poll::Ready(event)
             }
 
             // drain the update streams
+            // 排干update streams
             while let Some(Poll::Ready(Some(update))) =
                 self.discv4_updates.as_mut().map(|updates| updates.poll_next_unpin(cx))
             {
+                // 对于disv4的更新
                 self.on_discv4_update(update)
             }
 
             while let Some(Poll::Ready(Some(update))) =
                 self.dns_discovery_updates.as_mut().map(|updates| updates.poll_next_unpin(cx))
             {
+                // 对于disv4 node的更新
                 self.add_discv4_node(update.node_record);
+                // 对于node record的更新
                 self.on_node_record_update(update.node_record, update.fork_id);
             }
 
@@ -254,11 +267,14 @@ impl Discovery {
 }
 
 /// Events produced by the [`Discovery`] manager.
+/// 由[`Discovery`] manager产生的events
 #[derive(Debug, Clone)]
 pub enum DiscoveryEvent {
     /// Discovered a node
+    /// 发现一个node
     NewNode(DiscoveredEvent),
     /// Retrieved a [`ForkId`] from the peer via ENR request, See <https://eips.ethereum.org/EIPS/eip-868>
+    /// 通过ENR request获取一个[`ForkId`]
     EnrForkId(PeerId, ForkId),
 }
 

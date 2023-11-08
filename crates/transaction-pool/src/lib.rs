@@ -344,6 +344,7 @@ where
 }
 
 /// implements the `TransactionPool` interface for various transaction pool API consumers.
+/// `TransactionPool`的实现，对于各种transaction pool API的consumers
 #[async_trait::async_trait]
 impl<V, T, S> TransactionPool for Pool<V, T, S>
 where

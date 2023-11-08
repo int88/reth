@@ -18,6 +18,7 @@ pub struct DebugArgs {
     pub terminate: bool,
 
     /// Set the chain tip manually for testing purposes.
+    /// 手动设置chain tip，用于测试
     ///
     /// NOTE: This is a temporary flag
     #[arg(long = "debug.tip", help_heading = "Debug", conflicts_with = "continuous")]

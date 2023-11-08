@@ -2035,6 +2035,7 @@ pub enum DiscoveryUpdate {
     /// 一个新的node被发现并且加入到table
     Added(NodeRecord),
     /// A new node was discovered but _not_ added to the table because it is currently full.
+    /// 一个新的node被发现，但是不加入table，因为它当前full
     DiscoveredAtCapacity(NodeRecord),
     /// Received a [`ForkId`] via EIP-868 for the given [`NodeRecord`].
     EnrForkId(NodeRecord, ForkId),

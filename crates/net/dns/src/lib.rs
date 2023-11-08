@@ -365,11 +365,14 @@ impl<R: Resolver> Stream for DnsDiscoveryService<R> {
 }
 
 /// The converted discovered [Enr] object
+/// 被转换的[Enr]对象
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DnsNodeRecordUpdate {
     /// Discovered node and it's addresses
+    /// 发现的node以及它的地址
     pub node_record: NodeRecord,
     /// The forkid of the node, if present in the ENR
+    /// node的forkid，它当前在ENR
     pub fork_id: Option<ForkId>,
 }
 

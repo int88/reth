@@ -794,9 +794,11 @@ impl TransactionSigned {
     }
 
     /// Recovers a list of signers from a transaction list iterator
+    /// 返回一系列的signers，从一个transaction list iterator
     ///
     /// Returns `None`, if some transaction's signature is invalid, see also
     /// [Self::recover_signer].
+    /// 返回`None`，如果有的tx的signature是非法的，参见[Self::recover_signer]
     pub fn recover_signers<'a, T>(txes: T, num_txes: usize) -> Option<Vec<Address>>
     where
         T: IntoParallelIterator<Item = &'a Self> + IntoIterator<Item = &'a Self> + Send,

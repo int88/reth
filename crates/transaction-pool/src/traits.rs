@@ -119,6 +119,7 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns a new Stream that yields transactions hashes for new __pending__ transactions
     /// inserted into the pool that are allowed to be propagated.
+    /// 返回一个新的Stream，产生txs hashes，对于新的__pending__ txs，插入到pool，允许被传播
     ///
     /// Note: This is intended for networking and will __only__ yield transactions that are allowed
     /// to be propagated over the network.
@@ -228,8 +229,10 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Vec<PooledTransactionsElement>;
 
     /// Returns an iterator that yields transactions that are ready for block production.
+    /// 返回一个iterator，产生transactions，准备好用于block production
     ///
     /// Consumer: Block production
+    /// 消费者是Block production
     fn best_transactions(
         &self,
     ) -> Box<dyn BestTransactions<Item = Arc<ValidPoolTransaction<Self::Transaction>>>>;

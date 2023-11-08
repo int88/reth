@@ -14,16 +14,19 @@ pub type SubState<DB> = CacheDB<StateProviderDatabase<DB>>;
 pub type RethStateDBBox<'a> = StateDBBox<'a, RethError>;
 
 /// Wrapper around StateProvider that implements revm database trait
+/// 封装StateProvider，实现revm的db trait
 #[derive(Debug, Clone)]
 pub struct StateProviderDatabase<DB: StateProvider>(pub DB);
 
 impl<DB: StateProvider> StateProviderDatabase<DB> {
     /// Create new State with generic StateProvider.
+    /// 创建新的State，用generic StateProvider
     pub fn new(db: DB) -> Self {
         Self(db)
     }
 
     /// Return inner state reference
+    /// 返回inner state的reference
     pub fn state(&self) -> &DB {
         &self.0
     }
@@ -34,6 +37,7 @@ impl<DB: StateProvider> StateProviderDatabase<DB> {
     }
 
     /// Consume State and return inner StateProvider.
+    /// 消费State以及inner StateProvider
     pub fn into_inner(self) -> DB {
         self.0
     }

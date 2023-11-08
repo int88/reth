@@ -653,6 +653,7 @@ where
     }
 
     /// Returns an iterator that yields transactions that are ready to be included in the block.
+    /// 返回一个iterator，生成txs，准备好被包含进行block
     pub(crate) fn best_transactions(&self) -> BestTransactions<T> {
         self.pool.read().best_transactions()
     }

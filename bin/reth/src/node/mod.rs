@@ -180,6 +180,7 @@ pub struct NodeCommand<Ext: RethCliExt = ()> {
     pub builder: PayloadBuilderArgs,
 
     /// All debug related arguments with --debug prefix
+    /// 所有debug相关的参数，用--debug作为前缀
     #[clap(flatten)]
     pub debug: DebugArgs,
 
@@ -450,6 +451,7 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             task.set_pipeline_events(pipeline_events);
             // 生成自动mine的task
             debug!(target: "reth::cli", "Spawning auto mine task");
+            // 自动生成mining task
             ctx.task_executor.spawn(Box::pin(task));
 
             (pipeline, EitherDownloader::Left(client))

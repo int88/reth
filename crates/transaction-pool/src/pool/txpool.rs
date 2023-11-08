@@ -33,8 +33,10 @@ use std::{
 };
 
 /// A pool that manages transactions.
+/// 一个pool管理txs
 ///
 /// This pool maintains the state of all transactions and stores them accordingly.
+/// 这个pool维护所有txs的state并且分类存储它们
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// ```mermaid
@@ -72,6 +74,9 @@ pub struct TxPool<T: TransactionOrdering> {
     /// pending subpool
     ///
     /// Holds transactions that are ready to be executed on the current state.
+    /// pending subpool
+    ///
+    /// 维护txs，准备好在当前的state执行
     pending_pool: PendingPool<T>,
     /// Pool settings to enforce limits etc.
     config: PoolConfig,
@@ -213,6 +218,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns an iterator that yields transactions that are ready to be included in the block.
+    /// 返回一个iterator，产生txs，准备好被包含进行block
     pub(crate) fn best_transactions(&self) -> BestTransactions<T> {
         self.pending_pool.best()
     }

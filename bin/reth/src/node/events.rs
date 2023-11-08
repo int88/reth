@@ -59,6 +59,7 @@ impl NodeState {
     }
 
     /// Processes an event emitted by the pipeline
+    /// 处理pipeline发出的event
     fn handle_pipeline_event(&mut self, event: PipelineEvent) {
         match event {
             PipelineEvent::Running { pipeline_position, pipeline_total, stage_id, checkpoint } => {
@@ -175,17 +176,23 @@ impl NodeState {
 }
 
 /// A node event.
+/// 一个node的事件
 #[derive(Debug)]
 pub enum NodeEvent {
     /// A network event.
+    /// 一个network的事件
     Network(NetworkEvent),
     /// A sync pipeline event.
+    /// 一个sync pipeline的事件
     Pipeline(PipelineEvent),
     /// A consensus engine event.
+    /// 一个consensus engine的事件
     ConsensusEngine(BeaconConsensusEngineEvent),
     /// A Consensus Layer health event.
+    /// 一个Consensus Layer的health的事件
     ConsensusLayerHealth(ConsensusLayerHealthEvent),
     /// A pruner event
+    /// 一个pruner事件
     Pruner(PrunerEvent),
 }
 
@@ -240,6 +247,7 @@ pub async fn handle_events<E>(
 }
 
 /// Handles events emitted by the node and logs them accordingly.
+/// 处理node发射的events并且相应地记录它们
 #[pin_project::pin_project]
 struct EventHandler<E> {
     state: NodeState,
@@ -280,6 +288,7 @@ where
 
         while let Poll::Ready(Some(event)) = this.events.as_mut().poll_next(cx) {
             match event {
+                // 根据不同的事件进行处理
                 NodeEvent::Network(event) => {
                     this.state.handle_network_event(event);
                 }

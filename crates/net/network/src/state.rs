@@ -1,4 +1,5 @@
 //! Keeps track of the state of the network.
+//! 追踪network的状态
 
 use crate::{
     cache::LruCache,
@@ -68,6 +69,7 @@ pub struct NetworkState<C> {
     /// 这个类型用于拉取block number，在我们建立一个session并且接收到[Status] block hash之后
     client: C,
     /// Network discovery.
+    /// Network的discovery
     discovery: Discovery,
     /// The genesis hash of the network we're on
     genesis_hash: H256,
@@ -85,6 +87,7 @@ where
     C: BlockNumReader,
 {
     /// Create a new state instance with the given params
+    /// 用给定的参数创建一个新的state instance
     pub(crate) fn new(
         client: C,
         discovery: Discovery,
@@ -294,6 +297,7 @@ where
     }
 
     /// Event hook for events received from the discovery service.
+    /// Event hook用于处理从discovery service接收到的events
     fn on_discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
             DiscoveryEvent::NewNode(DiscoveredEvent::EventQueued {
@@ -401,20 +405,24 @@ where
     }
 
     /// Advances the state
+    /// 推动state
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<StateAction> {
         loop {
             // drain buffered messages
+            // 从buffer排干messages
             if let Some(message) = self.queued_messages.pop_front() {
                 return Poll::Ready(message)
             }
 
             while let Poll::Ready(discovery) = self.discovery.poll(cx) {
+                // 处理discovery event
                 self.on_discovery_event(discovery);
             }
 
             while let Poll::Ready(action) = self.state_fetcher.poll(cx) {
                 match action {
                     FetchAction::BlockRequest { peer_id, request } => {
+                        // 处理blokc request
                         self.handle_block_request(peer_id, request)
                     }
                 }

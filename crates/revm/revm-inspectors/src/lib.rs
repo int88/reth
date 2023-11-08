@@ -1,9 +1,12 @@
 //! revm [Inspector](revm::Inspector) implementations, such as call tracers
+//! revm [Inspector](revm::Inspector)的实现，例如call tracers
 //!
 //! ## Feature Flags
 //!
 //! - `js-tracer` (default): Enables a JavaScript tracer implementation. This pulls in extra
 //!   dependencies (such as `boa`, `tokio` and `serde_json`).
+//! - `js-tracer` (default): 使能了一个JavaScript trancer实现，这会拉取额外的依赖（例如，`boa`,
+//!   `tokio`以及`serde_json`）
 
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",

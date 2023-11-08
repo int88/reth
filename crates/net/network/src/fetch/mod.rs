@@ -80,6 +80,7 @@ impl StateFetcher {
     }
 
     /// Invoked when connected to a new peer.
+    /// 被调用，当连接到一个新的peer
     pub(crate) fn new_active_peer(
         &mut self,
         peer_id: PeerId,
@@ -155,8 +156,10 @@ impl StateFetcher {
     }
 
     /// Advance the state the syncer
+    /// 通东sync的state
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<FetchAction> {
         // drain buffered actions first
+        // 首先排干缓存的actions
         loop {
             let no_peers_available = match self.poll_action() {
                 PollAction::Ready(action) => return Poll::Ready(action),
@@ -166,11 +169,13 @@ impl StateFetcher {
 
             loop {
                 // poll incoming requests
+                // 轮询到来的请求
                 match self.download_requests_rx.poll_next_unpin(cx) {
                     Poll::Ready(Some(request)) => match request.get_priority() {
                         Priority::High => {
                             // find the first normal request and queue before, add this request to
                             // the back of the high-priority queue
+                            // 找到第一个正确的请求，添加这个请求到高优先级队列的后面
                             let pos = self
                                 .queued_requests
                                 .iter()
@@ -300,6 +305,7 @@ impl StateFetcher {
 }
 
 /// The outcome of [`StateFetcher::poll_action`]
+/// [`StateFetcher::poll_action`]的结果
 enum PollAction {
     Ready(FetchAction),
     NoRequests,
@@ -414,12 +420,16 @@ impl DownloadRequest {
 }
 
 /// An action the syncer can emit.
+/// 一个syncer可以发出的action
 pub(crate) enum FetchAction {
     /// Dispatch an eth request to the given peer.
+    /// 发送一个eth request到给定的peer
     BlockRequest {
         /// The targeted recipient for the request
+        /// 目标recipient，对于请求
         peer_id: PeerId,
         /// The request to send
+        /// 发送的请求
         request: BlockRequest,
     },
 }

@@ -61,6 +61,7 @@ pub enum PeerMessage {
 }
 
 /// Request Variants that only target block related data.
+/// 各种请求，只有target block相关的数据
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(missing_docs)]
 #[allow(clippy::enum_variant_names)]

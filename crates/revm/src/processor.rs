@@ -28,48 +28,65 @@ use std::{sync::Arc, time::Instant};
 use tracing::{debug, trace};
 
 /// EVMProcessor is a block executor that uses revm to execute blocks or multiple blocks.
+/// EVMProcessor是一个block executor，使用revem来执行blocks或者多个blocks
 ///
 /// Output is obtained by calling `take_output_state` function.
 ///
 /// It is capable of pruning the data that will be written to the database
 /// and implemented [PrunableBlockExecutor] traits.
+/// 它能够移除data，会写入db并且实现[PrunableBlockExecutor] traits
 ///
 /// It implemented the [BlockExecutor] that give it the ability to take block
 /// apply pre state (Cancun system contract call), execute transaction and apply
 /// state change and then apply post execution changes (block reward, withdrawals, irregular DAO
 /// hardfork state change). And if `execute_and_verify_receipt` is called it will verify the
 /// receipt.
+/// 它实现[BlockExecutor]，给他能力获取block pre state，执行tx并且应用state change，之后应用post
+/// execution changes，如果`execute_and_verify_receipt`被调用，它会校验receipt
 ///
 /// InspectorStack are used for optional inspecting execution. And it contains
 /// various duration of parts of execution.
+/// InspectorStack用于可选地观测执行，它包含执行的各个部分的duration
 // TODO: https://github.com/bluealloy/revm/pull/745
 // #[derive(Debug)]
 #[allow(missing_debug_implementations)]
 pub struct EVMProcessor<'a> {
     /// The configured chain-spec
+    /// 配置的chain-spec
     chain_spec: Arc<ChainSpec>,
     /// revm instance that contains database and env environment.
+    /// revm instance，包括database和env环境
     evm: EVM<StateDBBox<'a, RethError>>,
     /// Hook and inspector stack that we want to invoke on that hook.
+    /// Hook以及inspector stack，我们希望在hook调用
     stack: InspectorStack,
     /// The collection of receipts.
+    /// 一系列的receipts
     /// Outer vector stores receipts for each block sequentially.
+    /// 外部的vector顺序存储每个block的receipts
     /// The inner vector stores receipts ordered by transaction number.
+    /// 内部存储的receipts按照tx number排序
     ///
     /// If receipt is None it means it is pruned.
+    /// 如果receipt为None，则意味着它被清除了
     receipts: Vec<Vec<Option<Receipt>>>,
     /// First block will be initialized to `None`
     /// and be set to the block number of first block executed.
+    /// 第一个block会被初始化为`None`并且设置为第一个被执行的block的block number
     first_block: Option<BlockNumber>,
     /// The maximum known block.
+    /// 最大的已知的block
     tip: Option<BlockNumber>,
     /// Pruning configuration.
+    /// Pruning的配置
     prune_modes: PruneModes,
     /// Memoized address pruning filter.
+    /// 内存化的address pruning filter
     /// Empty implies that there is going to be addresses to include in the filter in a future
     /// block. None means there isn't any kind of configuration.
     pruning_address_filter: Option<(u64, Vec<Address>)>,
     /// Execution stats
+    /// 执行的stats
     stats: BlockExecutorStats,
 }
 
@@ -109,6 +126,7 @@ impl<'a> EVMProcessor<'a> {
     }
 
     /// Create a new EVM processor with the given revm state.
+    /// 创建一个新的EVM processor，用给定的revm state
     pub fn new_with_state(
         chain_spec: Arc<ChainSpec>,
         revm_state: StateDBBox<'a, RethError>,

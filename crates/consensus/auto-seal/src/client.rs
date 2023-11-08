@@ -14,9 +14,11 @@ use tracing::{trace, warn};
 
 /// A download client that polls the miner for transactions and assembles blocks to be returned in
 /// the download process.
+/// 一个download client，轮询miner对于txs并且构建blocks返回，在下载过程中
 ///
 /// When polled, the miner will assemble blocks when miners produce ready transactions and store the
 /// blocks in memory.
+/// 当轮询的时候，miner会构建blocks，当miner生产ready txs并且存在在内存中
 #[derive(Debug, Clone)]
 pub struct AutoSealClient {
     storage: Storage,
