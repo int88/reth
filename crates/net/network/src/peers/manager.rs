@@ -30,6 +30,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use tracing::{debug, info, trace};
 
 /// A communication channel to the [`PeersManager`] to apply manual changes to the peer set.
+/// 一个communication channel，和[`PeersManager`]，来应用manual changes到peer set
 #[derive(Clone, Debug)]
 pub struct PeersHandle {
     /// Sender half of command channel back to the [`PeersManager`]
@@ -122,6 +123,7 @@ pub struct PeersManager {
 
 impl PeersManager {
     /// Create a new instance with the given config
+    /// 创建一个新的实例，用给定的config
     pub fn new(config: PeersConfig) -> Self {
         let PeersConfig {
             refill_slots_interval,
@@ -174,6 +176,7 @@ impl PeersManager {
     }
 
     /// Returns a new [`PeersHandle`] that can send commands to this type.
+    /// 返回一个新的[`PeersHandle`]，可以发送这个类型的命令
     pub(crate) fn handle(&self) -> PeersHandle {
         PeersHandle { manager_tx: self.manager_tx.clone() }
     }
@@ -1025,19 +1028,26 @@ impl PeerConnectionState {
 }
 
 /// Commands the [`PeersManager`] listens for.
+/// [`PeersManager`]监听的Commands
 #[derive(Debug)]
 pub(crate) enum PeerCommand {
     /// Command for manually add
+    /// 用于手动添加的Command
     Add(PeerId, SocketAddr),
     /// Remove a peer from the set
+    /// 从set中一个peer
     ///
     /// If currently connected this will disconnect the session
+    /// 如果当前连接，这会让session disconnect
     Remove(PeerId),
     /// Apply a reputation change to the given peer.
+    /// 对给定peer应用一个reputation change
     ReputationChange(PeerId, ReputationChangeKind),
     /// Get information about a peer
+    /// 获取一个peer的信息
     GetPeer(PeerId, oneshot::Sender<Option<Peer>>),
     /// Get node information on all peers
+    /// 获取所有peers的node信息
     GetPeers(oneshot::Sender<Vec<NodeRecord>>),
 }
 

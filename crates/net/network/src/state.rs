@@ -433,11 +433,13 @@ where
             let mut received_responses = Vec::new();
 
             // poll all connected peers for responses
+            // 轮询所有的connected peers，对于response
             for (id, peer) in self.active_peers.iter_mut() {
                 if let Some(mut response) = peer.pending_response.take() {
                     match response.poll(cx) {
                         Poll::Ready(res) => {
                             // check if the error is due to a closed channel to the session
+                            // 检查错误是否是因为对于session的closed channel
                             if res.err().map(|err| err.is_channel_closed()).unwrap_or_default() {
                                 debug!(
                                     target : "net",
@@ -455,6 +457,7 @@ where
                         }
                         Poll::Pending => {
                             // not ready yet, store again.
+                            // 还没准备好，再次存储
                             peer.pending_response = Some(response);
                         }
                     };

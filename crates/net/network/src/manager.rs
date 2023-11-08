@@ -658,6 +658,7 @@ where
 
         loop {
             // advance the swarm
+            // 推动swarm
             match this.swarm.poll_next_unpin(cx) {
                 Poll::Pending | Poll::Ready(None) => break,
                 Poll::Ready(Some(event)) => {

@@ -290,6 +290,7 @@ mod tests {
         let mut rng = thread_rng();
         let (secret_key, _) = SECP256K1.generate_keypair(&mut rng);
         let discovery_addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0));
+        // 构建Discovery
         let _discovery =
             Discovery::new(discovery_addr, secret_key, Default::default(), Default::default())
                 .await

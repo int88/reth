@@ -73,12 +73,16 @@ use tracing::{debug, trace};
 #[must_use = "Swarm does nothing unless polled"]
 pub(crate) struct Swarm<C> {
     /// Listens for new incoming connections.
+    /// 监听新到来的连接
     incoming: ConnectionListener,
     /// All sessions.
+    /// 所有的sessions
     sessions: SessionManager,
     /// Tracks the entire state of the network and handles events received from the sessions.
+    /// 追踪整个network的state并且处理从sessions接收的events
     state: NetworkState<C>,
     /// Tracks the connection state of the node
+    /// 追踪node的connection state
     net_connection_state: NetworkConnectionState,
 }
 
@@ -306,12 +310,14 @@ where
     type Item = SwarmEvent;
 
     /// This advances all components.
+    /// 推动所有的components
     ///
     /// Processes, delegates (internal) commands received from the
     /// [`NetworkManager`](crate::NetworkManager), then polls the [`SessionManager`] which
     /// yields messages produced by individual peer sessions that are then handled. Least
     /// priority are incoming connections that are handled and delegated to
     /// the [`SessionManager`] to turn them into a session.
+    /// 处理，委托从[`NetworkManager`](crate::NetworkManager)接受到的commands
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.get_mut();
 
@@ -323,6 +329,7 @@ where
             }
 
             // poll all sessions
+            // 轮询所有的sessions
             match this.sessions.poll(cx) {
                 Poll::Pending => {}
                 Poll::Ready(event) => {
@@ -334,6 +341,7 @@ where
             }
 
             // poll listener for incoming connections
+            // 对listener轮询，对于incoming connections
             match Pin::new(&mut this.incoming).poll(cx) {
                 Poll::Pending => {}
                 Poll::Ready(event) => {
@@ -362,6 +370,7 @@ pub(crate) enum SwarmEvent {
         message: PeerMessage,
     },
     /// Received a message that does not match the announced capabilities of the peer.
+    /// 接收到一个message，不匹配peer的announced capabilities
     InvalidCapabilityMessage {
         peer_id: PeerId,
         /// Announced capabilities of the remote peer.

@@ -113,6 +113,7 @@ pub struct SessionManager {
 
 impl SessionManager {
     /// Creates a new empty [`SessionManager`].
+    /// 创建一个空的[`SessionManager`]
     pub fn new(
         secret_key: SecretKey,
         config: SessionsConfig,
