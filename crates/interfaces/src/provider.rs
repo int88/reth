@@ -36,6 +36,7 @@ pub enum ProviderError {
     #[error("Total difficulty not found for block #{number}")]
     TotalDifficultyNotFound { number: BlockNumber },
     /// Thrown when required header related data was not found but was required.
+    /// 当请求的header相关数据没有找到但是需要时抛出
     #[error("No header found for {0:?}")]
     HeaderNotFound(BlockHashOrNumber),
     /// Thrown we were unable to find a specific block

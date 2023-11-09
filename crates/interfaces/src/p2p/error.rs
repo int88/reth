@@ -70,6 +70,7 @@ impl EthResponseValidator for RequestResult<Vec<Header>> {
 }
 
 /// Error variants that can happen when sending requests to a session.
+/// 当发送请求到一个session时可以发生的各种variants
 #[derive(Clone, Debug, Error, Eq, PartialEq)]
 #[allow(missing_docs)]
 pub enum RequestError {
@@ -112,6 +113,7 @@ impl From<oneshot::error::RecvError> for RequestError {
 }
 
 /// The download result type
+/// download的结果类型
 pub type DownloadResult<T> = Result<T, DownloadError>;
 
 /// The downloader error type
@@ -119,6 +121,7 @@ pub type DownloadResult<T> = Result<T, DownloadError>;
 pub enum DownloadError {
     /* ==================== HEADER ERRORS ==================== */
     /// Header validation failed
+    /// Header校验失败
     #[error("Failed to validate header {hash}. Details: {error}.")]
     HeaderValidation {
         /// Hash of header failing validation
@@ -128,6 +131,7 @@ pub enum DownloadError {
         error: consensus::ConsensusError,
     },
     /// Received an invalid tip
+    /// 接收到一个非法的tip
     #[error("Received invalid tip: {received:?}. Expected {expected:?}.")]
     InvalidTip {
         /// The hash of the received tip

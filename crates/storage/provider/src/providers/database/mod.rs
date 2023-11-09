@@ -51,6 +51,9 @@ impl<DB: Database> ProviderFactory<DB> {
     /// data from the database using different types of providers. Example: [`HeaderProvider`]
     /// [`BlockHashReader`].  This may fail if the inner read/write database transaction fails to
     /// open.
+    /// 返回一个provider，有着一个创建的`DbTxMut`，允许从db中拉取以及更新data，
+    /// 使用不同类型的provider，例如[`HeaderProvider`] [`BlockHashReader`]，这可能失败，
+    /// 如果内部的read/write db tx打开失败
     pub fn provider_rw(&self) -> RethResult<DatabaseProviderRW<'_, DB>> {
         Ok(DatabaseProviderRW(DatabaseProvider::new_rw(self.db.tx_mut()?, self.chain_spec.clone())))
     }

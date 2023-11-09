@@ -29,6 +29,7 @@ use std::{
 ///
 /// ```rust,ignore
 /// let tx = TestTransaction::default();
+/// 执行stage
 /// stage.execute(&mut tx.container(), input);
 /// ```
 #[derive(Debug)]
@@ -41,6 +42,7 @@ pub struct TestTransaction {
 
 impl Default for TestTransaction {
     /// Create a new instance of [TestTransaction]
+    /// 创建一个新的[TestTransaction]的实例
     fn default() -> Self {
         // 创建rw db
         let tx = create_test_rw_db();
@@ -75,6 +77,7 @@ impl TestTransaction {
     }
 
     /// Invoke a callback with transaction committing it afterwards
+    /// 调用一个callback，提交tx，之后
     pub fn commit<F>(&self, f: F) -> Result<(), DbError>
     where
         F: FnOnce(&<DatabaseEnv as DatabaseGAT<'_>>::TXMut) -> Result<(), DbError>,
@@ -201,6 +204,7 @@ impl TestTransaction {
     }
 
     /// Inserts a single [SealedHeader] into the corresponding tables of the headers stage.
+    /// 插入一个[SealedHeader]到headers stage对应的tables
     fn insert_header<'a, TX: DbTxMut<'a> + DbTx<'a>>(
         tx: &'a TX,
         header: &SealedHeader,
@@ -212,6 +216,7 @@ impl TestTransaction {
 
     /// Insert ordered collection of [SealedHeader] into the corresponding tables
     /// that are supposed to be populated by the headers stage.
+    /// 插入一系列有序的[SealedHeader]到对应的tagbles，从而能被headers stage填充
     pub fn insert_headers<'a, I>(&self, headers: I) -> Result<(), DbError>
     where
         I: Iterator<Item = &'a SealedHeader>,

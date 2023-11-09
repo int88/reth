@@ -252,11 +252,13 @@ table!(
 
 table!(
     /// Stores the block number corresponding to a header.
+    /// 存储block number，对应到一个header
     ( HeaderNumbers ) BlockHash | BlockNumber
 );
 
 table!(
     /// Stores header bodies.
+    /// 存储header bodies
     ( Headers ) BlockNumber | Header
 );
 

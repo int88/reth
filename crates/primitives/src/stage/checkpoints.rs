@@ -260,6 +260,7 @@ impl Display for StageCheckpoint {
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum StageUnitCheckpoint {
     /// Saves the progress of AccountHashing stage.
+    /// 保存AccountHashing stage的progress
     Account(AccountHashingCheckpoint),
     /// Saves the progress of StorageHashing stage.
     Storage(StorageHashingCheckpoint),

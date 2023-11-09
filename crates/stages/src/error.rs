@@ -53,6 +53,7 @@ pub enum StageError {
     #[error(transparent)]
     PruningConfiguration(#[from] reth_primitives::PrunePartError),
     /// Invalid checkpoint passed to the stage
+    /// 非法的checkpoint传递给stage
     #[error("Invalid stage checkpoint: {0}")]
     StageCheckpoint(u64),
     /// Download channel closed

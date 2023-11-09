@@ -12,11 +12,14 @@ use std::{
 };
 
 /// Stage execution input, see [Stage::execute].
+/// Stage execution的输入
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct ExecInput {
     /// The target block number the stage needs to execute towards.
+    /// 需要执行前往的target block number
     pub target: Option<BlockNumber>,
     /// The checkpoint of this stage the last time it was executed.
+    /// 上次执行的stage的checkpoint
     pub checkpoint: Option<StageCheckpoint>,
 }
 
@@ -169,6 +172,7 @@ pub struct ExecOutput {
 
 impl ExecOutput {
     /// Mark the stage as done, checkpointing at the given place.
+    /// 将stage标记为done，在给定地方checkpointing
     pub fn done(checkpoint: StageCheckpoint) -> Self {
         Self { checkpoint, done: true }
     }
@@ -217,6 +221,7 @@ pub trait Stage<DB: Database>: Send + Sync {
     ) -> Result<ExecOutput, StageError>;
 
     /// Unwind the stage.
+    /// 对stage进行unwind
     async fn unwind(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,

@@ -48,15 +48,21 @@ enum ReverseHeadersDownloaderError {
 }
 
 /// Downloads headers concurrently.
+/// 同时下载headers
 ///
 /// This [HeaderDownloader] downloads headers using the configured [HeadersClient].
+/// 这个[HeaderDownloader]下载headers，用配置的[HeadersClient]
 /// Headers can be requested by hash or block number and take a `limit` parameter. This downloader
 /// tries to fill the gap between the local head of the node and the chain tip by issuing multiple
 /// requests at a time but yielding them in batches on [Stream::poll_next].
+/// Headers可以通过hash或者block number请求，并且有一个`limit`参数，这downloader试着填充node的local
+/// head和chain tip之间的gap，通过一次发射多个请求并且在[Stream::poll_next]批量产生
 ///
 /// **Note:** This downloader downloads in reverse, see also [HeadersDirection::Falling], this means
 /// the batches of headers that this downloader yields will start at the chain tip and move towards
 /// the local head: falling block numbers.
+/// 注意：这个downloader按照反序下载，查看[HeadersDirection::Falling]，
+/// 这意味着这个downloader生成的一系列headers会从chain tip开始向local head，block numbers下降
 #[must_use = "Stream does nothing unless polled"]
 #[allow(missing_debug_implementations)]
 pub struct ReverseHeadersDownloader<H: HeadersClient> {
@@ -67,6 +73,7 @@ pub struct ReverseHeadersDownloader<H: HeadersClient> {
     /// The local head of the chain.
     local_head: Option<SealedHeader>,
     /// Block we want to close the gap to.
+    /// 我们想要close gap to的Block
     sync_target: Option<SyncTargetBlock>,
     /// The block number to use for requests.
     next_request_block_number: u64,
@@ -94,8 +101,10 @@ pub struct ReverseHeadersDownloader<H: HeadersClient> {
     /// Buffered, unvalidated responses
     buffered_responses: BinaryHeap<OrderedHeadersResponse>,
     /// Buffered, _sorted_ and validated headers ready to be returned.
+    /// 缓存的，排好序的，并且校验过的headers，准备好返回
     ///
     /// Note: headers are sorted from high to low
+    /// 注意：headers从高到底排序
     queued_validated_headers: Vec<SealedHeader>,
     /// Header downloader metrics.
     metrics: HeaderDownloaderMetrics,
@@ -659,6 +668,7 @@ where
 {
     fn update_local_head(&mut self, head: SealedHeader) {
         // ensure we're only yielding headers that are in range and follow the current local head.
+        // 确保我们只生成在range内的headers并且follow当前的local head
         while self
             .queued_validated_headers
             .last()
@@ -666,13 +676,16 @@ where
             .unwrap_or_default()
         {
             // headers are sorted high to low
+            // headers从高到低排序
             self.queued_validated_headers.pop();
         }
         // update the local head
+        // 更新local head
         self.local_head = Some(head);
     }
 
     /// If the given target is different from the current target, we need to update the sync target
+    /// 如果给定的target不同于当前的target，我们需要更新sync target
     fn update_sync_target(&mut self, target: SyncTarget) {
         let current_tip = self.sync_target.as_ref().and_then(|t| t.hash());
         match target {
@@ -1118,10 +1131,13 @@ impl ReverseHeadersDownloaderBuilder {
     }
 
     /// Set the stream batch size
+    /// 设置stream的batch size
     ///
     /// This determines the number of headers the [ReverseHeadersDownloader] will yield on
     /// `Stream::next`. This will be the amount of headers the headers stage will commit at a
     /// time.
+    /// 这决定了[ReverseHeadersDownloader]会在`Stream::next`生成的headers的数目，这会是headers
+    /// stage一次性会提交的headers的数目
     pub fn stream_batch_size(mut self, size: usize) -> Self {
         self.stream_batch_size = size;
         self

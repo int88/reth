@@ -11,11 +11,13 @@ use crate::{
 };
 
 /// A read-only cursor over table `T`.
+/// 对于table `T`的一个只读的cursor
 pub trait DbCursorRO<'tx, T: Table> {
     /// Positions the cursor at the first entry in the table, returning it.
     fn first(&mut self) -> PairResult<T>;
 
     /// Seeks to the KV pair exactly at `key`.
+    /// 查找KV对，对于`key`
     fn seek_exact(&mut self, key: T::Key) -> PairResult<T>;
 
     /// Seeks to the KV pair whose key is greater than or equal to `key`.

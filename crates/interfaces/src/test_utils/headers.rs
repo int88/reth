@@ -36,6 +36,7 @@ use tokio::sync::{
 };
 
 /// A test downloader which just returns the values that have been pushed to it.
+/// 一个测试的downloader，它只返回已经被推送给他的values
 #[derive(Debug)]
 pub struct TestHeaderDownloader {
     client: TestHeadersClient,
@@ -48,6 +49,7 @@ pub struct TestHeaderDownloader {
 
 impl TestHeaderDownloader {
     /// Instantiates the downloader with the mock responses
+    /// 实例化downloader，用mock response
     pub fn new(
         client: TestHeadersClient,
         consensus: Arc<TestConsensus>,
@@ -69,17 +71,20 @@ impl TestHeaderDownloader {
     }
 
     /// Validate whether the header is valid in relation to it's parent
+    /// 校验header是否正确，相对它的parent
     fn validate(&self, header: &SealedHeader, parent: &SealedHeader) -> DownloadResult<()> {
         validate_header_download(&self.consensus, header, parent)
     }
 }
 
 impl HeaderDownloader for TestHeaderDownloader {
+    // 对于测试，什么都不做
     fn update_local_head(&mut self, _head: SealedHeader) {}
 
     fn update_sync_target(&mut self, _target: SyncTarget) {}
 
     fn set_batch_size(&mut self, limit: usize) {
+        // 设置batch size
         self.batch_size = limit;
     }
 }
@@ -98,6 +103,7 @@ impl Stream for TestHeaderDownloader {
             }
 
             match ready!(this.download.as_mut().unwrap().poll_next_unpin(cx)) {
+                // 返回queued_headers
                 None => return Poll::Ready(Some(Ok(std::mem::take(&mut this.queued_headers)))),
                 Some(header) => this.queued_headers.push(header.unwrap()),
             }
@@ -188,6 +194,7 @@ impl Stream for TestDownload {
 }
 
 /// A test client for fetching headers
+/// 一个test client用于抓取headers
 #[derive(Debug, Default, Clone)]
 pub struct TestHeadersClient {
     responses: Arc<Mutex<Vec<Header>>>,
@@ -197,23 +204,27 @@ pub struct TestHeadersClient {
 
 impl TestHeadersClient {
     /// Return the number of times client was polled
+    /// 返回client被拉取的
     pub fn request_attempts(&self) -> u64 {
         self.request_attempts.load(Ordering::SeqCst)
     }
 
     /// Adds headers to the set.
+    /// 添加headers到set中
     pub async fn extend(&self, headers: impl IntoIterator<Item = Header>) {
         let mut lock = self.responses.lock().await;
         lock.extend(headers);
     }
 
     /// Clears the set.
+    /// 清理set
     pub async fn clear(&self) {
         let mut lock = self.responses.lock().await;
         lock.clear();
     }
 
     /// Set response error
+    /// 设置response error
     pub async fn set_error(&self, err: RequestError) {
         let mut lock = self.error.lock().await;
         lock.replace(err);
@@ -274,11 +285,13 @@ impl Default for TestConsensus {
 
 impl TestConsensus {
     /// Get the failed validation flag.
+    /// 获取failed validation flag
     pub fn fail_validation(&self) -> bool {
         self.fail_validation.load(Ordering::SeqCst)
     }
 
     /// Update the validation flag.
+    /// 更新validation flag
     pub fn set_fail_validation(&self, val: bool) {
         self.fail_validation.store(val, Ordering::SeqCst)
     }
