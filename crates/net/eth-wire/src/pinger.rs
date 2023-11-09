@@ -9,6 +9,7 @@ use tokio_stream::Stream;
 
 /// The pinger is a state machine that is created with a maximum number of pongs that can be
 /// missed.
+/// ping是一个state machine，它有一个可以丢失的最大数目的pongs
 #[derive(Debug)]
 pub(crate) struct Pinger {
     /// The timer used for the next ping.
@@ -64,6 +65,7 @@ impl Pinger {
 
     /// Polls the state of the pinger and returns whether a new ping needs to be sent or if a
     /// previous ping timed out.
+    /// 轮询state of the pinger并且返回是否一个新的ping需要被发送或者是否一个之前的ping超时了
     pub(crate) fn poll_ping(
         &mut self,
         cx: &mut Context<'_>,

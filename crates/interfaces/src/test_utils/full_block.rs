@@ -13,6 +13,7 @@ use reth_primitives::{
 use std::{collections::HashMap, sync::Arc};
 
 /// A headers+bodies client implementation that does nothing.
+/// 一个headers+bodies的client实现，什么都不做
 #[derive(Debug, Default, Clone)]
 #[non_exhaustive]
 pub struct NoopFullBlockClient;

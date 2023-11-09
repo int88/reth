@@ -1,4 +1,5 @@
 //! Testing support for headers related interfaces.
+//! 用于支持header相关接口的测试
 use crate::{
     consensus::{self, Consensus, ConsensusError},
     p2p::{

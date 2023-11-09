@@ -33,6 +33,7 @@ pub struct TaskDownloader {
 impl TaskDownloader {
     /// Spawns the given `downloader` via [tokio::task::spawn] and returns a [TaskDownloader] that's
     /// connected to that task.
+    /// 生成给定的`downloader`，通过[tokio::task::spawn]并且返回一个[TaskDownloader]连接到这个task
     ///
     /// # Panics
     ///
@@ -108,6 +109,7 @@ impl Stream for TaskDownloader {
 }
 
 /// A [HeaderDownloader] that runs on its own task
+/// 一个[HeaderDownloader]运行在它自己的task
 struct SpawnedDownloader<T> {
     updates: UnboundedReceiverStream<DownloaderUpdates>,
     headers_tx: PollSender<HeadersDownloaderResult<Vec<SealedHeader>>>,

@@ -11,6 +11,7 @@ use reth_primitives::{BlockBody, H256};
 pub type BodiesFut = Pin<Box<dyn Future<Output = PeerRequestResult<Vec<BlockBody>>> + Send + Sync>>;
 
 /// A client capable of downloading block bodies.
+/// 一个client能够下载block bodies
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait BodiesClient: DownloadClient {
     /// The output of the request future for querying block bodies.

@@ -21,6 +21,7 @@ use tokio_util::sync::PollSender;
 pub const BODIES_TASK_BUFFER_SIZE: usize = 4;
 
 /// A [BodyDownloader] that drives a spawned [BodyDownloader] on a spawned task.
+/// 一个[BodyDownloader]驱动一个生成的 [BodyDownloader]，在一个spawned task
 #[derive(Debug)]
 #[pin_project]
 pub struct TaskDownloader {

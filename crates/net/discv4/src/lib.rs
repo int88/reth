@@ -424,6 +424,7 @@ pub struct Discv4Service {
     /// Copy of he sender half of the commands channel for [Discv4]
     to_service: mpsc::UnboundedSender<Discv4Command>,
     /// Receiver half of the commands channel for [Discv4]
+    /// [Discv4]的commands channel的接收部分
     commands_rx: mpsc::UnboundedReceiver<Discv4Command>,
     /// All subscribers for table updates
     update_listeners: Vec<mpsc::Sender<DiscoveryUpdate>>,
@@ -550,6 +551,7 @@ impl Discv4Service {
     }
 
     /// Returns the frontend handle that can communicate with the service via commands.
+    /// 返回frontend handle，可以通过commands和service交互
     pub fn handle(&self) -> Discv4 {
         Discv4 {
             local_addr: self.local_address,
@@ -1478,18 +1480,24 @@ impl Discv4Service {
     }
 
     /// Polls the socket and advances the state.
+    /// 轮询socket并且推进state
     ///
     /// To prevent traffic amplification attacks, implementations must verify that the sender of a
     /// query participates in the discovery protocol. The sender of a packet is considered verified
     /// if it has sent a valid Pong response with matching ping hash within the last 12 hours.
+    /// 为了防止traffic amplification攻击，实现必须校验discovery协议中的sender of a
+    /// query，一个packet的sender认为被校验了,如果它已经发送了一个合法的Pong response，有匹配的ping
+    /// hash，在最近12小时
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<Discv4Event> {
         loop {
             // drain buffered events first
+            // 首先排干缓存的events
             if let Some(event) = self.queued_events.pop_front() {
                 return Poll::Ready(event)
             }
 
             // trigger self lookup
+            // 触发self lookup
             if self.config.enable_lookup && self.lookup_interval.poll_tick(cx).is_ready() {
                 let _ = self.lookup_interval.poll_tick(cx);
                 let target = self.lookup_rotator.next(&self.local_node_record.id);
@@ -1497,6 +1505,7 @@ impl Discv4Service {
             }
 
             // re-ping some peers
+            // 重新ping一些peers
             if self.ping_interval.poll_tick(cx).is_ready() {
                 let _ = self.ping_interval.poll_tick(cx);
                 self.re_ping_oldest();
@@ -1509,6 +1518,7 @@ impl Discv4Service {
             }
 
             // process all incoming commands, this channel can never close
+            // 处理所有到来的commands，這個cahnnel从不关闭
             while let Poll::Ready(Some(cmd)) = self.commands_rx.poll_recv(cx) {
                 match cmd {
                     Discv4Command::Add(enr) => {
@@ -1554,6 +1564,7 @@ impl Discv4Service {
             }
 
             // process all incoming datagrams
+            // 处理所有到来的datagrams
             while let Poll::Ready(Some(event)) = self.ingress.poll_recv(cx) {
                 match event {
                     IngressEvent::RecvError(_) => {}
@@ -1595,14 +1606,17 @@ impl Discv4Service {
             }
 
             // try resending buffered pings
+            // 试着重发缓存的pings
             self.ping_buffered();
 
             // evict expired nodes
+            // 驱逐过期的nodes
             while self.evict_expired_requests_interval.poll_tick(cx).is_ready() {
                 self.evict_expired_requests(Instant::now())
             }
 
             // evict expired nodes
+            // 驱逐过期的nodes
             while self.expire_interval.poll_tick(cx).is_ready() {
                 self.received_pongs.evict_expired(Instant::now(), EXPIRE_DURATION)
             }
@@ -1615,6 +1629,7 @@ impl Discv4Service {
 }
 
 /// Endless future impl
+/// 不会结束的future
 impl Stream for Discv4Service {
     type Item = Discv4Event;
 
@@ -1624,8 +1639,10 @@ impl Stream for Discv4Service {
 }
 
 /// The Event type the Service stream produces.
+/// Service stream产生的Event类型
 ///
 /// This is mainly used for testing purposes and represents messages the service processed
+/// 这主要用于测试并且代表service处理的messages
 #[derive(Debug, Eq, PartialEq)]
 pub enum Discv4Event {
     /// A `Ping` message was handled.
@@ -1643,6 +1660,7 @@ pub enum Discv4Event {
 }
 
 /// Continuously reads new messages from the channel and writes them to the socket
+/// 持续从channel中读取新的messages并且将他们写入到socket
 pub(crate) async fn send_loop(udp: Arc<UdpSocket>, rx: EgressReceiver) {
     let mut stream = ReceiverStream::new(rx);
     while let Some((payload, to)) = stream.next().await {
@@ -1699,6 +1717,7 @@ pub(crate) async fn receive_loop(udp: Arc<UdpSocket>, tx: IngressSender, local_i
 }
 
 /// The commands sent from the frontend to the service
+/// 从frontend发往service的commands部分
 enum Discv4Command {
     Add(NodeRecord),
     SetTcpPort(u16),

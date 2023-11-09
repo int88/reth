@@ -14,8 +14,10 @@ use std::{
 use tokio::sync::oneshot::{self, Receiver};
 
 /// A test client for fetching bodies
+/// 一个test client用于抓取bodies
 pub struct TestBodiesClient<F> {
     /// The function that is called on each body request.
+    /// 这个函数在每个body request中被调用
     pub responder: F,
 }
 

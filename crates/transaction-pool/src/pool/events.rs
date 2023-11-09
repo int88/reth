@@ -55,14 +55,18 @@ impl<T: PoolTransaction> Clone for FullTransactionEvent<T> {
 }
 
 /// Various events that describe status changes of a transaction.
+/// 各种事件，描述一个tx的status的变化
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum TransactionEvent {
     /// Transaction has been added to the pending pool.
+    /// Tx已经被加入到了pending pool
     Pending,
     /// Transaction has been added to the queued pool.
+    /// Tx已经被加入到了queued pool
     Queued,
     /// Transaction has been included in the block belonging to this hash.
+    /// tx已经被加入到了block，属于这个hash
     Mined(H256),
     /// Transaction has been replaced by the transaction belonging to the hash.
     ///
@@ -73,6 +77,7 @@ pub enum TransactionEvent {
     /// Transaction became invalid indefinitely.
     Invalid,
     /// Transaction was propagated to peers.
+    /// tx已经被传播到了peer
     Propagated(Arc<Vec<PropagateKind>>),
 }
 
