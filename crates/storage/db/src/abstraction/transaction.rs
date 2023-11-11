@@ -33,6 +33,7 @@ pub trait DbTxMutGAT<'a, __ImplicitBounds: Sealed = Bounds<&'a Self>>: Send + Sy
 }
 
 /// Read only transaction
+/// 只读的tx
 pub trait DbTx<'tx>: for<'a> DbTxGAT<'a> {
     /// Get value
     fn get<T: Table>(&self, key: T::Key) -> Result<Option<T::Value>, DatabaseError>;
@@ -52,6 +53,7 @@ pub trait DbTx<'tx>: for<'a> DbTxGAT<'a> {
 }
 
 /// Read write transaction that allows writing to database
+/// 读写tx，允许写入db
 pub trait DbTxMut<'tx>: for<'a> DbTxMutGAT<'a> {
     /// Put value to database
     fn put<T: Table>(&self, key: T::Key, value: T::Value) -> Result<(), DatabaseError>;

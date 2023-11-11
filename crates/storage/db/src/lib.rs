@@ -1,44 +1,65 @@
 //! reth's database abstraction layer with concrete implementations.
+//! reth的db抽象层的具体实现
 //!
 //! The database abstraction assumes that the underlying store is a KV store subdivided into tables.
+//! db抽象假设底层的store是一个KV store，分割成tables
 //!
 //! One or more changes are tied to a transaction that is atomically committed to the data store at
 //! the same time. Strong consistency in what data is written and when is important for reth, so it
 //! is not possible to write data to the database outside of using a transaction.
+//! 一个或者多个变更，关联到一个tx，会同时原子提交到data
+//! store，数据写入的强一致性对reth很重要，因此不可能将数据写入db而不使用一个tx
 //!
 //! Good starting points for this crate are:
 //!
 //! - [`Database`] for the main database abstraction
+//! - [`Database`]是主要的db抽象
 //! - [`DbTx`] (RO) and [`DbTxMut`] (RW) for the transaction abstractions.
+//! - [`DbTx`] (RO)和[`DbTxMut`] (RW)用于tx的抽象
 //! - [`DbCursorRO`] (RO) and [`DbCursorRW`] (RW) for the cursor abstractions (see below).
+//! - [`DbCursorRO`] (RO)以及[`DbCursorRW`] (RW)用于cursor的抽象
 //!
 //! # Cursors and Walkers
 //!
 //! The abstraction also defines a couple of helpful abstractions for iterating and writing data:
+//! 这个抽象同时定义了一些有用的抽象，对于迭代和写入数据
 //!
 //! - **Cursors** ([`DbCursorRO`] / [`DbCursorRW`]) for iterating data in a table. Cursors are
 //!   assumed to resolve data in a sorted manner when iterating from start to finish, and it is safe
 //!   to assume that they are efficient at doing so.
+//! - **Cursors** ([`DbCursorRO`] /
+//!   [`DbCursorRW`])用于遍历一个table中的data，Cursors假设以一种有序的方式解析数据，
+//!   当从start遍历到finish，并且可以安全地假设他们是高效完成的
 //! - **Walkers** ([`Walker`] / [`RangeWalker`] / [`ReverseWalker`]) use cursors to walk the entries
 //!   in a table, either fully from a specific point, or over a range.
+//! - **Walkers** ([`Walker`] / [`RangeWalker`] /
+//!   [`ReverseWalker`])使用cursors遍历一个table中的entries，从某个点开始完整遍历，
+//!   或者在一个range之上
 //!
 //! Dup tables (see below) also have corresponding cursors and walkers (e.g. [`DbDupCursorRO`]).
 //! These **should** be preferred when working with dup tables, as they provide additional methods
 //! that are optimized for dup tables.
+//! Dup tables也有对应的cursors和walkers（例如[`DbDupCursorRO`]），它们更应该优先使用cursors，
+//! 因为他们提供额外的方法，对于dup tables的优化
 //!
 //! # Tables
 //!
 //! reth has two types of tables: simple KV stores (one key, one value) and dup tables (one key,
 //! many values). Dup tables can be efficient for certain types of data.
+//! reth有两种类型的tables：简单的KV stores（一个key，一个value）以及dup
+//! tables（一个key，多个values），Dup table对于特定类型的数据是高效的
 //!
 //! Keys are de/serialized using the [`Encode`] and [`Decode`] traits, and values are de/serialized
 //! ("compressed") using the [`Compress`] and [`Decompress`] traits.
+//! Keys可以序列/反序列，使用[`Encode`]和[`Decode`]
+//! traits，并且values可以使用[`Compresss`]和[`Decompress`] traits
 //!
 //! Tables implement the [`Table`] trait.
 //!
 //! # Overview
 //!
 //! An overview of the current data model of reth can be found in the [`tables`] module.
+//! 对于reth当前的data model可以在[`tables`] module中找到
 //!
 //! [`Database`]: crate::abstraction::database::Database
 //! [`DbTx`]: crate::abstraction::transaction::DbTx

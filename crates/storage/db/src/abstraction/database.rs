@@ -18,15 +18,19 @@ pub trait DatabaseGAT<'a, __ImplicitBounds: Sealed = Bounds<&'a Self>>: Send + S
 }
 
 /// Main Database trait that spawns transactions to be executed.
+/// 主要的Db trait，可以生成txs执行
 pub trait Database: for<'a> DatabaseGAT<'a> {
     /// Create read only transaction.
+    /// 创建只读的tx
     fn tx(&self) -> Result<<Self as DatabaseGAT<'_>>::TX, DatabaseError>;
 
     /// Create read write transaction only possible if database is open with write access.
+    /// 创建读写的tx，只有在db以读写权限打开的时候才有可能
     fn tx_mut(&self) -> Result<<Self as DatabaseGAT<'_>>::TXMut, DatabaseError>;
 
     /// Takes a function and passes a read-only transaction into it, making sure it's closed in the
     /// end of the execution.
+    /// 拿一个函数并且传入一个只读的tx，确保它在执行的最后被关闭
     fn view<T, F>(&self, f: F) -> Result<T, DatabaseError>
     where
         F: FnOnce(&<Self as DatabaseGAT<'_>>::TX) -> T,

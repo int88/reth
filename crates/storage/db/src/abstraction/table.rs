@@ -63,13 +63,17 @@ pub trait Value: Compress + Decompress + Serialize {}
 impl<T> Value for T where T: Compress + Decompress + Serialize {}
 
 /// Generic trait that a database table should follow.
+/// 通用的trait，一个db table应该遵守
 ///
 /// The [`Table::Key`] and [`Table::Value`] types should implement [`Encode`] and
 /// [`Decode`] when appropriate. These traits define how the data is stored and read from the
 /// database.
+/// [`Table::Key`]以及[`Table::Value`]类型应该实现[`Encode`]和[`Decode`]，
+/// 这些traits定义了data如何存储以及从db中读取
 ///
 /// It allows for the use of codecs. See [`crate::models::ShardedKey`] for a custom
 /// implementation.
+/// 它允许使用codecs，查看 [`crate::models::ShardedKey`]，对于自定义实现
 pub trait Table: Send + Sync + Debug + 'static {
     /// Return table name as it is present inside the MDBX.
     const NAME: &'static str;

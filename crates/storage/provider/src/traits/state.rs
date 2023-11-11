@@ -259,5 +259,6 @@ pub trait BundleStateDataProvider: Send + Sync {
 #[auto_impl[Box,&, Arc]]
 pub trait StateRootProvider: Send + Sync {
     /// Returns the state root of the BundleState on top of the current state.
+    /// 在当前的state之上返回BundleState的state root
     fn state_root(&self, post_state: &BundleStateWithReceipts) -> RethResult<H256>;
 }
