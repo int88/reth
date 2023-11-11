@@ -29,12 +29,14 @@ pub struct PruneModes {
     )]
     pub receipts: Option<PruneMode>,
     /// Account History pruning configuration.
+    /// Account History的清理配置
     #[serde(
         skip_serializing_if = "Option::is_none",
         deserialize_with = "deserialize_opt_prune_mode_with_min_blocks::<64, _>"
     )]
     pub account_history: Option<PruneMode>,
     /// Storage History pruning configuration.
+    /// Storage History的清理配置
     #[serde(
         skip_serializing_if = "Option::is_none",
         deserialize_with = "deserialize_opt_prune_mode_with_min_blocks::<64, _>"
@@ -42,9 +44,12 @@ pub struct PruneModes {
     pub storage_history: Option<PruneMode>,
     /// Receipts pruning configuration by retaining only those receipts that contain logs emitted
     /// by the specified addresses, discarding others. This setting is overridden by `receipts`.
+    /// Receipts清理配置，通过只保留那些特定地址发出的logs的receipts，丢弃其他的，
+    /// 这个settigns被`receipts`覆盖
     ///
     /// The [`BlockNumber`] represents the starting block from which point onwards the receipts are
     /// preserved.
+    /// [`BlockNumber`]代表starting block，从这开始，receipts被保留
     pub receipts_log_filter: ReceiptsLogPruneConfig,
 }
 
@@ -97,6 +102,7 @@ macro_rules! impl_prune_parts {
 
 impl PruneModes {
     /// Sets pruning to no target.
+    /// 设置pruning为no target
     pub fn none() -> Self {
         PruneModes::default()
     }

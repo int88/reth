@@ -11,8 +11,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub struct StorageEntry {
     /// Storage key.
+    /// Storage的key
     pub key: H256,
     /// Value on storage key.
+    /// storage key对应的Value
     pub value: U256,
 }
 

@@ -354,18 +354,23 @@ impl<'a> EVMProcessor<'a> {
     }
 
     /// Execute the block, verify gas usage and apply post-block state changes.
+    /// 执行block，校验gas usage并且应用post-block statge changes
     fn execute_inner(
         &mut self,
         block: &Block,
         total_difficulty: U256,
         senders: Option<Vec<Address>>,
     ) -> Result<Vec<Receipt>, BlockExecutionError> {
+        // 初始化env
         self.init_env(&block.header, total_difficulty);
+        // 执行beacon root contract调用
         self.apply_beacon_root_contract_call(block)?;
+        // 执行txs
         let (receipts, cumulative_gas_used) =
             self.execute_transactions(block, total_difficulty, senders)?;
 
         // Check if gas used matches the value set in header.
+        // 检查使用的gas匹配header中设置的值
         if block.gas_used != cumulative_gas_used {
             return Err(BlockValidationError::BlockGasUsed {
                 got: cumulative_gas_used,
@@ -392,6 +397,7 @@ impl<'a> EVMProcessor<'a> {
             .into())
         }
         let time = Instant::now();
+        // 应用post execution state change
         self.apply_post_execution_state_change(block, total_difficulty)?;
         self.stats.apply_post_execution_state_changes_duration += time.elapsed();
 
@@ -496,6 +502,7 @@ impl<'a> BlockExecutor for EVMProcessor<'a> {
         senders: Option<Vec<Address>>,
     ) -> Result<(), BlockExecutionError> {
         // execute block
+        // 执行block
         let receipts = self.execute_inner(block, total_difficulty, senders)?;
 
         // TODO Before Byzantium, receipts contained state root that would mean that expensive
@@ -513,6 +520,7 @@ impl<'a> BlockExecutor for EVMProcessor<'a> {
             self.stats.receipt_root_duration += time.elapsed();
         }
 
+        // 保存receipts
         self.save_receipts(receipts)
     }
 

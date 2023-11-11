@@ -44,6 +44,7 @@ pub enum BlockValidationError {
         block_available_gas: u64,
     },
     /// Error when block gas used doesn't match expected value
+    /// 当block gas不匹配期望值时的error
     #[error("Block gas used {got} is different from expected gas used {expected}.\nGas spent by each transaction: {gas_spent_by_tx:?}\n")]
     BlockGasUsed {
         /// The actual gas used

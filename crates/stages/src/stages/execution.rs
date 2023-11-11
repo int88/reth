@@ -29,21 +29,29 @@ use tracing::*;
 
 /// The execution stage executes all transactions and
 /// update history indexes.
+/// execution stage执行所有的txs并且更新history indexes
 ///
 /// Input tables:
 /// - [tables::CanonicalHeaders] get next block to execute.
+/// - [tables::CanonicalHeaders]获取下一个block执行
 /// - [tables::Headers] get for revm environment variables.
+/// - [tables::Headers]获取revm的环境变量
 /// - [tables::HeaderTD]
 /// - [tables::BlockBodyIndices] to get tx number
+/// - [tables::BlockBodyIndices]用于获取tx number
 /// - [tables::Transactions] to execute
+/// - [tables::Transactions]来执行
 ///
 /// For state access [LatestStateProviderRef] provides us latest state and history state
+/// 对于state访问，[LatestStateProviderRef]给我们提供了最新的state以及history state
 /// For latest most recent state [LatestStateProviderRef] would need (Used for execution Stage):
+/// 对于最近的state，[LatestStateProviderRef]会需要（在execution stage使用）：
 /// - [tables::PlainAccountState]
 /// - [tables::Bytecodes]
 /// - [tables::PlainStorageState]
 ///
 /// Tables updated after state finishes execution:
+/// 在state执行结束之后更新的Tables
 /// - [tables::PlainAccountState]
 /// - [tables::PlainStorageState]
 /// - [tables::Bytecodes]
@@ -51,22 +59,33 @@ use tracing::*;
 /// - [tables::StorageChangeSet]
 ///
 /// For unwinds we are accessing:
+/// 对于unwinds，我们要访问：
 /// - [tables::BlockBodyIndices] get tx index to know what needs to be unwinded
+/// - [tables::BlockBodyIndices]获取tx index，来知道我们需要unwinded什么
 /// - [tables::AccountHistory] to remove change set and apply old values to
+/// - [tables::AccountHistory]来移除change set并且应用old values
 /// - [tables::PlainAccountState] [tables::StorageHistory] to remove change set and apply old values
+/// - [tables::PlainAccountState] [tables::StorageHistory]来移除change set并且应用old
+///   values到[tables::PlainStorageState]
 /// to [tables::PlainStorageState]
 // false positive, we cannot derive it if !DB: Debug.
 #[allow(missing_debug_implementations)]
 pub struct ExecutionStage<EF: ExecutorFactory> {
     metrics_tx: Option<MetricEventsSender>,
     /// The stage's internal executor
+    /// stage内部的executor
     executor_factory: EF,
     /// The commit thresholds of the execution stage.
+    /// execution stage的commit thresholds
     thresholds: ExecutionStageThresholds,
     /// The highest threshold (in number of blocks) for switching between incremental
     /// and full calculations across [`super::MerkleStage`], [`super::AccountHashingStage`] and
     /// [`super::StorageHashingStage`]. This is required to figure out if can prune or not
     /// changesets on subsequent pipeline runs.
+    /// 最高的threshold（以blocks number）用于在incremental和full
+    /// calculations，跨[`super::MerkleStage`],
+    /// [`super::AccountHashingStage`]以及[`super::StorageHashingStage`].这需要搞清楚，
+    /// 是否可以prune，在后续pipeline运行的changesets
     external_clean_threshold: u64,
     /// Pruning configuration.
     prune_modes: PruneModes,
@@ -74,6 +93,7 @@ pub struct ExecutionStage<EF: ExecutorFactory> {
 
 impl<EF: ExecutorFactory> ExecutionStage<EF> {
     /// Create new execution stage with specified config.
+    /// 用特定的配置创建新的execution stage
     pub fn new(
         executor_factory: EF,
         thresholds: ExecutionStageThresholds,
@@ -90,8 +110,10 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
     }
 
     /// Create an execution stage with the provided  executor factory.
+    /// 创建一个execution stage，用提供的executor factory
     ///
     /// The commit threshold will be set to 10_000.
+    /// commit threshold会被设置为10_000
     pub fn new_with_factory(executor_factory: EF) -> Self {
         Self::new(
             executor_factory,
@@ -102,12 +124,14 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
     }
 
     /// Set the metric events sender.
+    /// 设置metric events的sender
     pub fn with_metrics_tx(mut self, metrics_tx: MetricEventsSender) -> Self {
         self.metrics_tx = Some(metrics_tx);
         self
     }
 
     /// Execute the stage.
+    /// 执行stage
     pub fn execute_inner<DB: Database>(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -122,12 +146,14 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         let prune_modes = self.adjust_prune_modes(provider, start_block, max_block)?;
 
         // Build executor
+        // 构建executor
         let mut executor =
             self.executor_factory.with_state(LatestStateProviderRef::new(provider.tx_ref()));
         executor.set_prune_modes(prune_modes);
         executor.set_tip(max_block);
 
         // Progress tracking
+        // 进度追踪
         let mut stage_progress = start_block;
         let mut stage_checkpoint =
             execution_checkpoint(provider, start_block, max_block, input.checkpoint())?;
@@ -136,27 +162,34 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         let mut execution_duration = Duration::default();
         debug!(target: "sync::stages::execution", start = start_block, end = max_block, "Executing range");
         // Execute block range
+        // 执行block range
 
         let mut cumulative_gas = 0;
 
         for block_number in start_block..=max_block {
             let time = Instant::now();
+            // 根据block number获取td
             let td = provider
                 .header_td_by_number(block_number)?
                 .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
+            // 根据block number获取block
             let block = provider
                 .block_with_senders(block_number)?
                 .ok_or_else(|| ProviderError::BlockNotFound(block_number.into()))?;
 
+            // 获取block使用的时间
             fetch_block_duration += time.elapsed();
 
+            // 累计消耗的gas
             cumulative_gas += block.gas_used;
 
             // Configure the executor to use the current state.
+            // 配置executor来使用当前的state
             trace!(target: "sync::stages::execution", number = block_number, txs = block.body.len(), "Executing block");
 
             let time = Instant::now();
             // Execute the block
+            // 执行block
             let (block, senders) = block.into_components();
             executor.execute_and_verify_receipt(&block, td, Some(senders)).map_err(|error| {
                 StageError::ExecutionError { block: block.header.clone().seal_slow(), error }
@@ -165,6 +198,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
             execution_duration += time.elapsed();
 
             // Gas metrics
+            // gas metrics
             if let Some(metrics_tx) = &mut self.metrics_tx {
                 let _ =
                     metrics_tx.send(MetricEvent::ExecutionStageGas { gas: block.header.gas_used });
@@ -175,6 +209,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
             stage_checkpoint.progress.processed += block.gas_used;
 
             // Check if we should commit now
+            // 检查我们是否需要commit
             let bundle_size_hint = executor.size_hint().unwrap_or_default() as u64;
             if self.thresholds.is_end_of_batch(
                 block_number - start_block,
@@ -190,6 +225,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
 
         let time = Instant::now();
         // write output
+        // 写output
         state.write_to_db(provider.tx_ref(), OriginalValuesKnown::Yes)?;
         let db_write_duration = time.elapsed();
         debug!(
@@ -212,15 +248,21 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
     }
 
     /// Adjusts the prune modes related to changesets.
+    /// 调整和changeset相关的prune modes
     ///
     /// This function verifies whether the [`super::MerkleStage`] or Hashing stages will run from
     /// scratch. If at least one stage isn't starting anew, it implies that pruning of
     /// changesets cannot occur. This is determined by checking the highest clean threshold
     /// (`self.external_clean_threshold`) across the stages.
+    /// 这个函数校验是否[`super::MerkleStage`]或者Hashing
+    /// stages会从头开始运行，如果至少一个stage不会从头开始，这意味着pruning of
+    /// changesets不会发生，这取决于检查最高的clean threshold，跨越stages
     ///
     /// Given that `start_block` changes with each checkpoint, it's necessary to inspect
     /// [`tables::AccountsTrie`] to ensure that [`super::MerkleStage`] hasn't
     /// been previously executed.
+    /// 给定每个checkpoint的`start_block`
+    /// changes，有必要检查[`tables::AccountsTrie`]来确保[`super::MerkleStage`]之前没有执行
     fn adjust_prune_modes<DB: Database>(
         &self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -327,8 +369,10 @@ fn calculate_gas_used_from_headers<DB: Database>(
 }
 
 /// The size of the stack used by the executor.
+/// executor使用的stack的大小
 ///
 /// Ensure the size is aligned to 8 as this is usually more efficient.
+/// 确保size和8对齐，更高效
 ///
 /// Currently 64 megabytes.
 const BIG_STACK_SIZE: usize = 64 * 1024 * 1024;
@@ -360,6 +404,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
                 .stack_size(BIG_STACK_SIZE)
                 .spawn_scoped(scope, || {
                     // execute and store output to results
+                    // 执行并且存储output到results
                     self.execute_inner(provider, input)
                 })
                 .expect("Expects that thread name is not null");
@@ -375,6 +420,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
     ) -> Result<UnwindOutput, StageError> {
         let tx = provider.tx_ref();
         // Acquire changeset cursors
+        // 需要changeset的cursors
         let mut account_changeset = tx.cursor_dup_write::<tables::AccountChangeSet>()?;
         let mut storage_changeset = tx.cursor_dup_write::<tables::StorageChangeSet>()?;
 
@@ -388,11 +434,14 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // get all batches for account change
+        // 获取account change所有的batches
         // Check if walk and walk_dup would do the same thing
+        // 检查是否walk以及walk_dup可以做同样的事情
         let account_changeset_batch =
             account_changeset.walk_range(range.clone())?.collect::<Result<Vec<_>, _>>()?;
 
         // revert all changes to PlainState
+        // 回退所有应用到PlainState的改变
         for (_, changeset) in account_changeset_batch.into_iter().rev() {
             if let Some(account_info) = changeset.info {
                 tx.put::<tables::PlainAccountState>(changeset.address, account_info)?;
@@ -402,11 +451,13 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // get all batches for storage change
+        // 获取storage change的变更
         let storage_changeset_batch = storage_changeset
             .walk_range(BlockNumberAddress::range(range.clone()))?
             .collect::<Result<Vec<_>, _>>()?;
 
         // revert all changes to PlainStorage
+        // 回退所有到PlainStorage的变更
         let mut plain_storage_cursor = tx.cursor_dup_write::<tables::PlainStorageState>()?;
 
         for (key, storage) in storage_changeset_batch.into_iter().rev() {
@@ -422,6 +473,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // Discard unwinded changesets
+        // 丢弃unwinded changesets
         provider.unwind_table_by_num::<tables::AccountChangeSet>(unwind_to)?;
 
         let mut rev_storage_changeset_walker = storage_changeset.walk_back(None)?;
@@ -434,6 +486,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         }
 
         // Look up the start index for the transaction range
+        // 查找transaction range的start index
         let first_tx_num = provider
             .block_body_indices(*range.start())?
             .ok_or(ProviderError::BlockBodyIndicesNotFound(*range.start()))?
@@ -442,6 +495,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
         let mut stage_checkpoint = input.checkpoint.execution_stage_checkpoint();
 
         // Unwind all receipts for transactions in the block range
+        // Unwind block range内所有的txs
         let mut cursor = tx.cursor_write::<tables::Receipts>()?;
         let mut reverse_walker = cursor.walk_back(None)?;
 
@@ -467,19 +521,26 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
 }
 
 /// The thresholds at which the execution stage writes state changes to the database.
+/// execution stage写入state changes到db的阈值
 ///
 /// If either of the thresholds (`max_blocks` and `max_changes`) are hit, then the execution stage
 /// commits all pending changes to the database.
+/// 如果任一thresholds（`max_blocks`以及`max_changes`）被触发，之后execution
+/// stage会提交所有的pending changes到db
 ///
 /// A third threshold, `max_changesets`, can be set to periodically write changesets to the
 /// current database transaction, which frees up memory.
+/// 第三个threshold，`max_changesets`，可以被设置来阶段性地写changsets到当前的db tx，这会释放内存
 #[derive(Debug, Clone)]
 pub struct ExecutionStageThresholds {
     /// The maximum number of blocks to process before the execution stage commits.
+    /// 在execution stage提交之前，处理的最大数目的blocks
     pub max_blocks: Option<u64>,
     /// The maximum amount of state changes to keep in memory before the execution stage commits.
+    /// 在execution stage提交之前，保存在内存中最大数目的stage changes
     pub max_changes: Option<u64>,
     /// The maximum amount of cumultive gas used in the batch.
+    /// batch中使用的最大数目的cumultive gas
     pub max_cumulative_gas: Option<u64>,
 }
 

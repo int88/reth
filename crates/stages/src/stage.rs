@@ -37,16 +37,19 @@ impl ExecInput {
     }
 
     /// Returns `true` if the target block number has already been reached.
+    /// 返回`true`，如果target block number已经到了
     pub fn target_reached(&self) -> bool {
         self.checkpoint().block_number >= self.target()
     }
 
     /// Return the target block number or default.
+    /// 返回target block number或者默认值
     pub fn target(&self) -> BlockNumber {
         self.target.unwrap_or_default()
     }
 
     /// Return next block range that needs to be executed.
+    /// 返回需要被执行的下一个block range
     pub fn next_block_range(&self) -> RangeInclusive<BlockNumber> {
         let (range, _) = self.next_block_range_with_threshold(u64::MAX);
         range

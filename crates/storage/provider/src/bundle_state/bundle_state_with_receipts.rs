@@ -354,19 +354,23 @@ impl BundleStateWithReceipts {
     }
 
     /// Write bundle state to database.
+    /// 将bundle state写入db
     ///
     /// `omit_changed_check` should be set to true of bundle has some of it data
     /// detached, This would make some original values not known.
+    /// `omit_changed_check`应该被设置为true，bundle有些数据detached，这会让原始的数据未知
     pub fn write_to_db<'a, TX: DbTxMut<'a> + DbTx<'a>>(
         self,
         tx: &TX,
         is_value_known: OriginalValuesKnown,
     ) -> Result<(), DatabaseError> {
+        // 获取plain state
         let (plain_state, reverts) = self.bundle.into_plain_state_and_reverts(is_value_known);
 
         StateReverts(reverts).write_to_db(tx, self.first_block)?;
 
         // write receipts
+        // 写入receipts
         let mut bodies_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
         let mut receipts_cursor = tx.cursor_write::<tables::Receipts>()?;
 

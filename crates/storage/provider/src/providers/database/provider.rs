@@ -1039,6 +1039,7 @@ impl<'this, TX: DbTx<'this>> BlockReader for DatabaseProvider<'this, TX> {
     }
 
     /// Returns the block with senders with matching number from database.
+    /// 从db中返回有senders的block，匹配对应的number
     ///
     /// **NOTE: The transactions have invalid hashes, since they would need to be calculated on the
     /// spot, and we want fast querying.**

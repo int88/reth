@@ -48,6 +48,7 @@ pub trait BlockExecutor {
     ) -> Result<(), BlockExecutionError>;
 
     /// Executes the block and checks receipts.
+    /// 执行block并且检查receipts
     fn execute_and_verify_receipt(
         &mut self,
         block: &Block,
@@ -56,6 +57,7 @@ pub trait BlockExecutor {
     ) -> Result<(), BlockExecutionError>;
 
     /// Return bundle state. This is output of executed blocks.
+    /// 返回bundle state，这是执行的blocks的输出
     fn take_output_state(&mut self) -> BundleStateWithReceipts;
 
     /// Internal statistics of execution.
@@ -69,9 +71,11 @@ pub trait BlockExecutor {
 /// 一个[BlockExecutor]能够在内存处理data的pruning，最终会写入到db?
 pub trait PrunableBlockExecutor: BlockExecutor {
     /// Set tip - highest known block number.
+    /// 设置tip - 最高已知的block number
     fn set_tip(&mut self, tip: BlockNumber);
 
     /// Set prune modes.
+    /// 设置prune modes
     fn set_prune_modes(&mut self, prune_modes: PruneModes);
 }
 

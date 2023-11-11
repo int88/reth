@@ -13,27 +13,34 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tracing::trace;
 
 /// Alias type for metric producers to use.
+/// 让metric producers使用的alias类型
 pub type MetricEventsSender = UnboundedSender<MetricEvent>;
 
 /// Collection of metric events.
+/// 一系列的metric事件
 #[derive(Clone, Copy, Debug)]
 pub enum MetricEvent {
     /// Sync reached new height. All stage checkpoints are updated.
+    /// Sync到达了新的height，所有的stage checkpoints被更新
     SyncHeight {
         /// Maximum height measured in block number that sync reached.
+        /// 衡量sync到达的最大的height
         height: BlockNumber,
     },
     /// Stage reached new checkpoint.
+    /// Stage到达的新的checkpoint
     StageCheckpoint {
         /// Stage ID.
         stage_id: StageId,
         /// Stage checkpoint.
         checkpoint: StageCheckpoint,
         /// Maximum known block number reachable by this stage.
+        /// 这个stage到达的最高已知的block number
         /// If specified, `entities_total` metric is updated.
         max_block_number: Option<BlockNumber>,
     },
     /// Execution stage processed some amount of gas.
+    /// Execution stage消耗了一些gas
     ExecutionStageGas {
         /// Gas processed.
         gas: u64,
