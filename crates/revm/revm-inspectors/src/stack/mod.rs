@@ -13,9 +13,13 @@ mod maybe_owned;
 pub use maybe_owned::MaybeOwnedInspector;
 
 /// One can hook on inspector execution in 3 ways:
+/// 一个hook可以在inspector执行过程中分为三种方式：
 /// - Block: Hook on block execution
+/// - Block: 在一个block执行过程中的hook
 /// - BlockWithIndex: Hook on block execution transaction index
+/// - BlockWithIndex: 在block执行的tx index的hook
 /// - Transaction: Hook on a specific transaction hash
+/// - Transaction: 在特定的transanction hash执行的hook
 #[derive(Debug, Default, Clone)]
 pub enum Hook {
     #[default]
@@ -30,14 +34,19 @@ pub enum Hook {
 }
 
 /// An inspector that calls multiple inspectors in sequence.
+/// 一个inspector顺序调用多个inspectors
 ///
 /// If a call to an inspector returns a value other than [InstructionResult::Continue] (or
 /// equivalent) the remaining inspectors are not called.
+/// 如果一个对于inspector的调用返回一个值，而不是[InstructionResult::Continue]或者其他类似的，
+/// 剩余的inspector不再被调用
 #[derive(Default, Clone)]
 pub struct InspectorStack {
     /// An inspector that prints the opcode traces to the console.
+    /// 一个inspector，打印opcode traces到console
     pub custom_print_tracer: Option<CustomPrintTracer>,
     /// The provided hook
+    /// 提供的hook
     pub hook: Hook,
 }
 

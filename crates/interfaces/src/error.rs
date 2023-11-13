@@ -1,4 +1,5 @@
 /// Result alias for [`RethError`]
+/// 对于[`RethError`]的Result别名
 pub type RethResult<T> = Result<T, RethError>;
 
 /// Core error variants possible when interacting with the blockchain

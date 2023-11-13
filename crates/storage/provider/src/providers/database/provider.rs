@@ -79,6 +79,7 @@ impl<'this, DB: Database> DerefMut for DatabaseProviderRW<'this, DB> {
 
 impl<'this, DB: Database> DatabaseProviderRW<'this, DB> {
     /// Commit database transaction
+    /// 提交db的tx
     pub fn commit(self) -> RethResult<bool> {
         self.0.commit()
     }
@@ -107,6 +108,7 @@ where
 
 impl<'this, TX: DbTxMut<'this>> DatabaseProvider<'this, TX> {
     /// Creates a provider with an inner read-write transaction.
+    /// 创建一个provider，有一个内置的读写tx
     pub fn new_rw(tx: TX, chain_spec: Arc<ChainSpec>) -> Self {
         Self { tx, chain_spec, _phantom_data: std::marker::PhantomData }
     }
@@ -2008,6 +2010,7 @@ impl<'this, TX: DbTxMut<'this> + DbTx<'this>> BlockWriter for DatabaseProvider<'
             block.body.into_iter().zip(senders).collect()
         };
 
+        // 遍历tx iter
         for (transaction, sender) in tx_iter {
             let hash = transaction.hash();
 

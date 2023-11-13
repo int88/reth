@@ -380,8 +380,10 @@ dupsort!(
 
 dupsort!(
     /// Stores the state of a storage key before a certain transaction changed it.
+    /// 存储一个storage key的state，在一个特定的tx改变它之前
     /// If [`StorageEntry::value`] is zero, this means storage was not existing
     /// and needs to be removed.
+    /// 如果[`StorageEntry::value`]为0，这意味着storage不存在并且需要被移除
     ( StorageChangeSet ) BlockNumberAddress | [H256] StorageEntry
 );
 

@@ -288,15 +288,19 @@ pub struct ChainSpec {
     pub paris_block_and_final_difficulty: Option<(u64, U256)>,
 
     /// Timestamps of various hardforks
+    /// 各种hardforks的时间戳
     ///
     /// This caches entries in `hardforks` map
+    /// 这缓存`hardforks` map中的entries
     #[serde(skip, default)]
     pub fork_timestamps: ForkTimestamps,
 
     /// The active hard forks and their activation conditions
+    /// active hard forks以及它们的激活条件
     pub hardforks: BTreeMap<Hardfork, ForkCondition>,
 
     /// The deposit contract deployed for PoS
+    /// 对于PoS部署的deposit contract
     #[serde(skip, default)]
     pub deposit_contract: Option<DepositContract>,
 
@@ -306,6 +310,9 @@ pub struct ChainSpec {
     /// The batch sizes for pruner, per block. In the actual pruner run it will be multiplied by
     /// the amount of blocks between pruner runs to account for the difference in amount of new
     /// data coming in.
+    /// 对于pruner的batch
+    /// size，对于每个block，在真正的pruner运行的时候，他会乘以blocks的数目，在pruner运行的时候，
+    /// 对于新来的data
     #[serde(default)]
     pub prune_batch_sizes: PruneBatchSizes,
 }
@@ -770,6 +777,7 @@ impl ChainSpecBuilder {
     }
 
     /// Enable Berlin at genesis.
+    /// 在genesis中使能Berlin
     pub fn berlin_activated(mut self) -> Self {
         self = self.istanbul_activated();
         self.hardforks.insert(Hardfork::Berlin, ForkCondition::Block(0));
@@ -842,25 +850,34 @@ impl From<&Arc<ChainSpec>> for ChainSpecBuilder {
 }
 
 /// The condition at which a fork is activated.
+/// 一个fork被激活的条件
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ForkCondition {
     /// The fork is activated after a certain block.
+    /// 在一个特定的block之后激活fork
     Block(BlockNumber),
     /// The fork is activated after a total difficulty has been reached.
+    /// 在达到特定的td之后使能fork
     TTD {
         /// The block number at which TTD is reached, if it is known.
+        /// 在block number之后 TTD到达，如果他已知
         ///
         /// This should **NOT** be set unless you want this block advertised as [EIP-2124][eip2124]
         /// `FORK_NEXT`. This is currently only the case for Sepolia and Holesky.
+        /// 这不应该被设置，除非你想要这个block在[EIP-2124][eip2124]的`FORK_NEXT`被建议，
+        /// 现在只有Sepolia和Holesky
         ///
         /// [eip2124]: https://eips.ethereum.org/EIPS/eip-2124
         fork_block: Option<BlockNumber>,
         /// The total difficulty after which the fork is activated.
+        /// 在td之后，fork被激活
         total_difficulty: U256,
     },
     /// The fork is activated after a specific timestamp.
+    /// fork在特定的时间戳之后被激活
     Timestamp(u64),
     /// The fork is never activated
+    /// fork不会被激活
     #[default]
     Never,
 }

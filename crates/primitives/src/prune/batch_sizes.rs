@@ -15,8 +15,10 @@ pub struct PruneBatchSizes {
     /// 每个block清理的最大的receipts的数目
     receipts: usize,
     /// Maximum number of transaction lookup entries to prune, per block.
+    /// 对于每个block，清理的最大的tx lookup的数目
     transaction_lookup: usize,
     /// Maximum number of transaction senders to prune, per block.
+    /// 对于每个block，清理的最大的tx senders的数目
     transaction_senders: usize,
     /// Maximum number of account history entries to prune, per block.
     /// Measured in the number of `AccountChangeSet` table rows.

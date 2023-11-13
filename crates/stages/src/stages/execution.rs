@@ -385,6 +385,7 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
     }
 
     /// Execute the stage
+    /// 执行stage
     async fn execute(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -392,11 +393,14 @@ impl<EF: ExecutorFactory, DB: Database> Stage<DB> for ExecutionStage<EF> {
     ) -> Result<ExecOutput, StageError> {
         // For Ethereum transactions that reaches the max call depth (1024) revm can use more stack
         // space than what is allocated by default.
+        // 对于Ethereum txs，到达了max call depth(1024)，revm可以使用更多的stack，比默认分配的
         //
         // To make sure we do not panic in this case, spawn a thread with a big stack allocated.
+        // 为了确保我们不回panic，在这种情况，生成一个stack，有着一个大的stack
         //
         // A fix in revm is pending to give more insight into the stack size, which we can use later
         // to optimize revm or move data to the heap.
+        // revm中的一个fix处于pending，为了对于stack size有更多的insight，我们后面可以用来优化rev
         //
         // See https://github.com/bluealloy/revm/issues/305
         std::thread::scope(|scope| {
@@ -586,11 +590,13 @@ mod tests {
     use std::sync::Arc;
 
     fn stage() -> ExecutionStage<Factory> {
+        // 构建factory
         let factory =
             Factory::new(Arc::new(ChainSpecBuilder::mainnet().berlin_activated().build()));
         ExecutionStage::new(
             factory,
             ExecutionStageThresholds {
+                // 最大的blocks的数目为100
                 max_blocks: Some(100),
                 max_changes: None,
                 max_cumulative_gas: None,
@@ -742,13 +748,16 @@ mod tests {
         provider.commit().unwrap();
 
         // insert pre state
+        // 插入pre state
         let provider = factory.provider_rw().unwrap();
 
+        // 从provider中获取tx
         let db_tx = provider.tx_ref();
         let acc1 = H160(hex!("1000000000000000000000000000000000000000"));
         let acc2 = H160(hex!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"));
         let code = hex!("5a465a905090036002900360015500");
         let balance = U256::from(0x3635c9adc5dea00000u128);
+        // 对code进行hash
         let code_hash = keccak256(code);
         db_tx
             .put::<tables::PlainAccountState>(
@@ -762,6 +771,7 @@ mod tests {
                 Account { nonce: 0, balance, bytecode_hash: None },
             )
             .unwrap();
+        // 插入Bytecodes
         db_tx.put::<tables::Bytecodes>(code_hash, Bytecode::new_raw(code.to_vec().into())).unwrap();
         provider.commit().unwrap();
 
@@ -789,15 +799,19 @@ mod tests {
         let provider = factory.provider().unwrap();
 
         // check post state
+        // 检查post state
         let account1 = H160(hex!("1000000000000000000000000000000000000000"));
+        // 构建account1的info
         let account1_info =
             Account { balance: U256::ZERO, nonce: 0x00, bytecode_hash: Some(code_hash) };
         let account2 = H160(hex!("2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"));
+        // 构建account2的info
         let account2_info = Account {
             balance: U256::from(0x1bc16d674ece94bau128),
             nonce: 0x00,
             bytecode_hash: None,
         };
+        // 构建account3的info
         let account3 = H160(hex!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"));
         let account3_info = Account {
             balance: U256::from(0x3635c9adc5de996b46u128),
@@ -806,6 +820,7 @@ mod tests {
         };
 
         // assert accounts
+        // 对accounts断言
         assert_eq!(
             provider.basic_account(account1),
             Ok(Some(account1_info)),
@@ -823,6 +838,7 @@ mod tests {
         );
         // assert storage
         // Get on dupsort would return only first value. This is good enough for this test.
+        // 对storage进行断言，获取dupsort只返回第一个值，这对于这个测试足够了
         assert_eq!(
             provider.tx_ref().get::<tables::PlainStorageState>(account1),
             Ok(Some(StorageEntry { key: H256::from_low_u64_be(1), value: U256::from(2) })),
@@ -848,9 +864,11 @@ mod tests {
         provider.commit().unwrap();
 
         // variables
+        // 变量
         let code = hex!("5a465a905090036002900360015500");
         let balance = U256::from(0x3635c9adc5dea00000u128);
         let code_hash = keccak256(code);
+        // pre state
         // pre state
         let provider = factory.provider_rw().unwrap();
 
@@ -860,19 +878,23 @@ mod tests {
         let acc2 = H160(hex!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"));
         let acc2_info = Account { nonce: 0, balance, bytecode_hash: None };
 
+        // 写入plain account state和bytecodes
         db_tx.put::<tables::PlainAccountState>(acc1, acc1_info).unwrap();
         db_tx.put::<tables::PlainAccountState>(acc2, acc2_info).unwrap();
         db_tx.put::<tables::Bytecodes>(code_hash, Bytecode::new_raw(code.to_vec().into())).unwrap();
         provider.commit().unwrap();
 
         // execute
+        // 执行
         let provider = factory.provider_rw().unwrap();
         let mut execution_stage = stage();
         let result = execution_stage.execute(&provider, input).await.unwrap();
         provider.commit().unwrap();
 
         let provider = factory.provider_rw().unwrap();
+        // 又构建stge
         let mut stage = stage();
+        // 对stage进行unwind
         let result = stage
             .unwind(
                 &provider,
@@ -917,11 +939,13 @@ mod tests {
         let genesis = SealedBlock::decode(&mut genesis_rlp).unwrap();
         let mut block_rlp = hex!("f9025ff901f7a0c86e8cc0310ae7c531c758678ddbfd16fc51c8cef8cec650b032de9869e8b94fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347942adc25665018aa1fe0e6bc666dac8fc2697ff9baa050554882fbbda2c2fd93fdc466db9946ea262a67f7a76cc169e714f105ab583da00967f09ef1dfed20c0eacfaa94d5cd4002eda3242ac47eae68972d07b106d192a0e3c8b47fbfc94667ef4cceb17e5cc21e3b1eebd442cebb27f07562b33836290db90100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008302000001830f42408238108203e800a00000000000000000000000000000000000000000000000000000000000000000880000000000000000f862f860800a83061a8094095e7baea6a6c7c4c2dfeb977efac326af552d8780801ba072ed817487b84ba367d15d2f039b5fc5f087d0a8882fbdf73e8cb49357e1ce30a0403d800545b8fc544f92ce8124e2255f8c3c6af93f28243a120585d4c4c6a2a3c0").as_slice();
         let block = SealedBlock::decode(&mut block_rlp).unwrap();
+        // 插入provider
         provider.insert_block(genesis, None, None).unwrap();
         provider.insert_block(block.clone(), None, None).unwrap();
         provider.commit().unwrap();
 
         // variables
+        // 变量
         let caller_address = H160(hex!("a94f5374fce5edbc8e2a8697c15331677e6ebf0b"));
         let destroyed_address = H160(hex!("095e7baea6a6c7c4c2dfeb977efac326af552d87"));
         let beneficiary_address = H160(hex!("2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"));
@@ -931,22 +955,27 @@ mod tests {
         let code_hash = keccak256(code);
 
         // pre state
+        // pre state
         let caller_info = Account { nonce: 0, balance, bytecode_hash: None };
         let destroyed_info =
             Account { nonce: 0, balance: U256::ZERO, bytecode_hash: Some(code_hash) };
 
         // set account
+        // 设置account
         let provider = factory.provider_rw().unwrap();
+        // 插入plain account state
         provider.tx_ref().put::<tables::PlainAccountState>(caller_address, caller_info).unwrap();
         provider
             .tx_ref()
             .put::<tables::PlainAccountState>(destroyed_address, destroyed_info)
             .unwrap();
+        // 插入code hash
         provider
             .tx_ref()
             .put::<tables::Bytecodes>(code_hash, Bytecode::new_raw(code.to_vec().into()))
             .unwrap();
         // set storage to check when account gets destroyed.
+        // 设置storage进行检查，当accounts被摧毁的时候
         provider
             .tx_ref()
             .put::<tables::PlainStorageState>(
@@ -965,23 +994,30 @@ mod tests {
         provider.commit().unwrap();
 
         // execute
+        // 执行
         let provider = factory.provider_rw().unwrap();
         let mut execution_stage = stage();
         let _ = execution_stage.execute(&provider, input).await.unwrap();
         provider.commit().unwrap();
 
         // assert unwind stage
+        // 校验unwind stage
         let provider = factory.provider_rw().unwrap();
+        // account已经被摧毁了
         assert_eq!(provider.basic_account(destroyed_address), Ok(None), "Account was destroyed");
 
         assert_eq!(
             provider.tx_ref().get::<tables::PlainStorageState>(destroyed_address),
             Ok(None),
+            // 对于destroyed account没有storage
             "There is storage for destroyed account"
         );
         // drops tx so that it returns write privilege to test_tx
+        // 丢弃tx，这样他返回对于test_tx的写权限
         drop(provider);
+        // 获取plain accounts
         let plain_accounts = test_tx.table::<tables::PlainAccountState>().unwrap();
+        // 获取plain storage
         let plain_storage = test_tx.table::<tables::PlainStorageState>().unwrap();
 
         assert_eq!(
@@ -1005,12 +1041,14 @@ mod tests {
                 )
             ]
         );
+        // plain storage为空
         assert!(plain_storage.is_empty());
 
         let account_changesets = test_tx.table::<tables::AccountChangeSet>().unwrap();
         let storage_changesets = test_tx.table::<tables::StorageChangeSet>().unwrap();
 
         assert_eq!(
+            // 校验account changeset
             account_changesets,
             vec![
                 (
@@ -1026,6 +1064,7 @@ mod tests {
         );
 
         assert_eq!(
+            // 校验storage changsets
             storage_changesets,
             vec![
                 (

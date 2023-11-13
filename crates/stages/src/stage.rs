@@ -127,13 +127,17 @@ impl ExecInput {
 }
 
 /// Stage unwind input, see [Stage::unwind].
+/// Stage unwind的输入
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct UnwindInput {
     /// The current highest checkpoint of the stage.
+    /// stage当前最高的checkpoint
     pub checkpoint: StageCheckpoint,
     /// The block to unwind to.
+    /// unwind到的block
     pub unwind_to: BlockNumber,
     /// The bad block that caused the unwind, if any.
+    /// 导致unwind的bad block，如果有的话
     pub bad_block: Option<BlockNumber>,
 }
 
@@ -182,9 +186,11 @@ impl ExecOutput {
 }
 
 /// The output of a stage unwinding.
+/// 一个stage unwind的结果
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct UnwindOutput {
     /// The checkpoint at which the stage has unwound to.
+    /// stage已经unwind to到的chekpoint
     pub checkpoint: StageCheckpoint,
 }
 
