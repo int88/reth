@@ -25,6 +25,7 @@ pub struct ExecInput {
 
 impl ExecInput {
     /// Return the checkpoint of the stage or default.
+    /// 返回这个stage的checkpoint或者默认值
     pub fn checkpoint(&self) -> StageCheckpoint {
         self.checkpoint.unwrap_or_default()
     }
@@ -51,17 +52,21 @@ impl ExecInput {
     /// Return next block range that needs to be executed.
     /// 返回需要被执行的下一个block range
     pub fn next_block_range(&self) -> RangeInclusive<BlockNumber> {
+        // 忽略第二个返回值，表明是否是final range
         let (range, _) = self.next_block_range_with_threshold(u64::MAX);
         range
     }
 
     /// Return true if this is the first block range to execute.
+    /// 返回true，如果这是执行的第一个block range
     pub fn is_first_range(&self) -> bool {
         self.checkpoint.is_none()
     }
 
     /// Return the next block range to execute.
+    /// 返回下一个block range执行
     /// Return pair of the block range and if this is final block range.
+    /// 返回pairt of block range并且是否是final block range
     pub fn next_block_range_with_threshold(
         &self,
         threshold: u64,
@@ -73,6 +78,7 @@ impl ExecInput {
         let end = min(target, current_block.block_number.saturating_add(threshold));
 
         let is_final_range = end == target;
+        // 如果end和target一致，说明的final range
         (start..=end, is_final_range)
     }
 

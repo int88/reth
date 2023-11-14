@@ -272,6 +272,7 @@ table!(
 
 table!(
     /// Stores the uncles/ommers of the block.
+    /// 存储block的uncles/ommers
     ( BlockOmmers ) BlockNumber | StoredBlockOmmers
 );
 

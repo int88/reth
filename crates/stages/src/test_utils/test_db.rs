@@ -84,6 +84,7 @@ impl TestTransaction {
     {
         let mut tx = self.inner_rw();
         f(tx.tx_ref())?;
+        // 提交tx
         tx.commit().expect("failed to commit");
         Ok(())
     }
@@ -209,8 +210,11 @@ impl TestTransaction {
         tx: &'a TX,
         header: &SealedHeader,
     ) -> Result<(), DbError> {
+        // 插入canonical headers
         tx.put::<tables::CanonicalHeaders>(header.number, header.hash())?;
+        // 插入header numbers
         tx.put::<tables::HeaderNumbers>(header.hash(), header.number)?;
+        // 插入headers
         tx.put::<tables::Headers>(header.number, header.clone().unseal())
     }
 
@@ -225,17 +229,22 @@ impl TestTransaction {
     }
 
     /// Inserts total difficulty of headers into the corresponding tables.
+    /// 插入headers的td到对应的tables
     ///
     /// Superset functionality of [TestTransaction::insert_headers].
+    /// 支持[TestTransaction::insert_headers]功能的超集
     pub(crate) fn insert_headers_with_td<'a, I>(&self, headers: I) -> Result<(), DbError>
     where
+        // 一个header的iterator
         I: Iterator<Item = &'a SealedHeader>,
     {
         self.commit(|tx| {
             let mut td = U256::ZERO;
             headers.into_iter().try_for_each(|header| {
+                //插入header
                 Self::insert_header(tx, header)?;
                 td += header.difficulty;
+                // 写入HeaderTD的table
                 tx.put::<tables::HeaderTD>(header.number, td.into())
             })
         })

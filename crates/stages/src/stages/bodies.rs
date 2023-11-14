@@ -19,8 +19,10 @@ use tracing::*;
 
 // TODO(onbjerg): Metrics and events (gradual status for e.g. CLI)
 /// The body stage downloads block bodies.
+/// body stage下载block bodies
 ///
 /// The body stage downloads block bodies for all block headers stored locally in the database.
+/// body stage下载block bodies，对于所有存储在db中的block headers
 ///
 /// # Empty blocks
 ///
@@ -30,6 +32,8 @@ use tracing::*;
 ///
 /// This also means that if there is no body for the block in the database (assuming the
 /// block number <= the synced block of this stage), then the block can be considered empty.
+/// 这同时意味着如果如果在db中对于block没有body（假设block number <= 这个stage的synced
+/// block），那么block可以认为为空
 ///
 /// # Tables
 ///
@@ -43,6 +47,7 @@ use tracing::*;
 /// # Genesis
 ///
 /// This stage expects that the genesis has been inserted into the appropriate tables:
+/// 这个stage期望genesis已经被插入到合适的tables
 ///
 /// - The header tables (see [`HeaderStage`][crate::stages::HeaderStage])
 /// - The [`BlockOmmers`][reth_db::tables::BlockOmmers] table
@@ -65,6 +70,8 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
 
     /// Download block bodies from the last checkpoint for this stage up until the latest synced
     /// header, limited by the stage's batch size.
+    /// 下载block bodies，从这个stage的last checkpoint，直到latest synced header，被stage的batch
+    /// size限制
     async fn execute(
         &mut self,
         provider: &DatabaseProviderRW<'_, &DB>,
@@ -76,10 +83,12 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
 
         let range = input.next_block_range();
         // Update the header range on the downloader
+        // 更新downloader中的header range
         self.downloader.set_download_range(range.clone())?;
         let (from_block, to_block) = range.into_inner();
 
         // Cursors used to write bodies, ommers and transactions
+        // cursors用于写入bodies,ommers以及txs
         let tx = provider.tx_ref();
         let mut block_indices_cursor = tx.cursor_write::<tables::BlockBodyIndices>()?;
         let mut tx_cursor = tx.cursor_write::<tables::Transactions>()?;
@@ -88,12 +97,15 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         let mut withdrawals_cursor = tx.cursor_write::<tables::BlockWithdrawals>()?;
 
         // Get id for the next tx_num of zero if there are no transactions.
+        // 获取下一个tx_num的id，如果没有txs
         let mut next_tx_num = tx_cursor.last()?.map(|(id, _)| id + 1).unwrap_or_default();
 
         debug!(target: "sync::stages::bodies", stage_progress = from_block, target = to_block, start_tx_id = next_tx_num, "Commencing sync");
 
         // Task downloader can return `None` only if the response relaying channel was closed. This
         // is a fatal error to prevent the pipeline from running forever.
+        // Task downloader可以返回`None`，只有response relaying channel被关闭，这是一个fatal
+        // error，防止pipeline一直运行
         let downloaded_bodies =
             self.downloader.try_next().await?.ok_or(StageError::ChannelClosed)?;
 
@@ -102,6 +114,7 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
         let mut highest_block = from_block;
         for response in downloaded_bodies {
             // Write block
+            // 写入block
             let block_number = response.block_number();
 
             let block_indices = StoredBlockBodyIndices {
@@ -114,25 +127,31 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             match response {
                 BlockResponse::Full(block) => {
                     // write transaction block index
+                    // 写入tx block index
                     if !block.body.is_empty() {
                         tx_block_cursor.append(block_indices.last_tx_num(), block.number)?;
                     }
 
                     // Write transactions
+                    // 写入txs
                     for transaction in block.body {
                         // Append the transaction
+                        // 扩展tx
                         tx_cursor.append(next_tx_num, transaction.into())?;
                         // Increment transaction id for each transaction.
+                        // 对于每个tx，增加tx id
                         next_tx_num += 1;
                     }
 
                     // Write ommers if any
+                    // 写入ommers，如果有的话
                     if !block.ommers.is_empty() {
                         ommers_cursor
                             .append(block_number, StoredBlockOmmers { ommers: block.ommers })?;
                     }
 
                     // Write withdrawals if any
+                    // 写入withdrawals，如果有的话
                     if let Some(withdrawals) = block.withdrawals {
                         if !withdrawals.is_empty() {
                             withdrawals_cursor
@@ -144,14 +163,19 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             };
 
             // insert block meta
+            // 插入block meta
             block_indices_cursor.append(block_number, block_indices)?;
 
+            // 重置highest block
             highest_block = block_number;
         }
 
         // The stage is "done" if:
         // - We got fewer blocks than our target
         // - We reached our target and the target was not limited by the batch size of the stage
+        // stage为"done"，如果：
+        // - 我们获取比target更少的blocks
+        // - 我们到达了我们的target并且target没有被stage的batch size限制
         let done = highest_block == to_block;
         Ok(ExecOutput {
             checkpoint: StageCheckpoint::new(highest_block)
@@ -242,11 +266,13 @@ mod tests {
     stage_test_suite_ext!(BodyTestRunner, body);
 
     /// Checks that the stage downloads at most `batch_size` blocks.
+    /// 检查stage至多下载`batch_size`个blocks
     #[tokio::test]
     async fn partial_body_download() {
         let (stage_progress, previous_stage) = (1, 200);
 
         // Set up test runner
+        // 设置test runner
         let mut runner = BodyTestRunner::default();
         let input = ExecInput {
             target: Some(previous_stage),
@@ -256,26 +282,32 @@ mod tests {
 
         // Set the batch size (max we sync per stage execution) to less than the number of blocks
         // the previous stage synced (10 vs 20)
+        // 设置batch size（每个stage的执行，我们同步的最大值）少于之前stage同步的（10比20）
         let batch_size = 10;
         runner.set_batch_size(batch_size);
 
         // Run the stage
+        // 运行stage
         let rx = runner.execute(input);
 
         // Check that we only synced around `batch_size` blocks even though the number of blocks
         // synced by the previous stage is higher
+        // 检查我们只同步`batch_size`个blocks，即使之前stage同步的blocks数目更高
         let output = rx.await.unwrap();
         assert_matches!(
             output,
             Ok(ExecOutput { checkpoint: StageCheckpoint {
+                // 获取block number
                 block_number,
                 stage_checkpoint: Some(StageUnitCheckpoint::Entities(EntitiesCheckpoint {
+                    // 获取processed和total
                     processed, // 1 seeded block body + batch size
                     total // seeded headers
                 }))
             }, done: false }) if block_number < 200 &&
                 processed == 1 + batch_size && total == previous_stage
         );
+        // 校验执行
         assert!(runner.validate_execution(input, output.ok()).is_ok(), "execution validation");
     }
 
@@ -488,6 +520,7 @@ mod tests {
         };
 
         /// The block hash of the genesis block.
+        /// genesis block的block hash
         pub(crate) const GENESIS_HASH: H256 = H256::zero();
 
         /// A helper to create a collection of block bodies keyed by their hash.
@@ -503,6 +536,7 @@ mod tests {
         }
 
         /// A helper struct for running the [BodyStage].
+        /// 一个helper结构用于运行[BodyStage]
         pub(crate) struct BodyTestRunner {
             pub(crate) consensus: Arc<TestConsensus>,
             responses: HashMap<H256, BlockBody>,
@@ -516,6 +550,7 @@ mod tests {
                     consensus: Arc::new(TestConsensus::default()),
                     responses: HashMap::default(),
                     tx: TestTransaction::default(),
+                    // 设置默认的batch size
                     batch_size: 1000,
                 }
             }
@@ -523,6 +558,7 @@ mod tests {
 
         impl BodyTestRunner {
             pub(crate) fn set_batch_size(&mut self, batch_size: u64) {
+                // 重新设置batch size
                 self.batch_size = batch_size;
             }
 
@@ -558,10 +594,13 @@ mod tests {
                 let start = input.checkpoint().block_number;
                 let end = input.target();
                 let mut rng = generators::rng();
+                // 随机生成blocks
                 let blocks = random_block_range(&mut rng, start..=end, GENESIS_HASH, 0..2);
+                // 插入headers
                 self.tx.insert_headers_with_td(blocks.iter().map(|block| &block.header))?;
                 if let Some(progress) = blocks.first() {
                     // Insert last progress data
+                    // 插入最后处理的data
                     self.tx.commit(|tx| {
                         let body = StoredBlockBodyIndices {
                             first_tx_num: 0,
@@ -569,10 +608,12 @@ mod tests {
                         };
                         body.tx_num_range().try_for_each(|tx_num| {
                             let transaction = random_signed_tx(&mut rng);
+                            // 插入txs
                             tx.put::<tables::Transactions>(tx_num, transaction.into())
                         })?;
 
                         if body.tx_count != 0 {
+                            // 插入Transaction Block table
                             tx.put::<tables::TransactionBlock>(
                                 body.first_tx_num(),
                                 progress.number,
@@ -582,6 +623,7 @@ mod tests {
                         tx.put::<tables::BlockBodyIndices>(progress.number, body)?;
 
                         if !progress.ommers_hash_is_empty() {
+                            // 插入block ommer
                             tx.put::<tables::BlockOmmers>(
                                 progress.number,
                                 StoredBlockOmmers { ommers: progress.ommers.clone() },

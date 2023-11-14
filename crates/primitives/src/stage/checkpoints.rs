@@ -157,12 +157,15 @@ pub struct IndexHistoryCheckpoint {
 }
 
 /// Saves the progress of abstract stage iterating over or downloading entities.
+/// 保存抽象的stage的进度，遍历或者下载entities
 #[main_codec]
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 pub struct EntitiesCheckpoint {
     /// Number of entities already processed.
+    /// 已经处理的entities的数目
     pub processed: u64,
     /// Total entities to be processed.
+    /// 总共要处理的entities
     pub total: u64,
 }
 
@@ -256,6 +259,7 @@ impl Display for StageCheckpoint {
 // TODO(alexey): add a merkle checkpoint. Currently it's hard because [`MerkleCheckpoint`]
 //  is not a Copy type.
 /// Stage-specific checkpoint metrics.
+/// Stage特定的chekcpoint metrics
 #[derive_arbitrary(compact)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum StageUnitCheckpoint {
@@ -265,8 +269,10 @@ pub enum StageUnitCheckpoint {
     /// Saves the progress of StorageHashing stage.
     Storage(StorageHashingCheckpoint),
     /// Saves the progress of abstract stage iterating over or downloading entities.
+    /// 保存抽象的stage的进度，当遍历或下载entities
     Entities(EntitiesCheckpoint),
     /// Saves the progress of Execution stage.
+    /// 保存Execution stage的进度
     Execution(ExecutionCheckpoint),
     /// Saves the progress of Headers stage.
     Headers(HeadersCheckpoint),

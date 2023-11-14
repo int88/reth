@@ -4,8 +4,10 @@ use reth_primitives::{BlockNumber, SealedBlock, SealedHeader, U256};
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum BlockResponse {
     /// Full block response (with transactions or ommers)
+    /// 完整的block response（有txs以及ommers）
     Full(SealedBlock),
     /// The empty block response
+    /// 空的block response
     Empty(SealedHeader),
 }
 

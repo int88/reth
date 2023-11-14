@@ -132,12 +132,15 @@ impl NodeState {
             BeaconConsensusEngineEvent::CanonicalBlockAdded(block) => {
                 self.latest_canonical_engine_block = Some(block.number);
 
+                // block被添加到canonical chain
                 info!(number=block.number, hash=?block.hash, "Block added to canonical chain");
             }
             BeaconConsensusEngineEvent::CanonicalChainCommitted(head, elapsed) => {
+                // canonical chain被committed
                 info!(number=head.number, hash=?head.hash, ?elapsed, "Canonical chain committed");
             }
             BeaconConsensusEngineEvent::ForkBlockAdded(block) => {
+                // Block被添加到fork chain
                 info!(number=block.number, hash=?block.hash, "Block added to fork chain");
             }
         }

@@ -4,6 +4,7 @@ use reth_primitives::{SealedBlock, SealedHeader};
 use std::{sync::Arc, time::Duration};
 
 /// Events emitted by [crate::BeaconConsensusEngine].
+/// [crate::BeaconConsensusEngine]发射的事件
 #[derive(Clone, Debug)]
 pub enum BeaconConsensusEngineEvent {
     /// The fork choice state was updated.
