@@ -127,12 +127,15 @@ pub struct StorageHashingCheckpoint {
 }
 
 /// Saves the progress of Execution stage.
+/// 保存Execution stage的进度
 #[main_codec]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ExecutionCheckpoint {
     /// Block range which this checkpoint is valid for.
+    /// Block range在这个checkpoint是合法的
     pub block_range: CheckpointBlockRange,
     /// Progress measured in gas.
+    /// 以gas衡量的进度
     pub progress: EntitiesCheckpoint,
 }
 

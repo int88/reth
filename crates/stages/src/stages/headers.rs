@@ -560,10 +560,12 @@ mod tests {
             }
 
             async fn after_execution(&self, headers: Self::Seed) -> Result<(), TestRunnerError> {
+                // 扩展client
                 self.client.extend(headers.iter().map(|h| h.clone().unseal())).await;
                 let tip = if !headers.is_empty() {
                     headers.last().unwrap().hash()
                 } else {
+                    // 插入header
                     let tip = random_header(&mut generators::rng(), 0, None);
                     self.tx.insert_headers(std::iter::once(&tip))?;
                     tip.hash()
@@ -726,10 +728,12 @@ mod tests {
     }
 
     /// Execute the stage in two steps
+    /// 两个步骤执行stage
     #[tokio::test]
     async fn execute_from_previous_checkpoint() {
         let mut runner = HeadersTestRunner::with_linear_downloader();
         // pick range that's larger than the configured headers batch size
+        // 选择大于配置的header batch size的range
         let (checkpoint, previous_stage) = (600, 1200);
         let mut input = ExecInput {
             target: Some(previous_stage),
@@ -738,12 +742,15 @@ mod tests {
         let headers = runner.seed_execution(input).expect("failed to seed execution");
         let rx = runner.execute(input);
 
+        // 扩展client
         runner.client.extend(headers.iter().rev().map(|h| h.clone().unseal())).await;
 
         // skip `after_execution` hook for linear downloader
+        // 跳过`after_execution` hook，对于liner downloader
         let tip = headers.last().unwrap();
         runner.send_tip(tip.hash());
 
+        // 进行unwrap
         let result = rx.await.unwrap();
         assert_matches!(result, Ok(ExecOutput { checkpoint: StageCheckpoint {
             block_number,
@@ -761,6 +768,7 @@ mod tests {
             from == checkpoint && to == previous_stage &&
             processed == checkpoint + 500 && total == tip.number);
 
+        // 清理client
         runner.client.clear().await;
         runner.client.extend(headers.iter().take(101).map(|h| h.clone().unseal()).rev()).await;
         input.checkpoint = Some(result.unwrap().checkpoint);
@@ -783,6 +791,7 @@ mod tests {
         }, done: true }) if block_number == tip.number &&
             from == checkpoint && to == previous_stage &&
             // -1 because we don't need to download the local head
+            // -1 因为我们不需要下载local head
             processed == checkpoint + headers.len() as u64 - 1 && total == tip.number);
         assert!(runner.validate_execution(input, result.ok()).is_ok(), "validation failed");
     }

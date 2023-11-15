@@ -296,6 +296,7 @@ table!(
     /// 存储tx number到block number的映射
     ///
     /// The key is the highest transaction ID in the block.
+    /// key是block中最高的tx ID
     ( TransactionBlock ) TxNumber | BlockNumber
 );
 

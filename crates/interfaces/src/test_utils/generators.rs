@@ -32,11 +32,14 @@ pub fn rng() -> StdRng {
 }
 
 /// Generates a range of random [SealedHeader]s.
+/// 返回一系列随机的[SealedHeader]
 ///
 /// The parent hash of the first header
 /// in the result will be equal to `head`.
+/// 第一个header的parent hash会等于`header`
 ///
 /// The headers are assumed to not be correct if validated.
+/// headers假设不是正确的，如果校验的话
 pub fn random_header_range<R: Rng>(
     rng: &mut R,
     range: std::ops::Range<u64>,
@@ -44,6 +47,7 @@ pub fn random_header_range<R: Rng>(
 ) -> Vec<SealedHeader> {
     let mut headers = Vec::with_capacity(range.end.saturating_sub(range.start) as usize);
     for idx in range {
+        // 推入Header
         headers.push(random_header(
             rng,
             idx,
@@ -54,8 +58,10 @@ pub fn random_header_range<R: Rng>(
 }
 
 /// Generate a random [SealedHeader].
+/// 生成一个随机的[SealedHeader]
 ///
 /// The header is assumed to not be correct if validated.
+/// header假设是不正确的，如果被校验的话
 pub fn random_header<R: Rng>(rng: &mut R, number: u64, parent: Option<H256>) -> SealedHeader {
     let header = reth_primitives::Header {
         number,

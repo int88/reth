@@ -37,6 +37,7 @@ pub struct StoredBlockBodyIndices {
 
 impl StoredBlockBodyIndices {
     /// Return the range of transaction ids for this block.
+    /// 返回这个block的range of tx ids
     pub fn tx_num_range(&self) -> Range<TxNumber> {
         self.first_tx_num..self.first_tx_num + self.tx_count
     }

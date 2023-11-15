@@ -31,8 +31,10 @@ use tracing::info;
 pub const BODIES_DOWNLOADER_SCOPE: &str = "downloaders.bodies";
 
 /// Downloads bodies in batches.
+/// 批量下载bodies
 ///
 /// All blocks in a batch are fetched at the same time.
+/// 所有在一个batch中的blocks都一次性抓取
 #[must_use = "Stream does nothing unless polled"]
 #[derive(Debug)]
 pub struct BodiesDownloader<B: BodiesClient, DB> {
@@ -54,8 +56,10 @@ pub struct BodiesDownloader<B: BodiesClient, DB> {
     /// Current estimated size of buffered blocks in bytes.
     buffered_blocks_size_bytes: usize,
     /// The range of block numbers for body download.
+    /// block numbers的range
     download_range: RangeInclusive<BlockNumber>,
     /// The latest block number returned.
+    /// 最新返回的block number
     latest_queued_block_number: Option<BlockNumber>,
     /// Requests in progress
     in_progress_queue: BodiesRequestQueue<B>,
@@ -195,8 +199,10 @@ where
     }
 
     /// Clear all download related data.
+    /// 清理所有download相关的data
     ///
     /// Should be invoked upon encountering fatal error.
+    /// 在遇到fatal error的时候被调用
     fn clear(&mut self) {
         self.download_range = RangeInclusive::new(1, 0);
         self.latest_queued_block_number.take();
@@ -206,6 +212,7 @@ where
         self.buffered_blocks_size_bytes = 0;
 
         // reset metrics
+        // 重置metrics
         self.metrics.in_flight_requests.set(0.);
         self.metrics.buffered_responses.set(0.);
         self.metrics.buffered_blocks.set(0.);
@@ -312,24 +319,30 @@ where
     DB: Database + Unpin + 'static,
 {
     /// Set a new download range (exclusive).
+    /// 设置一个新的download range（排他性的）
     ///
     /// This method will drain all queued bodies, filter out ones outside the range and put them
     /// back into the buffer.
+    /// 这个方法会排干所有队列中的bodies，过滤到范围之外的，并且将他们放回buffer
     /// If there are any bodies between the range start and last queued body that have not been
     /// downloaded or are not in progress, they will be re-requested.
+    /// 如果有start和last范围内的bodies还没有被下载，或者不在过程中，他们会被重新请求
     fn set_download_range(&mut self, range: RangeInclusive<BlockNumber>) -> DownloadResult<()> {
         // Check if the range is valid.
+        // 检查range是否合法
         if range.is_empty() {
             tracing::error!(target: "downloaders::bodies", ?range, "Bodies download range is invalid (empty)");
             return Err(DownloadError::InvalidBodyRange { range })
         }
 
         // Check if the provided range is the subset of the existing range.
+        // 检查提供的range是已经存在的range的子集
         let is_current_range_subset = self.download_range.contains(range.start()) &&
             *range.end() == *self.download_range.end();
         if is_current_range_subset {
             tracing::trace!(target: "downloaders::bodies", ?range, "Download range already in progress");
             // The current range already includes requested.
+            // 当前的range已经包含在请求中
             return Ok(())
         }
 
@@ -338,6 +351,7 @@ where
         let distance = *range.end() - *range.start();
         if is_next_consecutive_range {
             // New range received.
+            // 接收到了新的range
             tracing::trace!(target: "downloaders::bodies", ?range, "New download range set");
             info!(target: "downloaders::bodies", distance, "Downloading bodies {range:?}");
             self.download_range = range;
@@ -346,6 +360,8 @@ where
 
         // The block range is reset. This can happen either after unwind or after the bodies were
         // written by external services (e.g. BlockchainTree).
+        // block range被重置，这可能在unwind或者bodies被外部services写入（例如，
+        // BlockchainTree）之后发生
         tracing::trace!(target: "downloaders::bodies", ?range, prev_range = ?self.download_range, "Download range reset");
         info!(target: "downloaders::bodies", distance, "Downloading bodies {range:?}");
         self.clear();

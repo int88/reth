@@ -46,6 +46,7 @@ pub struct Head {
 }
 
 /// Block header
+/// Block的header
 #[main_codec]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Header {

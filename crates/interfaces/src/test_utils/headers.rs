@@ -214,6 +214,7 @@ impl TestHeadersClient {
     /// 添加headers到set中
     pub async fn extend(&self, headers: impl IntoIterator<Item = Header>) {
         let mut lock = self.responses.lock().await;
+        // 扩展headers
         lock.extend(headers);
     }
 
@@ -250,6 +251,7 @@ impl HeadersClient for TestHeadersClient {
         request: HeadersRequest,
         _priority: Priority,
     ) -> Self::Output {
+        // 复制responses
         let responses = self.responses.clone();
         let error = self.error.clone();
 

@@ -1,6 +1,7 @@
 /// The bodies stage.
 mod bodies;
 /// The execution stage that generates state diff.
+/// execution stage生成state diff
 mod execution;
 /// The finish stage
 mod finish;
@@ -15,6 +16,7 @@ mod index_account_history;
 /// Index history of storage changes
 mod index_storage_history;
 /// Stage for computing state root.
+/// 用于计算state root的Stage
 mod merkle;
 /// The sender recovery stage.
 mod sender_recovery;

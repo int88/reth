@@ -192,11 +192,13 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
     ) -> Result<UnwindOutput, StageError> {
         let tx = provider.tx_ref();
         // Cursors to unwind bodies, ommers
+        // 用于unwind bodies, ommers的cursors
         let mut body_cursor = tx.cursor_write::<tables::BlockBodyIndices>()?;
         let mut transaction_cursor = tx.cursor_write::<tables::Transactions>()?;
         let mut ommers_cursor = tx.cursor_write::<tables::BlockOmmers>()?;
         let mut withdrawals_cursor = tx.cursor_write::<tables::BlockWithdrawals>()?;
         // Cursors to unwind transitions
+        // cursors用于unwind txs
         let mut tx_block_cursor = tx.cursor_write::<tables::TransactionBlock>()?;
 
         let mut rev_walker = body_cursor.walk_back(None)?;
@@ -206,16 +208,19 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             }
 
             // Delete the ommers entry if any
+            // 删除ommers entry
             if ommers_cursor.seek_exact(number)?.is_some() {
                 ommers_cursor.delete_current()?;
             }
 
             // Delete the withdrawals entry if any
+            // 删除withdrawals entry
             if withdrawals_cursor.seek_exact(number)?.is_some() {
                 withdrawals_cursor.delete_current()?;
             }
 
             // Delete all transaction to block values.
+            // 删除block中所有的tx
             if !block_meta.is_empty() &&
                 tx_block_cursor.seek_exact(block_meta.last_tx_num())?.is_some()
             {
@@ -223,14 +228,17 @@ impl<DB: Database, D: BodyDownloader> Stage<DB> for BodyStage<D> {
             }
 
             // Delete all transactions that belong to this block
+            // 删除所有属于这个block的txs
             for tx_id in block_meta.tx_num_range() {
                 // First delete the transaction
+                // 首先删除tx
                 if transaction_cursor.seek_exact(tx_id)?.is_some() {
                     transaction_cursor.delete_current()?;
                 }
             }
 
             // Delete the current body value
+            // 刹车农户当前的body value
             rev_walker.delete_current()?;
         }
 
@@ -312,11 +320,13 @@ mod tests {
     }
 
     /// Same as [partial_body_download] except the `batch_size` is not hit.
+    /// 和[partial_body_download]相同，除了没有到达`batch_size`
     #[tokio::test]
     async fn full_body_download() {
         let (stage_progress, previous_stage) = (1, 20);
 
         // Set up test runner
+        // 设置test runner
         let mut runner = BodyTestRunner::default();
         let input = ExecInput {
             target: Some(previous_stage),
@@ -325,13 +335,17 @@ mod tests {
         runner.seed_execution(input).expect("failed to seed execution");
 
         // Set the batch size to more than what the previous stage synced (40 vs 20)
+        // 设置batch size，超过之前stage已经同步的（40 vs 20）
         runner.set_batch_size(40);
 
         // Run the stage
+        // 运行stage
         let rx = runner.execute(input);
 
         // Check that we synced all blocks successfully, even though our `batch_size` allows us to
         // sync more (if there were more headers)
+        // 检查我们已经成功同步所有blocks，
+        // 即使我们的`batch_size`允许我们同步更多（如果有更多的headers）
         let output = rx.await.unwrap();
         assert_matches!(
             output,
@@ -350,6 +364,7 @@ mod tests {
     }
 
     /// Same as [full_body_download] except we have made progress before
+    /// 和[full_body_download]相同，除了我们之前已经有了进度
     #[tokio::test]
     async fn sync_from_previous_progress() {
         let (stage_progress, previous_stage) = (1, 21);
@@ -369,6 +384,7 @@ mod tests {
         let rx = runner.execute(input);
 
         // Check that we synced at least 10 blocks
+        // 检查我们已经同步了至少10个blocks
         let first_run = rx.await.unwrap();
         assert_matches!(
             first_run,
@@ -381,14 +397,17 @@ mod tests {
             }, done: false }) if block_number >= 10 &&
                 processed == 1 + batch_size && total == previous_stage
         );
+        // 第一次运行的checkpoint
         let first_run_checkpoint = first_run.unwrap().checkpoint;
 
         // Execute again on top of the previous run
+        // 在之前运行的基础上再次运行
         let input =
             ExecInput { target: Some(previous_stage), checkpoint: Some(first_run_checkpoint) };
         let rx = runner.execute(input);
 
         // Check that we synced more blocks
+        // 检查我们已经同步了更多的blocks
         let output = rx.await.unwrap();
         assert_matches!(
             output,
@@ -409,6 +428,7 @@ mod tests {
     }
 
     /// Checks that the stage unwinds correctly, even if a transaction in a block is missing.
+    /// 检查stage被正确地unwind，即使一个block中的一个tx缺失
     #[tokio::test]
     async fn unwind_missing_tx() {
         let (stage_progress, previous_stage) = (1, 20);
@@ -422,13 +442,17 @@ mod tests {
         runner.seed_execution(input).expect("failed to seed execution");
 
         // Set the batch size to more than what the previous stage synced (40 vs 20)
+        // 设置batch size超过之前的stage已经同步的
         runner.set_batch_size(40);
 
         // Run the stage
+        // 运行stage
         let rx = runner.execute(input);
 
         // Check that we synced all blocks successfully, even though our `batch_size` allows us to
         // sync more (if there were more headers)
+        // 检查我们已经成功同步了所有的blocks，
+        // 即使`batch_size`允许我们同步更多（即使有更多的headers）
         let output = rx.await.unwrap();
         assert_matches!(
             output,
@@ -442,22 +466,26 @@ mod tests {
                 processed == total && total == previous_stage
         );
         let checkpoint = output.unwrap().checkpoint;
+        // 校验db blocks
         runner
             .validate_db_blocks(input.checkpoint().block_number, checkpoint.block_number)
             .expect("Written block data invalid");
 
         // Delete a transaction
+        // 删除一个tx
         runner
             .tx()
             .commit(|tx| {
                 let mut tx_cursor = tx.cursor_write::<tables::Transactions>()?;
                 tx_cursor.last()?.expect("Could not read last transaction");
+                // 删除一个tx
                 tx_cursor.delete_current()?;
                 Ok(())
             })
             .expect("Could not delete a transaction");
 
         // Unwind all of it
+        // Unwind所有
         let unwind_to = 1;
         let input = UnwindInput { bad_block: None, checkpoint, unwind_to };
         let res = runner.unwind(input).await;
@@ -686,6 +714,7 @@ mod tests {
             }
 
             /// Validate that the inserted block data is valid
+            /// 校验插入的block data都是合法的
             pub(crate) fn validate_db_blocks(
                 &self,
                 prev_progress: BlockNumber,
@@ -693,6 +722,7 @@ mod tests {
             ) -> Result<(), TestRunnerError> {
                 self.tx.query(|tx| {
                     // Acquire cursors on body related tables
+                    // 获取cursors，对于body相关的tables
                     let mut headers_cursor = tx.cursor_read::<tables::Headers>()?;
                     let mut bodies_cursor = tx.cursor_read::<tables::BlockBodyIndices>()?;
                     let mut ommers_cursor = tx.cursor_read::<tables::BlockOmmers>()?;
@@ -710,7 +740,9 @@ mod tests {
                         let (number, body) = entry?;
 
                         // Validate sequentiality only after prev progress,
+                        // 顺序校验，只有在prev progress之后
                         // since the data before is mocked and can contain gaps
+                        // 因为之前的data被mocked并且包含gaps
                         if number > prev_progress {
                             if let Some(prev_key) = prev_number {
                                 assert_eq!(prev_key + 1, number, "Body entries must be sequential");
@@ -718,6 +750,7 @@ mod tests {
                         }
 
                         // Validate that the current entry is below or equals to the highest allowed block
+                        // 校验当前的entry小于或者等于highest allowed block
                         assert!(
                             number <= highest_block,
                             "We wrote a block body outside of our synced range. Found block with number {number}, highest block according to stage is {highest_block}",
@@ -725,6 +758,7 @@ mod tests {
 
                         let (_, header) = headers_cursor.seek_exact(number)?.expect("to be present");
                         // Validate that ommers exist if any
+                        // 校验ommers存在，如果有的话
                         let stored_ommers =  ommers_cursor.seek_exact(number)?;
                         if header.ommers_hash_is_empty() {
                             assert!(stored_ommers.is_none(), "Unexpected ommers entry");
