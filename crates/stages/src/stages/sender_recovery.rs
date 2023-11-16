@@ -24,6 +24,8 @@ use tracing::*;
 /// The sender recovery stage iterates over existing transactions,
 /// recovers the transaction signer and stores them
 /// in [`TxSenders`][reth_db::tables::TxSenders] table.
+/// sender recovery stage遍历已经存在的txs，恢复tx signer并且存储它们到
+/// [`TxSenders`][reth_db::tables::TxSenders] table
 #[derive(Clone, Debug)]
 pub struct SenderRecoveryStage {
     /// The size of inserted items after which the control
@@ -91,6 +93,7 @@ impl<DB: Database> Stage<DB> for SenderRecoveryStage {
         let tx_walker = tx_cursor.walk_range(raw_tx_range)?;
 
         // Iterate over transactions in chunks
+        // 以chunks迭代txs
         info!(target: "sync::stages::sender_recovery", ?tx_range, "Recovering senders");
 
         // channels used to return result of sender recovery.

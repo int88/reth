@@ -13,6 +13,8 @@ use std::fmt::Debug;
 /// Stage is indexing history the account changesets generated in
 /// [`ExecutionStage`][crate::stages::ExecutionStage]. For more information
 /// on index sharding take a look at [`reth_db::tables::AccountHistory`]
+/// Stage是索引在 [`ExecutionStage`][crate::stages::ExecutionStage]生成的account changesets的历史
+/// 对于更多的信息，关于index sharding，查看[`reth_db::tables::AccountHistory`]
 #[derive(Debug)]
 pub struct IndexAccountHistoryStage {
     /// Number of blocks after which the control

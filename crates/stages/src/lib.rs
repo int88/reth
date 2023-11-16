@@ -1,13 +1,18 @@
 //! Staged syncing primitives for reth.
+//! 对于reth的staged syncing的primitives
 //!
 //! This crate contains the syncing primitives [`Pipeline`] and [`Stage`], as well as all stages
 //! that reth uses to sync.
+//! 这个crate包含syncing primitives [`Pipeline`]和[`Stage`]，以及reth用于同步的所有stages
 //!
 //! A pipeline can be configured using [`Pipeline::builder()`].
+//! 一个pipeline可以用[`Pipeline::builder()`]配置
 //!
 //! For ease of use, this crate also exposes a set of [`StageSet`]s, which are collections of stages
 //! that perform specific functions during sync. Stage sets can be customized; it is possible to
 //! add, disable and replace stages in the set.
+//! 为了便于使用，这个create也暴露一系列的[`StageSet`]，一系列的stages在sync过程中执行特定的功能，
+//! Stage set可以被定制，可以添加、禁止以及替换set中的stages
 //!
 //! # Examples
 //!
@@ -38,6 +43,7 @@
 //! # let (tip_tx, tip_rx) = watch::channel(H256::default());
 //! # let factory = Factory::new(MAINNET.clone());
 //! // Create a pipeline that can fully sync
+//! // 创建一个pipeline，可以进行完全同步
 //! # let pipeline =
 //! Pipeline::builder()
 //!     .with_tip_sender(tip_tx)

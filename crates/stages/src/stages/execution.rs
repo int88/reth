@@ -160,6 +160,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
 
         let mut fetch_block_duration = Duration::default();
         let mut execution_duration = Duration::default();
+        // 指定开始的block和最后的block
         debug!(target: "sync::stages::execution", start = start_block, end = max_block, "Executing range");
         // Execute block range
         // 执行block range
@@ -230,6 +231,7 @@ impl<EF: ExecutorFactory> ExecutionStage<EF> {
         let db_write_duration = time.elapsed();
         debug!(
             target: "sync::stages::execution",
+            // 指定各种执行的时间
             block_fetch = ?fetch_block_duration,
             execution = ?execution_duration,
             write_preperation = ?write_preparation_duration,

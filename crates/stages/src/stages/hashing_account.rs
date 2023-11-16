@@ -26,7 +26,9 @@ use tokio::sync::mpsc;
 use tracing::*;
 
 /// Account hashing stage hashes plain account.
+/// Account hashing stage对plain account进行hash
 /// This is preparation before generating intermediate hashes and calculating Merkle tree root.
+/// 这是在生成intermediate hashes和计算Merkle tree root之前的准备
 #[derive(Clone, Debug)]
 pub struct AccountHashingStage {
     /// The threshold (in number of blocks) for switching between incremental

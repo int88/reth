@@ -48,11 +48,15 @@ impl<DB: Database> Debug for StageEntry<DB> {
 }
 
 /// Helper to create and configure a [`StageSet`].
+/// Helper用于创建和配置一个[`StageSet`]
 ///
 /// The builder provides ordering helpers to ensure that stages that depend on each other are added
 /// to the final sync pipeline before/after their dependencies.
+/// builder提供ordering helpers来确保互相依赖的stages被添加到final sync
+/// pipeline，在他们的依赖之前或之后
 ///
 /// Stages inside the set can be disabled, enabled, overridden and reordered.
+/// 其中的Stages可以被禁止、使能、覆盖或者重新排序
 pub struct StageSetBuilder<DB> {
     stages: HashMap<StageId, StageEntry<DB>>,
     order: Vec<StageId>,
@@ -123,9 +127,12 @@ where
     }
 
     /// Adds the given [`StageSet`] to the end of this set.
+    /// 添加给定的[`StageSet`]到这个set的尾端
     ///
     /// If a stage is in both sets, it is removed from its previous place in this set. Because of
     /// this, it is advisable to merge sets first and re-order stages after if needed.
+    /// 如果一个stage同时在两个集合，它首先从之前的地方移除，因此，建议首先合并sets，并且需要的话，
+    /// 对stages重新排序
     pub fn add_set<Set: StageSet<DB>>(mut self, set: Set) -> Self {
         for stage in set.builder().build() {
             let target_index = self.order.len();

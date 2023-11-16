@@ -235,6 +235,7 @@ where
         // Nothing to sync
         // 没有东西需要同步
         if gap.is_closed() {
+            // 已经到达了target block
             info!(target: "sync::stages::headers", checkpoint = %current_checkpoint, target = ?tip, "Target block already reached");
             return Ok(ExecOutput::done(current_checkpoint))
         }

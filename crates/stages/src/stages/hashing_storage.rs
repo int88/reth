@@ -21,6 +21,7 @@ use std::{collections::BTreeMap, fmt::Debug};
 use tracing::*;
 
 /// Storage hashing stage hashes plain storage.
+/// Storage hashinng stage对plain storage进行hashes
 /// This is preparation before generating intermediate hashes and calculating Merkle tree root.
 #[derive(Debug)]
 pub struct StorageHashingStage {

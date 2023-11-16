@@ -28,16 +28,23 @@ pub const MERKLE_STAGE_DEFAULT_CLEAN_THRESHOLD: u64 = 50_000;
 /// [`AccountHashingStage`][crate::stages::AccountHashingStage] and
 /// [`StorageHashingStage`][crate::stages::AccountHashingStage] to calculate intermediate hashes
 /// and state roots.
+/// merkle hashing
+/// stage使用来自[`AccountHashingStage`][crate::stages::AccountHashingStage]和[`StorageHashingStage`][crate::stages::AccountHashingStage]的输入来计算intermediate hashes和state roots
 ///
 /// This stage should be run with the above two stages, otherwise it is a no-op.
+/// 这个stage应该和上面两个stages一起运行，否则是no-op
 ///
 /// This stage is split in two: one for calculating hashes and one for unwinding.
+/// stage分为两部分：一个用于计算hashes，另一个用于unwind
 ///
 /// When run in execution, it's going to be executed AFTER the hashing stages, to generate
 /// the state root. When run in unwind mode, it's going to be executed BEFORE the hashing stages,
 /// so that it unwinds the intermediate hashes based on the unwound hashed state from the hashing
 /// stages. The order of these two variants is important. The unwind variant should be added to the
 /// pipeline before the execution variant.
+/// 当在运行的时候，它在hashing stages之后运行，生成state root，当运行在unwind模式，它在hashing
+/// stages之前运行，这样它可以unwinds中间态的hashes，基于来自hashing stages的unwound hashed
+/// state，这两个变种的顺序很重要，unwind variant应该被添加到pipeline，在execution variant之后
 ///
 /// An example pipeline to only hash state would be:
 ///

@@ -25,6 +25,9 @@ use tracing::*;
 /// This stage walks over the bodies table, and sets the transaction hash of each transaction in a
 /// block to the corresponding `BlockNumber` at each block. This is written to the
 /// [`tables::TxHashNumber`] This is used for looking up changesets via the transaction hash.
+/// 这个stage遍历bodies table，并且设置每个tx的tx
+/// hash，在一个block中，对应每个block的`BlockNumber`，这被写入[`tables::TxHashNumber`]，
+/// 这用于通过tx hash查找changesets
 #[derive(Debug, Clone)]
 pub struct TransactionLookupStage {
     /// The number of lookup entries to commit at once

@@ -418,8 +418,10 @@ dupsort!(
 
 table!(
     /// Stores the transaction sender for each canonical transaction.
+    /// 对于每一个canonical tx，存储tx sender
     /// It is needed to speed up execution stage and allows fetching signer without doing
     /// transaction signed recovery
+    /// 它需要加速execution stage并且允许获取signer，而不需要做tx signed recovery
     ( TxSenders ) TxNumber | Address
 );
 
