@@ -190,6 +190,7 @@ pub struct NodeCommand<Ext: RethCliExt = ()> {
     pub db: DatabaseArgs,
 
     /// All dev related arguments with --dev prefix
+    /// 所有dev相关的参数，有着--dev的前缀
     #[clap(flatten)]
     pub dev: DevArgs,
 
