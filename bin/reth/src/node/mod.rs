@@ -481,7 +481,9 @@ impl<Ext: RethCliExt> NodeCommand<Ext> {
             Some(tip)
         } else if self.debug.continuous {
             // Set genesis as the initial pipeline target.
+            // 设置genesis作为pipeline target
             // This will allow the downloader to start
+            // 这会运行target开始
             debug!(target: "reth::cli", "Continuous sync mode enabled");
             Some(genesis_hash)
         } else {

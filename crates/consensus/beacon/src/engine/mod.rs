@@ -385,18 +385,27 @@ where
 
     /// Check if the pipeline is consistent (all stages have the checkpoint block numbers no less
     /// than the checkpoint of the first stage).
+    /// 检查pipeline是否一致（所有的stages的checkpoint block
+    /// numbers没有比第一个stage的checkpoint小）
     ///
     /// This will return the pipeline target if:
+    /// 它会返回pipeline target如果：
     ///  * the pipeline was interrupted during its previous run
+    ///  * pipeline在之前的运行过程中被中断
     ///  * a new stage was added
+    ///  * 新的stage被添加
     ///  * stage data was dropped manually through `reth stage drop ...`
+    ///  * stage data被手动丢弃，通过`reth stage drop ...`
     ///
     /// # Returns
     ///
     /// A target block hash if the pipeline is inconsistent, otherwise `None`.
+    /// 一个target block hash，如果pipeline不一致，否则`None`
     fn check_pipeline_consistency(&self) -> RethResult<Option<H256>> {
         // If no target was provided, check if the stages are congruent - check if the
         // checkpoint of the last stage matches the checkpoint of the first.
+        // 如果没有提供target，检查stages是否一致 -
+        // 检查最后stage的chekcpoint匹配第一个stage的checkpoint
         let first_stage_checkpoint = self
             .blockchain
             .get_stage_checkpoint(*StageId::ALL.first().unwrap())?
@@ -405,18 +414,22 @@ where
 
         // Skip the first stage as we've already retrieved it and comparing all other checkpoints
         // against it.
+        // 跳过第一个stage，因为我们已经获取到他了并且和其他checkpoints比较
         for stage_id in StageId::ALL.iter().skip(1) {
             let stage_checkpoint =
                 self.blockchain.get_stage_checkpoint(*stage_id)?.unwrap_or_default().block_number;
 
             // If the checkpoint of any stage is less than the checkpoint of the first stage,
             // retrieve and return the block hash of the latest header and use it as the target.
+            // 如果任何stage的checkpoint小于第一个stage的checkpoint，获取并且返回最后的header的block
+            // hash并且使用它作为target
             if stage_checkpoint < first_stage_checkpoint {
                 warn!(
                     target: "consensus::engine",
                     first_stage_checkpoint,
                     inconsistent_stage_id = %stage_id,
                     inconsistent_stage_checkpoint = stage_checkpoint,
+                    // pipeline的同步进度不一致
                     "Pipeline sync progress is inconsistent"
                 );
                 return self.blockchain.block_hash(first_stage_checkpoint)

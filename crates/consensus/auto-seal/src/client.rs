@@ -51,6 +51,7 @@ impl AutoSealClient {
 
         for _ in 0..limit {
             // fetch from storage
+            // 从storage获取block
             if let Some(header) = storage.header_by_hash_or_number(block) {
                 match direction {
                     HeadersDirection::Falling => block = header.parent_hash.into(),

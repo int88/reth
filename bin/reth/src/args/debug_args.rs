@@ -8,6 +8,7 @@ use reth_primitives::{TxHash, H256};
 #[command(next_help_heading = "Debug")]
 pub struct DebugArgs {
     /// Prompt the downloader to download blocks one at a time.
+    /// 提醒downloader一次下载一个blocks
     ///
     /// NOTE: This is for testing purposes only.
     #[arg(long = "debug.continuous", help_heading = "Debug", conflicts_with = "tip")]

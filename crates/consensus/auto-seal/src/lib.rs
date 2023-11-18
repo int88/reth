@@ -245,6 +245,7 @@ impl StorageInner {
     }
 
     /// Returns the matching header if it exists.
+    /// 返回匹配的header，如果存在的话
     pub(crate) fn header_by_hash_or_number(
         &self,
         hash_or_num: BlockHashOrNumber,

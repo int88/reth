@@ -10,11 +10,14 @@ use std::{
 
 /// The header request struct to be sent to connected peers, which
 /// will proceed to ask them to stream the requested headers to us.
+/// header request结构被发送给connected peers，它会被处理，让他们将请求的headers发我么
 #[derive(Clone, Debug)]
 pub struct HeadersRequest {
     /// The starting block
+    /// 开始的block
     pub start: BlockHashOrNumber,
     /// The response max size
+    /// 最大的response的大小
     pub limit: u64,
     /// The direction in which headers should be returned.
     pub direction: HeadersDirection,
@@ -33,6 +36,7 @@ pub trait HeadersClient: DownloadClient {
 
     /// Sends the header request to the p2p network and returns the header response received from a
     /// peer.
+    /// 发送header request到p2p network并且返回从一个peer接收到的header response
     fn get_headers(&self, request: HeadersRequest) -> Self::Output {
         self.get_headers_with_priority(request, Priority::Normal)
     }

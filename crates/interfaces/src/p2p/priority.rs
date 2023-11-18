@@ -1,7 +1,9 @@
 /// BlockHeader and BodyHeader DownloadRequest priority
+/// BlockHeader以及BodyHeader的DownloadRequest优先级
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Priority {
     /// Queued from the back for download requests.
+    /// 从后面排队等待下载请求
     #[default]
     Normal,
 
