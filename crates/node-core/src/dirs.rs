@@ -317,6 +317,7 @@ impl<D> ChainPath<D> {
     }
 
     /// Returns the path to the config file for this chain.
+    /// 返回这个chain的config file
     ///
     /// `<DIR>/<CHAIN_ID>/reth.toml`
     pub fn config_path(&self) -> PathBuf {

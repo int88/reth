@@ -54,8 +54,10 @@ pub struct NodeRecord {
 
 impl NodeRecord {
     /// Derive the [`NodeRecord`] from the secret key and addr
+    /// 从secret key和addr派生出[`NodeRecord`]
     pub fn from_secret_key(addr: SocketAddr, sk: &SecretKey) -> Self {
         let pk = secp256k1::PublicKey::from_secret_key(SECP256K1, sk);
+        println!("PUBLIC KEY is {}", pk);
         let id = PeerId::from_slice(&pk.serialize_uncompressed()[1..]);
         Self::new(addr, id)
     }
@@ -84,6 +86,7 @@ impl NodeRecord {
     }
 
     /// Creates a new record from a socket addr and peer id.
+    /// 创建一个新的record，从一个socket addr和peer id
     #[allow(dead_code)]
     pub fn new(addr: SocketAddr, id: PeerId) -> Self {
         Self { address: addr.ip(), tcp_port: addr.port(), udp_port: addr.port(), id }

@@ -66,10 +66,13 @@ use tracing::{debug, error, trace, warn};
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// Manages the _entire_ state of the network.
+/// 管理整个network的state
 ///
 /// This is an endless [`Future`] that consistently drives the state of the entire network forward.
+/// 这是一个endless [`Future`]，持续驱动整个network的状态向前
 ///
 /// The [`NetworkManager`] is the container type for all parts involved with advancing the network.
+/// [`NetworkManager`]是容器类型，包含所有的部分，推动network
 ///
 /// include_mmd!("docs/mermaid/network-manager.mmd")
 #[derive(Debug)]

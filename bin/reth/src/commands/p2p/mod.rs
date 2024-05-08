@@ -87,23 +87,27 @@ pub enum Subcommands {
     /// Download block header
     Header {
         /// The header number or hash
+        /// header的number或者hash
         #[arg(value_parser = hash_or_num_value_parser)]
         id: BlockHashOrNumber,
     },
     /// Download block body
     Body {
         /// The block number or hash
+        /// block number或者hash
         #[arg(value_parser = hash_or_num_value_parser)]
         id: BlockHashOrNumber,
     },
 }
 impl Command {
     /// Execute `p2p` command
+    /// 执行`p2p`命令
     pub async fn execute(&self) -> eyre::Result<()> {
         let tempdir = tempfile::TempDir::new()?;
         let noop_db = Arc::new(create_db(tempdir.into_path(), self.db.database_args())?);
 
         // add network name to data dir
+        // 将network name加入到data dir
         let data_dir = self.datadir.unwrap_or_chain_default(self.chain.chain);
         let config_path = self.config.clone().unwrap_or_else(|| data_dir.config_path());
 

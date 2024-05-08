@@ -1014,11 +1014,14 @@ where
     DB: Database + DatabaseMetrics + DatabaseMetadata + Clone + Unpin + 'static,
 {
     /// Launches a preconfigured [Node]
+    /// 启动一个预先配置的[Node]
     ///
     /// This bootstraps the node internals, creates all the components with the given [Node] type
     /// and launches the node.
+    /// 在内部启动node，创建所有的组件，用给定的[Node]类型并且启动node
     ///
     /// Returns a [NodeHandle] that can be used to interact with the node.
+    /// 返回一个[NodeHandle]，可以用于和node交互
     pub async fn launch_node<N>(
         self,
         node: N,

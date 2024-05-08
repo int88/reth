@@ -746,6 +746,7 @@ impl ChainSpec {
     }
 
     /// Get the fork id for the given hardfork.
+    /// 获取给定hardfork的fork id
     #[inline]
     pub fn hardfork_fork_id(&self, fork: Hardfork) -> Option<ForkId> {
         match self.fork(fork) {

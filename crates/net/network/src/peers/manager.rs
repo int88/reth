@@ -79,14 +79,19 @@ impl PeersHandle {
 }
 
 /// Maintains the state of _all_ the peers known to the network.
+/// 维护所有network中已知的peers
 ///
 /// This is supposed to be owned by the network itself, but can be reached via the [`PeersHandle`].
+/// 这应该被network自己所有，但是可以通过[`PeersHandle`]访问
 /// From this type, connections to peers are established or disconnected, see [`PeerAction`].
+/// 从这个类型，到peers的连接建立或者断开，查看[`PeerAction`]
 ///
 /// The [`PeersManager`] will be notified on peer related changes
+/// [`PeersManager`]会被通知peer相关的变更
 #[derive(Debug)]
 pub struct PeersManager {
     /// All peers known to the network
+    /// network已知的peers
     peers: HashMap<PeerId, Peer>,
     /// The set of trusted peer ids.
     ///
@@ -96,6 +101,7 @@ pub struct PeersManager {
     /// Copy of the sender half, so new [`PeersHandle`] can be created on demand.
     manager_tx: mpsc::UnboundedSender<PeerCommand>,
     /// Receiver half of the command channel.
+    /// command channle的接收部分
     handle_rx: UnboundedReceiverStream<PeerCommand>,
     /// Buffered actions until the manager is polled.
     queued_actions: VecDeque<PeerAction>,
@@ -129,6 +135,7 @@ pub struct PeersManager {
 
 impl PeersManager {
     /// Create a new instance with the given config
+    /// 用给定的配置创建一个新的instance
     pub fn new(config: PeersConfig) -> Self {
         let PeersConfig {
             refill_slots_interval,
@@ -146,6 +153,7 @@ impl PeersManager {
         let now = Instant::now();
 
         // We use half of the interval to decrease the max duration to `150%` in worst case
+        // 我们使用一半的interval来降低max duration到`150%`，在最坏的情况
         let unban_interval = ban_duration.min(backoff_durations.low) / 2;
 
         let mut peers = HashMap::with_capacity(trusted_nodes.len() + basic_nodes.len());
@@ -659,8 +667,10 @@ impl PeersManager {
     }
 
     /// Called for a newly discovered peer.
+    /// 被新发现的peer调用
     ///
     /// If the peer already exists, then the address, kind and fork_id will be updated.
+    /// 如果peer已经存在，那么地址，kind以及fork_id会更新
     pub(crate) fn add_peer(&mut self, peer_id: PeerId, addr: SocketAddr, fork_id: Option<ForkId>) {
         self.add_peer_kind(peer_id, PeerKind::Basic, addr, fork_id)
     }
@@ -847,9 +857,11 @@ impl PeersManager {
     }
 
     /// Advances the state.
+    /// 推动state
     ///
     /// Event hooks invoked externally may trigger a new [`PeerAction`] that are buffered until
     /// [`PeersManager`] is polled.
+    /// 外部调用的Event hooks会触发一个新的[`PeerAction`]，会被缓存，直到[`PeersManager`]被轮询
     pub fn poll(&mut self, cx: &mut Context<'_>) -> Poll<PeerAction> {
         loop {
             // drain buffered actions
@@ -1200,8 +1212,10 @@ pub(crate) enum PeerCommand {
     /// Command for manually add
     Add(PeerId, SocketAddr),
     /// Remove a peer from the set
+    /// 从集合中移除一个peer
     ///
     /// If currently connected this will disconnect the session
+    /// 如果当前是连接的，会断开session
     Remove(PeerId),
     /// Apply a reputation change to the given peer.
     ReputationChange(PeerId, ReputationChangeKind),
@@ -1268,6 +1282,7 @@ pub enum PeerAction {
 }
 
 /// Config type for initiating a [`PeersManager`] instance.
+/// Config类型，用于初始化一个[`PeersManager`]实例
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(default))]

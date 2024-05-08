@@ -1,4 +1,5 @@
 //! Discovery support for the network.
+//! 对于network的Discovery支持
 
 use crate::{
     cache::LruMap,
@@ -26,25 +27,32 @@ use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tracing::trace;
 
 /// Default max capacity for cache of discovered peers.
+/// 对于发现的peers的缓存的最大容量
 ///
 /// Default is 10 000 peers.
 pub const DEFAULT_MAX_CAPACITY_DISCOVERED_PEERS_CACHE: u32 = 10_000;
 
 /// An abstraction over the configured discovery protocol.
+/// 对于配置的discovery protocol的抽象
 ///
 /// Listens for new discovered nodes and emits events for discovered nodes and their
 /// address.
+/// 监听新发现的ndoe并且发射新发现nodes的事件以及他们的地址
 #[derive(Debug)]
 pub struct Discovery {
     /// All nodes discovered via discovery protocol.
+    /// 所有通过discovery协议发现的nodes
     ///
     /// These nodes can be ephemeral and are updated via the discovery protocol.
+    /// 这nodes可以是临时的并且通过discovery协议更新
     discovered_nodes: LruMap<PeerId, SocketAddr>,
     /// Local ENR of the discovery v4 service (discv5 ENR has same [`PeerId`]).
     local_enr: NodeRecord,
     /// Handler to interact with the Discovery v4 service
+    /// 用于和Discovery v4 service交互的Handler
     discv4: Option<Discv4>,
     /// All KAD table updates from the discv4 service.
+    /// 来自disv4 service的所有KAD table更新
     discv4_updates: Option<ReceiverStream<DiscoveryUpdate>>,
     /// The handle to the spawned discv4 service
     _discv4_service: Option<JoinHandle<()>>,
@@ -59,16 +67,21 @@ pub struct Discovery {
     /// The handle to the spawned DNS discovery service
     _dns_disc_service: Option<JoinHandle<()>>,
     /// Events buffered until polled.
+    /// 缓存的Events，直到
     queued_events: VecDeque<DiscoveryEvent>,
     /// List of listeners subscribed to discovery events.
+    /// 一系列的listeners，订阅discovery events
     discovery_listeners: Vec<mpsc::UnboundedSender<DiscoveryEvent>>,
 }
 
 impl Discovery {
     /// Spawns the discovery service.
+    /// 生成didscovery service
     ///
     /// This will spawn the [`reth_discv4::Discv4Service`] onto a new task and establish a listener
     /// channel to receive all discovered nodes.
+    /// 这会生成[`reth_discv4::Discv4Service`]进一个新的task并且建立一个listener
+    /// channel来接收所有发现的nodes
     pub async fn new(
         discovery_v4_addr: SocketAddr,
         sk: SecretKey,
@@ -77,6 +90,7 @@ impl Discovery {
         dns_discovery_config: Option<DnsDiscoveryConfig>,
     ) -> Result<Self, NetworkError> {
         // setup discv4
+        // 设置discv4
         let local_enr = NodeRecord::from_secret_key(discovery_v4_addr, &sk);
         let discv4_future = async {
             let Some(disc_config) = discv4_config else { return Ok((None, None, None)) };
@@ -88,12 +102,14 @@ impl Discovery {
                 )?;
             let discv4_updates = discv4_service.update_stream();
             // spawn the service
+            // 生成service
             let discv4_service = discv4_service.spawn();
 
             Ok((Some(discv4), Some(discv4_updates), Some(discv4_service)))
         };
 
         let discv5_future = async {
+            // 生成discv5
             let Some(config) = discv5_config else { return Ok::<_, NetworkError>((None, None)) };
             let (discv5, discv5_updates, _local_enr_discv5) = Discv5::start(&sk, config).await?;
             Ok((Some(discv5), Some(discv5_updates.into())))
@@ -103,6 +119,7 @@ impl Discovery {
             tokio::try_join!(discv4_future, discv5_future)?;
 
         // setup DNS discovery
+        // 设置DNS discovery
         let (_dns_discovery, dns_discovery_updates, _dns_disc_service) =
             if let Some(dns_config) = dns_discovery_config {
                 let (mut service, dns_disc) = DnsDiscoveryService::new_pair(
@@ -138,6 +155,7 @@ impl Discovery {
     }
 
     /// Notifies all registered listeners with the provided `event`.
+    /// 通知所有注册的listeners，关于提供的`event`
     #[inline]
     fn notify_listeners(&mut self, event: &DiscoveryEvent) {
         self.discovery_listeners.retain_mut(|listener| listener.send(event.clone()).is_ok());
@@ -183,6 +201,7 @@ impl Discovery {
     }
 
     /// Add a node to the discv4 table.
+    /// 添加一个node到discv4 table
     pub(crate) fn add_discv4_node(&self, node: NodeRecord) {
         if let Some(discv4) = &self.discv4 {
             discv4.add_node(node);
@@ -199,6 +218,7 @@ impl Discovery {
     }
 
     /// Processes an incoming [NodeRecord] update from a discovery service
+    /// 处理来自一个discovery service的[NodeRecord]更新
     fn on_node_record_update(&mut self, record: NodeRecord, fork_id: Option<ForkId>) {
         let id = record.id;
         let addr = record.tcp_addr();
@@ -215,6 +235,7 @@ impl Discovery {
     fn on_discv4_update(&mut self, update: DiscoveryUpdate) {
         match update {
             DiscoveryUpdate::Added(record) => {
+                // 对于node添加事件
                 self.on_node_record_update(record, None);
             }
             DiscoveryUpdate::EnrForkId(node, fork_id) => {
@@ -237,12 +258,15 @@ impl Discovery {
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<DiscoveryEvent> {
         loop {
             // Drain all buffered events first
+            // 首先排干所有缓存的events
             if let Some(event) = self.queued_events.pop_front() {
+                // 通知listener
                 self.notify_listeners(&event);
                 return Poll::Ready(event)
             }
 
             // drain the discv4 update stream
+            // 排干discv4 update stream
             while let Some(Poll::Ready(Some(update))) =
                 self.discv4_updates.as_mut().map(|updates| updates.poll_next_unpin(cx))
             {
@@ -250,6 +274,7 @@ impl Discovery {
             }
 
             // drain the discv5 update stream
+            // 排干disv5 update stream
             while let Some(Poll::Ready(Some(update))) =
                 self.discv5_updates.as_mut().map(|updates| updates.poll_next_unpin(cx))
             {
@@ -263,6 +288,7 @@ impl Discovery {
             }
 
             // drain the dns update stream
+            // 排干dns updatea stream
             while let Some(Poll::Ready(Some(update))) =
                 self.dns_discovery_updates.as_mut().map(|updates| updates.poll_next_unpin(cx))
             {
@@ -294,6 +320,7 @@ impl Stream for Discovery {
 #[cfg(test)]
 impl Discovery {
     /// Returns a Discovery instance that does nothing and is intended for testing purposes.
+    /// 返回一个Discovery实例，什么都不做，用于测试
     ///
     /// NOTE: This instance does nothing
     pub(crate) fn noop() -> Self {
@@ -323,9 +350,11 @@ impl Discovery {
 }
 
 /// Events produced by the [`Discovery`] manager.
+/// [`Discovery`]产生的events
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DiscoveryEvent {
     /// Discovered a node
+    /// 发现一个node
     NewNode(DiscoveredEvent),
     /// Retrieved a [`ForkId`] from the peer via ENR request, See <https://eips.ethereum.org/EIPS/eip-868>
     EnrForkId(PeerId, ForkId),
@@ -361,17 +390,22 @@ mod tests {
     async fn start_discovery_node(udp_port_discv4: u16, udp_port_discv5: u16) -> Discovery {
         let secret_key = SecretKey::new(&mut thread_rng());
 
+        // 构建discv4和discv5的地址
         let discv4_addr = format!("127.0.0.1:{udp_port_discv4}").parse().unwrap();
         let discv5_addr: SocketAddr = format!("127.0.0.1:{udp_port_discv5}").parse().unwrap();
 
         // disable `NatResolver`
+        // 禁止`NatResolver`
         let discv4_config = Discv4ConfigBuilder::default().external_ip_resolver(None).build();
 
+        // 构建discv5的监听配置
         let discv5_listen_config = discv5::ListenConfig::from(discv5_addr);
+        // 构建discv5的配置
         let discv5_config = reth_discv5::Config::builder(0)
             .discv5_config(discv5::ConfigBuilder::new(discv5_listen_config).build())
             .build();
 
+        // 构建新的Discovery
         Discovery::new(discv4_addr, secret_key, Some(discv4_config), Some(discv5_config), None)
             .await
             .expect("should build discv5 with discv4 downgrade")
@@ -383,12 +417,17 @@ mod tests {
 
         // set up test
         let mut node_1 = start_discovery_node(40014, 40015).await;
+        // 获取discv4的enr
         let discv4_enr_1 = node_1.discv4.as_ref().unwrap().node_record();
+        // 获取discv5的enr
         let discv5_enr_node_1 =
             node_1.discv5.as_ref().unwrap().with_discv5(|discv5| discv5.local_enr());
+        // 获取discv4的id
         let discv4_id_1 = discv4_enr_1.id;
+        // 获取discv5的id
         let discv5_id_1 = discv5_enr_node_1.node_id();
 
+        // 构建discovery node 2
         let mut node_2 = start_discovery_node(40024, 40025).await;
         let discv4_enr_2 = node_2.discv4.as_ref().unwrap().node_record();
         let discv5_enr_node_2 =
@@ -405,17 +444,21 @@ mod tests {
         // test
 
         // assert discovery version 4 and version 5 nodes have same id
+        // 确认discovery version 4和version 5有着同样的id
         assert_eq!(discv4_id_1, enr_to_discv4_id(&discv5_enr_node_1).unwrap());
         assert_eq!(discv4_id_2, enr_to_discv4_id(&discv5_enr_node_2).unwrap());
 
         // add node_2:discv4 manually to node_1:discv4
+        // 手动将node_2:disv4加入到node_1:discv4
         node_1.add_discv4_node(discv4_enr_2);
 
         // verify node_2:discv4 discovered node_1:discv4 and vv
+        // 校验node_2:discv4发现了node_1:discv4
         let event_node_1 = node_1.next().await.unwrap();
         let event_node_2 = node_2.next().await.unwrap();
 
         assert_eq!(
+            // 收到NewNode的事件
             DiscoveryEvent::NewNode(DiscoveredEvent::EventQueued {
                 peer_id: discv4_id_2,
                 socket_addr: discv4_enr_2.tcp_addr(),
@@ -424,6 +467,7 @@ mod tests {
             event_node_1
         );
         assert_eq!(
+            // Node2也能接收到NewNode
             DiscoveryEvent::NewNode(DiscoveredEvent::EventQueued {
                 peer_id: discv4_id_1,
                 socket_addr: discv4_enr_1.tcp_addr(),
@@ -432,12 +476,15 @@ mod tests {
             event_node_2
         );
 
+        // 校验发现的nodes的数目
         assert_eq!(1, node_1.discovered_nodes.len());
         assert_eq!(1, node_2.discovered_nodes.len());
 
         // add node_2:discv5 to node_1:discv5, manual insertion won't emit an event
+        // 添加node_2:discv5到node_1:discv5，手动添加不会发射事件
         node_1.add_discv5_node(EnrCombinedKeyWrapper(discv5_enr_node_2.clone()).into()).unwrap();
         // verify node_2 is in KBuckets of node_1:discv5
+        // 校验node_2在node_1:discv5的KBuckets
         assert!(node_1
             .discv5
             .as_ref()
@@ -445,6 +492,7 @@ mod tests {
             .with_discv5(|discv5| discv5.table_entries_id().contains(&discv5_id_2)));
 
         // manually trigger connection from node_1:discv5 to node_2:discv5
+        // 手动触发node_1:discv5到node_2:discv5的连接
         node_1
             .discv5
             .as_ref()
@@ -455,6 +503,7 @@ mod tests {
 
         // this won't emit an event, since the nodes already discovered each other on discv4, the
         // number of nodes stored for each node on this level remains 1.
+        // 这不会发出事件，因为双方已经在discv4中发现对方了，每个nodes保存的nodes的数目依然是1
         assert_eq!(1, node_1.discovered_nodes.len());
         assert_eq!(1, node_2.discovered_nodes.len());
     }

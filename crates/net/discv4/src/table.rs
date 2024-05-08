@@ -7,11 +7,13 @@ use std::{collections::HashMap, net::IpAddr, time::Instant};
 #[derive(Debug, Clone, Default)]
 pub(crate) struct PongTable {
     /// The nodes we have received a `Pong` from.
+    /// 已经接收到`Pong`的nodes
     nodes: HashMap<NodeKey, Instant>,
 }
 
 impl PongTable {
     /// Updates the timestamp we received a `Pong` from the given node.
+    /// 更新我们接收到`Pong`的时间戳，对于给定的node
     pub(crate) fn on_pong(&mut self, remote_id: PeerId, remote_ip: IpAddr) {
         let key = NodeKey { remote_id, remote_ip };
         self.nodes.insert(key, Instant::now());

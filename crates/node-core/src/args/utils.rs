@@ -22,6 +22,7 @@ use reth_primitives::{GOERLI, HOLESKY, MAINNET, SEPOLIA};
 pub const SUPPORTED_CHAINS: &[&str] = &["base", "base-sepolia", "optimism", "optimism-sepolia"];
 #[cfg(not(feature = "optimism"))]
 /// Chains supported by reth. First value should be used as the default.
+/// reth支持的Chains，第一个值作为默认值
 pub const SUPPORTED_CHAINS: &[&str] = &["mainnet", "sepolia", "goerli", "holesky", "dev"];
 
 /// Helper to parse a [Duration] from seconds

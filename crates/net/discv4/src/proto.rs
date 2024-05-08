@@ -229,6 +229,7 @@ pub struct FindNode {
 #[derive(Clone, Debug, Eq, PartialEq, RlpEncodable, RlpDecodable)]
 pub struct Neighbours {
     /// The list of nodes containing IP, UDP port, TCP port, and node ID.
+    /// 一系列的nodes，包含IP, UDP port和TCP port以及node ID
     pub nodes: Vec<NodeRecord>,
     /// The expiration timestamp of the packet, an absolute UNIX time stamp.
     pub expire: u64,

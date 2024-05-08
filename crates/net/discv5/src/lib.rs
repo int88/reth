@@ -158,6 +158,9 @@ impl Discv5 {
     /// Spawns [`discv5::Discv5`]. Returns [`discv5::Discv5`] handle in reth compatible wrapper type
     /// [`Discv5`], a receiver of [`discv5::Event`]s from the underlying node, and the local
     /// [`Enr`](discv5::Enr) converted into the reth compatible [`NodeRecord`] type.
+    /// 生成[`discv5::Discv5`]，返回[`discv5::Discv5`]
+    /// handle，以reth兼容的[`Discv5`]封装类型，一个[`discv5::Event`]的接收者，从底层的node，
+    /// 以及本地的[`Enr`](discv5::Enr)，转换为reth兼容的[`NodeRecord`]格式
     pub async fn start(
         sk: &SecretKey,
         discv5_config: Config,
@@ -214,16 +217,19 @@ impl Discv5 {
             };
 
             // add fork id
+            // 添加fork id
             let (chain, fork_id) = fork;
             builder.add_value_rlp(chain, alloy_rlp::encode(fork_id).into());
 
             // add other data
+            // 添加其他的data
             for (key, value) in other_enr_data {
                 builder.add_value_rlp(key, alloy_rlp::encode(value).into());
             }
 
             // enr v4 not to get confused with discv4, independent versioning enr and
             // discovery
+            // enr v4和dsicv4不应该混淆，独立的版本，enr和discovery
             let enr = builder.build(sk).expect("should build enr v4");
             let EnrCombinedKeyWrapper(enr) = enr.into();
 

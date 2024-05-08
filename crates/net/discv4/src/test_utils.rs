@@ -237,6 +237,7 @@ pub async fn create_discv4() -> (Discv4, Discv4Service) {
 }
 
 /// Creates a new testing instance for [`Discv4`] and its service with the given config.
+/// 创建一个[`Discv4`]的测试实例以及给定配置的service
 pub async fn create_discv4_with_config(config: Discv4Config) -> (Discv4, Discv4Service) {
     let mut rng = thread_rng();
     let socket = SocketAddr::from_str("0.0.0.0:0").unwrap();

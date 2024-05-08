@@ -1,4 +1,5 @@
 //! CLI definition and entrypoint to executable
+//! CLI的定义以及执行的入口
 
 use crate::{
     args::{
@@ -27,18 +28,23 @@ use std::{ffi::OsString, fmt, future::Future, sync::Arc};
 pub use crate::core::cli::*;
 
 /// The main reth cli interface.
+/// main reth的cli接口
 ///
 /// This is the entrypoint to the executable.
+/// 这是到executable的entrypoint
 #[derive(Debug, Parser)]
 #[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about = "Reth", long_about = None)]
 pub struct Cli<Ext: clap::Args + fmt::Debug = NoArgs> {
     /// The command to run
+    /// 运行的command
     #[command(subcommand)]
     command: Commands<Ext>,
 
     /// The chain this node is running.
+    /// 这个node运行的chain
     ///
     /// Possible values are either a built-in chain or the path to a chain specification file.
+    /// 可能的值是一个内置的chain或者通往特定的chain文件的路径
     #[arg(
         long,
         value_name = "CHAIN_OR_PATH",
@@ -50,12 +56,16 @@ pub struct Cli<Ext: clap::Args + fmt::Debug = NoArgs> {
     chain: Arc<ChainSpec>,
 
     /// Add a new instance of a node.
+    /// 添加一个node的新实例
     ///
     /// Configures the ports of the node to avoid conflicts with the defaults.
+    /// 配置node的端口来避免和默认值的冲突
     /// This is useful for running multiple nodes on the same machine.
+    /// 这用于在同一个机器运行多个nodes
     ///
     /// Max number of instances is 200. It is chosen in a way so that it's not possible to have
     /// port numbers that conflict with each other.
+    /// 最大的instances的数目是200，它按一种方式选择，这样让各自的端口不会冲突
     ///
     /// Changes to the following port numbers:
     /// - DISCOVERY_PORT: default + `instance` - 1
@@ -71,6 +81,7 @@ pub struct Cli<Ext: clap::Args + fmt::Debug = NoArgs> {
 
 impl Cli {
     /// Parsers only the default CLI arguments
+    /// Parsers解析默认的CLI参数
     pub fn parse_args() -> Self {
         Self::parse()
     }
@@ -87,14 +98,17 @@ impl Cli {
 
 impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
     /// Execute the configured cli command.
+    /// 执行配置的cli命令
     ///
     /// This accepts a closure that is used to launch the node via the
     /// [NodeCommand](node::NodeCommand).
+    /// 这接收一个closure，用于启动node，通过[NodeCommand](node::NodeCommand)
     ///
     ///
     /// # Example
     ///
     /// ```no_run
+    /// // 不运行
     /// use reth::cli::Cli;
     /// use reth_node_ethereum::EthereumNode;
     ///
@@ -110,6 +124,7 @@ impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
     /// # Example
     ///
     /// Parse additional CLI arguments for the node command and use it to configure the node.
+    /// 解析额外的CLI命令，对于node command并且用于配置Node
     ///
     /// ```no_run
     /// use clap::Parser;
@@ -123,6 +138,7 @@ impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
     /// Cli::parse()
     ///     .run(|builder, my_args: MyArgs| async move {
     ///         // launch the node
+    ///         // 启动node
     ///
     ///         Ok(())
     ///     })
@@ -134,6 +150,7 @@ impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
         Fut: Future<Output = eyre::Result<()>>,
     {
         // add network name to logs dir
+        // 添加network name到logs dir
         self.logs.log_file_directory =
             self.logs.log_file_directory.join(self.chain.chain.to_string());
 
@@ -158,9 +175,11 @@ impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
     }
 
     /// Initializes tracing with the configured options.
+    /// 用配置的options初始化tracing
     ///
     /// If file logging is enabled, this function returns a guard that must be kept alive to ensure
     /// that all logs are flushed to disk.
+    /// 如果使能了logging，这个函数返回一个guard，必须保持alive来确保所有的logs被刷到磁盘
     pub fn init_tracing(&self) -> eyre::Result<Option<FileWorkerGuard>> {
         let guard = self.logs.init_tracing()?;
         Ok(guard)
@@ -168,15 +187,19 @@ impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
 }
 
 /// Commands to be executed
+/// 执行的命令
 #[derive(Debug, Subcommand)]
 pub enum Commands<Ext: clap::Args + fmt::Debug = NoArgs> {
     /// Start the node
+    /// 启动node
     #[command(name = "node")]
     Node(node::NodeCommand<Ext>),
     /// Initialize the database from a genesis file.
+    /// 从一个genesis file初始化一个db
     #[command(name = "init")]
     Init(init_cmd::InitCommand),
     /// This syncs RLP encoded blocks from a file.
+    /// 从一个文件同步RLP encoded blocks
     #[command(name = "import")]
     Import(import::ImportCommand),
     /// Dumps genesis block JSON configuration to stdout.
@@ -219,10 +242,13 @@ mod tests {
     /// Tests that the help message is parsed correctly. This ensures that clap args are configured
     /// correctly and no conflicts are introduced via attributes that would result in a panic at
     /// runtime
+    /// 测试help message被正确解析，这确保clap
+    /// args被正确配置并且没有引入冲突，通过attributes，因为这会导致运行时panic
     #[test]
     fn test_parse_help_all_subcommands() {
         let reth = Cli::<NoArgs>::command();
         for sub_command in reth.get_subcommands() {
+            // 获取子命令的名字
             let err = Cli::try_parse_args_from(["reth", sub_command.get_name(), "--help"])
                 .err()
                 .unwrap_or_else(|| {
@@ -231,12 +257,14 @@ mod tests {
 
             // --help is treated as error, but
             // > Not a true "error" as it means --help or similar was used. The help message will be sent to stdout.
+            // --help被作为error，但是不是一个真的"error"，因为这意味着 -- help或者乐死的被使用，help message会被发送给stdout
             assert_eq!(err.kind(), clap::error::ErrorKind::DisplayHelp);
         }
     }
 
     /// Tests that the log directory is parsed correctly. It's always tied to the specific chain's
     /// name
+    /// 测试log directory被正确解析，它总是关联到特定的chain的名字
     #[test]
     fn parse_logs_path() {
         let mut reth = Cli::try_parse_args_from(["reth", "node"]).unwrap();
@@ -244,11 +272,13 @@ mod tests {
             reth.logs.log_file_directory.join(reth.chain.chain.to_string());
         let log_dir = reth.logs.log_file_directory;
         let end = format!("reth/logs/{}", SUPPORTED_CHAINS[0]);
+        // log目录是否匹配
         assert!(log_dir.as_ref().ends_with(end), "{log_dir:?}");
 
         let mut iter = SUPPORTED_CHAINS.iter();
         iter.next();
         for chain in iter {
+            // 使用不同的chains
             let mut reth = Cli::try_parse_args_from(["reth", "node", "--chain", chain]).unwrap();
             reth.logs.log_file_directory =
                 reth.logs.log_file_directory.join(reth.chain.chain.to_string());
@@ -262,6 +292,7 @@ mod tests {
     fn parse_env_filter_directives() {
         let temp_dir = tempfile::tempdir().unwrap();
 
+        // 设置环境变量，配置log
         std::env::set_var("RUST_LOG", "info,evm=debug");
         let reth = Cli::try_parse_args_from([
             "reth",

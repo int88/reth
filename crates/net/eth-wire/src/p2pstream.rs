@@ -65,6 +65,7 @@ const MAX_P2P_CAPACITY: usize = 2;
 
 /// An un-authenticated [`P2PStream`]. This is consumed and returns a [`P2PStream`] after the
 /// `Hello` handshake is completed.
+/// 一个未认证的[`P2PStream`]，它被消费并且返回一个[`P2PStream`]，在`Hello` 握手完成之后
 #[pin_project]
 #[derive(Debug)]
 pub struct UnauthedP2PStream<S> {

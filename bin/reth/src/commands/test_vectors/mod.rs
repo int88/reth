@@ -1,4 +1,5 @@
 //! Command for generating test vectors.
+//! 用于生成test vectors的命令
 
 use clap::{Parser, Subcommand};
 

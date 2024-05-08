@@ -28,10 +28,12 @@ pub struct Discv4Config {
     pub max_find_node_failures: u8,
     /// The interval to use when checking for expired nodes that need to be re-pinged. Default:
     /// 10min.
+    /// 检查超时的nodes，需要被re-pinged，默认为10分钟
     pub ping_interval: Duration,
     /// The duration of we consider a ping timed out.
     pub ping_expiration: Duration,
     /// The rate at which new random lookups should be triggered.
+    /// 随机的lookups被触发的速率
     pub lookup_interval: Duration,
     /// The duration of we consider a FindNode request timed out.
     pub request_timeout: Duration,

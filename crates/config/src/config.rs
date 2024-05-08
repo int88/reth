@@ -11,16 +11,19 @@ use std::{
 };
 
 /// Configuration for the reth node.
+/// 用于配置reth node的配置
 #[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(default)]
 pub struct Config {
     /// Configuration for each stage in the pipeline.
+    /// 对于pipeline中每个stage的配置
     // TODO(onbjerg): Can we make this easier to maintain when we add/remove stages?
     pub stages: StageConfig,
     /// Configuration for pruning.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prune: Option<PruneConfig>,
     /// Configuration for the discovery service.
+    /// discovery service的配置
     pub peers: PeersConfig,
     /// Configuration for peer sessions.
     pub sessions: SessionsConfig,

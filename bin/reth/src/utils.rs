@@ -1,4 +1,5 @@
 //! Common CLI utility functions.
+//! 公共的CLI组件函数
 
 use boyer_moore_magiclen::BMByte;
 use eyre::Result;

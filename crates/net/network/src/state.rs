@@ -53,6 +53,7 @@ pub struct NetworkState<C> {
     /// Manages connections to peers.
     peers_manager: PeersManager,
     /// Buffered messages until polled.
+    /// 缓存的messages，直到轮询
     queued_messages: VecDeque<StateAction>,
     /// The client type that can interact with the chain.
     ///
@@ -60,6 +61,7 @@ pub struct NetworkState<C> {
     /// [Status] block hash.
     client: C,
     /// Network discovery.
+    /// Network discovery服务
     discovery: Discovery,
     /// The type that handles requests.
     ///
@@ -285,6 +287,7 @@ where
     }
 
     /// Event hook for events received from the discovery service.
+    /// 从discovery service接收到的events
     fn on_discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
             DiscoveryEvent::NewNode(DiscoveredEvent::EventQueued {
@@ -292,6 +295,7 @@ where
                 socket_addr,
                 fork_id,
             }) => {
+                // 加入queued messages
                 self.queued_messages.push_back(StateAction::DiscoveredNode {
                     peer_id,
                     socket_addr,
@@ -396,6 +400,7 @@ where
     }
 
     /// Advances the state
+    /// 推动state
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<StateAction> {
         loop {
             // drain buffered messages
@@ -519,6 +524,7 @@ pub(crate) enum StateAction {
         fork_id: ForkId,
     },
     /// A new node was found through the discovery, possibly with a ForkId
+    /// 一个新的node通过discovery被发现，可能有一个ForkId
     DiscoveredNode { peer_id: PeerId, socket_addr: SocketAddr, fork_id: Option<ForkId> },
     /// A peer was added
     PeerAdded(PeerId),

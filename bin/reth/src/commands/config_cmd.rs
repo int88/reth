@@ -10,6 +10,7 @@ use reth_config::Config;
 #[derive(Debug, Parser)]
 pub struct Command {
     /// The path to the configuration file to use.
+    /// 使用的配置文件的路径
     #[arg(long, value_name = "FILE", verbatim_doc_comment)]
     config: Option<PathBuf>,
 
@@ -26,6 +27,7 @@ impl Command {
         } else {
             let path = self.config.clone().unwrap_or_default();
             // confy will create the file if it doesn't exist; we don't want this
+            // confy会创建文件，如果他不存在，我们不想要这样
             if !path.exists() {
                 bail!("Config file does not exist: {}", path.display());
             }

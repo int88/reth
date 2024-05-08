@@ -277,6 +277,7 @@ impl PanickedTaskError {
 }
 
 /// A type that can spawn new tokio tasks
+/// 一个类型可以生成新的tokio tasks
 #[derive(Debug, Clone)]
 pub struct TaskExecutor {
     /// Handle to the tokio runtime this task manager is associated with.

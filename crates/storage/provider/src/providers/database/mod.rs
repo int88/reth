@@ -32,8 +32,10 @@ pub use provider::{DatabaseProvider, DatabaseProviderRO, DatabaseProviderRW};
 use reth_db::mdbx::DatabaseArguments;
 
 /// A common provider that fetches data from a database or static file.
+/// 一个common provider，从一个db或者静态文件抓取数据
 ///
 /// This provider implements most provider or provider factory traits.
+/// 这个provider实现了大多数provider或者provider factory的traits
 #[derive(Debug, Clone)]
 pub struct ProviderFactory<DB> {
     /// Database

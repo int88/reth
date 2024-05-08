@@ -88,10 +88,13 @@ impl NetworkHandle {
     }
 
     /// Returns a new [`FetchClient`] that can be cloned and shared.
+    /// 返回一个新的[`FetchClient`]可以被克隆和共享
     ///
     /// The [`FetchClient`] is the entrypoint for sending requests to the network.
+    /// [`FetchClient`]是entrypoint，用于发送请求到network
     pub async fn fetch_client(&self) -> Result<FetchClient, oneshot::error::RecvError> {
         let (tx, rx) = oneshot::channel();
+        // 本质上是发送NetworkHandleMessage
         let _ = self.manager().send(NetworkHandleMessage::FetchClient(tx));
         rx.await
     }
@@ -244,9 +247,11 @@ impl PeersInfo for NetworkHandle {
         let mut builder = Enr::builder();
         builder.ip(local_node_record.address);
         if local_node_record.address.is_ipv4() {
+            // 如果是ipv4的地址
             builder.udp4(local_node_record.udp_port);
             builder.tcp4(local_node_record.tcp_port);
         } else {
+            // 如果是ipv6的地址
             builder.udp6(local_node_record.udp_port);
             builder.tcp6(local_node_record.tcp_port);
         }
@@ -457,6 +462,7 @@ pub(crate) enum NetworkHandleMessage {
     /// Applies a reputation change to the given peer.
     ReputationChange(PeerId, ReputationChangeKind),
     /// Returns the client that can be used to interact with the network.
+    /// 返回client，可以和network交互
     FetchClient(oneshot::Sender<FetchClient>),
     /// Applies a status update.
     StatusUpdate {

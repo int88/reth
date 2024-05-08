@@ -105,8 +105,10 @@ pub const DEFAULT_DISCOVERY_V5_ADDR: IpAddr = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 pub const DEFAULT_DISCOVERY_V5_PORT: u16 = 9000;
 
 /// The default address for discv4 via UDP: "0.0.0.0:30303"
+/// 对于discv4默认的地址，通过UDP："0.0.0.1:30303"
 ///
 /// Note: The default TCP address is the same.
+/// 注意：默认的TCP地址是相同的
 pub const DEFAULT_DISCOVERY_ADDRESS: SocketAddr =
     SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, DEFAULT_DISCOVERY_PORT));
 
@@ -121,6 +123,8 @@ const ALPHA: usize = 3;
 
 /// Maximum number of nodes to ping at concurrently. 2 full `Neighbours` responses with 16 _new_
 /// nodes. This will apply some backpressure in recursive lookups.
+/// 最大并发ping的nodes的数目，2个full的`Neighbours` responses，有着16个nodes，这会对recursive
+/// lookups施加压力
 const MAX_NODES_PING: usize = 2 * MAX_NODES_PER_BUCKET;
 
 /// The size of the datagram is limited [`MAX_PACKET_SIZE`], 16 nodes, as the discv4 specifies don't
@@ -131,6 +135,7 @@ const MAX_NODES_PING: usize = 2 * MAX_NODES_PER_BUCKET;
 const SAFE_MAX_DATAGRAM_NEIGHBOUR_RECORDS: usize = (MAX_PACKET_SIZE - 109) / 91;
 
 /// The timeout used to identify expired nodes, 24h
+/// 用于标识expired nodes的24h
 ///
 /// Mirrors geth's `bondExpiration` of 24h
 const ENDPOINT_PROOF_EXPIRATION: Duration = Duration::from_secs(24 * 60 * 60);
@@ -153,8 +158,10 @@ pub(crate) type IngressReceiver = mpsc::Receiver<IngressEvent>;
 type NodeRecordSender = OneshotSender<Vec<NodeRecord>>;
 
 /// The Discv4 frontend
+/// Discv4的frontend
 ///
 /// This communicates with the [Discv4Service] by sending commands over a channel.
+/// 它通过channel发送commands来和[Discv4Service]交互
 ///
 /// See also [Discv4::spawn]
 #[derive(Debug, Clone)]
@@ -206,6 +213,7 @@ impl Discv4 {
     }
 
     /// Binds a new UdpSocket and creates the service
+    /// 绑定一个新的UdpSocket并且创建service
     ///
     /// ```
     /// # use std::io;
@@ -277,6 +285,7 @@ impl Discv4 {
     }
 
     /// Starts a `FindNode` recursive lookup that locates the closest nodes to the given node id. See also: <https://github.com/ethereum/devp2p/blob/master/discv4.md#recursive-lookup>
+    /// 开始一个`FindNode` recursive lookup，对于给定node id最近的nodes
     ///
     /// The lookup initiator starts by picking α closest nodes to the target it knows of. The
     /// initiator then sends concurrent FindNode packets to those nodes. α is a system-wide
@@ -285,29 +294,42 @@ impl Discv4 {
     /// closest to the target, it picks α that it has not yet queried and resends FindNode to them.
     /// Nodes that fail to respond quickly are removed from consideration until and unless they do
     /// respond.
+    /// lookup initiators开始选择到target最近的α歌nodes，initiator之后发送并发的FindNode
+    /// packets到这些nodes
+    /// α是一个系统级的并发参数，例如3，在递归步骤中，
+    /// initiator重新发送它从之前的查询中学习到的nodes，从k个initiator听到的离target最近的nodes，
+    /// 它选择α个还没查询的并且重新发送FindNode到他们，Node不能快速回复的，
+    /// 从consideration中移除并且直到他们回复
     //
     // If a round of FindNode queries fails to return a node any closer than the closest already
     // seen, the initiator resends the find node to all of the k closest nodes it has not already
     // queried. The lookup terminates when the initiator has queried and gotten responses from the k
     // closest nodes it has seen.
+    // 如果一轮的FindNode查询不能返回任何Node比之前看到的更近，initiator重新发送find
+    // node到所有k个最近的nodes，它还没有查询，lookup终止，
+    // 当initiator已经请求并且从k个已经看到的nodes获取resonses
     pub async fn lookup_self(&self) -> Result<Vec<NodeRecord>, Discv4Error> {
         self.lookup_node(None).await
     }
 
     /// Looks up the given node id.
+    /// 查找给定的node id
     ///
     /// Returning the closest nodes to the given node id.
+    /// 返回到给定的node id最近的nodes
     pub async fn lookup(&self, node_id: PeerId) -> Result<Vec<NodeRecord>, Discv4Error> {
         self.lookup_node(Some(node_id)).await
     }
 
     /// Performs a random lookup for node records.
+    /// 对于node records进行随机查找
     pub async fn lookup_random(&self) -> Result<Vec<NodeRecord>, Discv4Error> {
         let target = PeerId::random();
         self.lookup_node(Some(target)).await
     }
 
     /// Sends a message to the service to lookup the closest nodes
+    /// 发送一个message到service来查找最近的nodes
     pub fn send_lookup(&self, node_id: PeerId) {
         let cmd = Discv4Command::Lookup { node_id: Some(node_id), tx: None };
         self.send_to_service(cmd);
@@ -333,6 +355,7 @@ impl Discv4 {
     }
 
     /// Adds the node to the table, if it is not already present.
+    /// 添加node到table，如果它不存在
     pub fn add_node(&self, node_record: NodeRecord) {
         let cmd = Discv4Command::Add(node_record);
         self.send_to_service(cmd);
@@ -454,9 +477,11 @@ pub struct Discv4Service {
     /// Currently active pings to specific nodes.
     pending_pings: HashMap<PeerId, PingRequest>,
     /// Currently active endpoint proof verification lookups to specific nodes.
+    /// 当前活跃的endpoint proof verification lookups到特定的nodes
     ///
     /// Entries here means we've proven the peer's endpoint but haven't completed our end of the
     /// endpoint proof
+    /// 这里的Entries意味着我们已经完成了peer的endpoint，但是还没完成我们这端的endpoint proof
     pending_lookup: HashMap<PeerId, (Instant, LookupContext)>,
     /// Currently active FindNode requests
     pending_find_nodes: HashMap<PeerId, FindNodeRequest>,
@@ -475,6 +500,7 @@ pub struct Discv4Service {
     /// Interval when to recheck active requests
     evict_expired_requests_interval: Interval,
     /// Interval when to resend pings.
+    /// 重新发送pings的时间间隔
     ping_interval: Interval,
     /// The interval at which to attempt resolving external IP again.
     resolve_external_ip_interval: Option<ResolveNatInterval>,
@@ -483,6 +509,7 @@ pub struct Discv4Service {
     /// Buffered events populated during poll.
     queued_events: VecDeque<Discv4Event>,
     /// Keeps track of nodes from which we have received a `Pong` message.
+    /// 追踪已经接收到`Pong` message的nodes
     received_pongs: PongTable,
     /// Interval used to expire additionally tracked nodes
     expire_interval: Interval,
@@ -651,19 +678,27 @@ impl Discv4Service {
     }
 
     /// Bootstraps the local node to join the DHT.
+    /// Boostraps the local node加入DHT
     ///
     /// Bootstrapping is a multi-step operation that starts with a lookup of the local node's
     /// own ID in the DHT. This introduces the local node to the other nodes
     /// in the DHT and populates its routing table with the closest proven neighbours.
+    /// Bootstrapping是一个多步骤的操作，从在DHT中查找local node自己的ID开始，这在DHT中将local
+    /// node介绍给其他nodes 并且填充它的routing table，用最近的proven neighbours
     ///
     /// This is similar to adding all bootnodes via [`Self::add_node`], but does not fire a
     /// [`DiscoveryUpdate::Added`] event for the given bootnodes. So boot nodes don't appear in the
     /// update stream, which is usually desirable, since bootnodes should not be connected to.
+    /// 这和通过[`Self::add_node`]添加所有的bootnodes类似，
+    /// 但是不触发[`DiscoveryUpdate::Added`]事件，对于给定的bootnodes，因此boot nodes不会在update
+    /// stream中出现，这通常是期望的，因为bootnodes不应该被连接
     ///
     /// If adding the configured bootnodes should result in a [`DiscoveryUpdate::Added`], see
     /// [`Self::add_all_nodes`].
+    /// 如果添加配置的bootnodes应该导致一个[`DiscoveryUpdate::Added`]，查看[`Self::add_all_nodes`]
     ///
     /// **Note:** This is a noop if there are no bootnodes.
+    /// 注意：这是一个noop，如果没有bootnodes
     pub fn bootstrap(&mut self) {
         for record in self.config.bootstrap_nodes.clone() {
             debug!(target: "discv4", ?record, "pinging boot node");
@@ -671,6 +706,7 @@ impl Discv4Service {
             let entry = NodeEntry::new(record);
 
             // insert the boot node in the table
+            // 将boot node插入到table中
             match self.kbuckets.insert_or_update(
                 &key,
                 entry,
@@ -681,6 +717,7 @@ impl Discv4Service {
             ) {
                 InsertResult::Failed(_) => {}
                 _ => {
+                    // 试着Ping
                     self.try_ping(record, PingReason::InitialInsert);
                 }
             }
@@ -688,10 +725,13 @@ impl Discv4Service {
     }
 
     /// Spawns this services onto a new task
+    /// 将这个services生成到一个新的task
     ///
     /// Note: requires a running runtime
+    /// 注意：需要一个运行的runtime
     pub fn spawn(mut self) -> JoinHandle<()> {
         tokio::task::spawn(async move {
+            // 首先调用bootstrap
             self.bootstrap();
 
             while let Some(event) = self.next().await {
@@ -702,6 +742,7 @@ impl Discv4Service {
     }
 
     /// Creates a new bounded channel for [`DiscoveryUpdate`]s.
+    /// 创建一个新的bounded channel，为了[`DiscoveryUpdate`]
     pub fn update_stream(&mut self) -> ReceiverStream<DiscoveryUpdate> {
         let (tx, rx) = mpsc::channel(512);
         self.update_listeners.push(tx);
@@ -709,57 +750,75 @@ impl Discv4Service {
     }
 
     /// Looks up the local node in the DHT.
+    /// 在DHT中查找local node
     pub fn lookup_self(&mut self) {
         self.lookup(self.local_node_record.id)
     }
 
     /// Looks up the given node in the DHT
+    /// 在DHT中查找给定的node
     ///
     /// A FindNode packet requests information about nodes close to target. The target is a 64-byte
     /// secp256k1 public key. When FindNode is received, the recipient should reply with Neighbors
     /// packets containing the closest 16 nodes to target found in its local table.
+    /// 一个FindNode packet请求关于离target近的nodes的信息，这个target是一个64字节的secp256k1 public
+    /// key，当收到FindNode，接收者应该用Neighbors回复，packets中包含16个离target最近的nodes，
+    /// 在local table中
     //
     // To guard against traffic amplification attacks, Neighbors replies should only be sent if the
     // sender of FindNode has been verified by the endpoint proof procedure.
+    // 为了防止流量放大攻击，Neighbors replies只有在FindNode的sender已经通过endpoint proof
+    // procedure校验之后才能被发送
     pub fn lookup(&mut self, target: PeerId) {
         self.lookup_with(target, None)
     }
 
     /// Starts the recursive lookup process for the given target, <https://github.com/ethereum/devp2p/blob/master/discv4.md#recursive-lookup>.
+    /// 开始对于给定target的递归式查找
     ///
     /// At first the `ALPHA` (==3, defined concurrency factor) nodes that are closest to the target
     /// in the underlying DHT are selected to seed the lookup via `FindNode` requests. In the
     /// recursive step, the initiator resends FindNode to nodes it has learned about from previous
     /// queries.
+    /// 一开始`ALPHA`个在DHT中最接近target的nodes被选为通过`FindNode`请求填充lookup，在递归步骤里，
+    /// initiator重新发送FindNode 到从之前的请求中学习来的nodes
     ///
     /// This takes an optional Sender through which all successfully discovered nodes are sent once
     /// the request has finished.
+    /// 它有一个可选的Sender，通过它，所有成功的discovered nodes会被发送，一旦请求结束
     fn lookup_with(&mut self, target: PeerId, tx: Option<NodeRecordSender>) {
         trace!(target: "discv4", ?target, "Starting lookup");
         let target_key = kad_key(target);
 
         // Start a lookup context with the 16 (MAX_NODES_PER_BUCKET) closest nodes
+        // 开始一个lookup context，有着16（MAX_NODES_PER_BUCKET）个最近的nodes
         let ctx = LookupContext::new(
             target_key.clone(),
             self.kbuckets
                 .closest_values(&target_key)
                 .filter(|node| {
+                    // 过滤nodes
                     node.value.has_endpoint_proof &&
                         !self.pending_find_nodes.contains_key(&node.key.preimage().0)
                 })
+                // 最多获取16个
                 .take(MAX_NODES_PER_BUCKET)
                 .map(|n| (target_key.distance(&n.key), n.value.record)),
             tx,
         );
 
         // From those 16, pick the 3 closest to start the concurrent lookup.
+        // 从16个中选择3个最近的，开始并行的lookup
         let closest = ctx.closest(ALPHA);
 
         if closest.is_empty() && self.pending_find_nodes.is_empty() {
             // no closest nodes, and no lookup in progress: table is empty.
+            // 没有closest nodes并且没有正在进行中的lookup：table为空
             // This could happen if all records were deleted from the table due to missed pongs
             // (e.g. connectivity problems over a long period of time, or issues during initial
             // bootstrapping) so we attempt to bootstrap again
+            // 这可能发生，如果所有的records被从table中删除，因为丢失的pongs（例如，
+            // 一段很长时间的连接问题，或者在初始的bootstraping期间发生），因此我们尝试再次bootstrap
             self.bootstrap();
             return
         }
@@ -772,14 +831,18 @@ impl Discv4Service {
     }
 
     /// Sends a new `FindNode` packet to the node with `target` as the lookup target.
+    /// 发送一个新的`FindNode` packet到node `target`
     ///
     /// CAUTION: This expects there's a valid Endpoint proof to the given `node`.
+    /// 注意：这期望有一个合法的Endpoint proof，到给定的`node`
     fn find_node(&mut self, node: &NodeRecord, ctx: LookupContext) {
         trace!(target: "discv4", ?node, lookup=?ctx.target(), "Sending FindNode");
+        // 标记为queried
         ctx.mark_queried(node.id);
         let id = ctx.target();
         let msg = Message::FindNode(FindNode { id, expire: self.find_node_expiration() });
         self.send_packet(msg, node.udp_addr());
+        // 插入pending_find_nodes
         self.pending_find_nodes.insert(node.id, FindNodeRequest::new(ctx));
     }
 
@@ -886,6 +949,7 @@ impl Discv4Service {
     }
 
     /// Callback invoked when we receive a pong from the peer.
+    /// 当我们从peer接收到一个pong时调用的callback
     fn update_on_pong(&mut self, record: NodeRecord, mut last_enr_seq: Option<u64>) {
         if record.id == *self.local_peer_id() {
             return
@@ -898,28 +962,33 @@ impl Discv4Service {
 
         // if the peer included a enr seq in the pong then we can try to request the ENR of that
         // node
+        // 如果peer包含一个enr seq，在pong里，我们可以试着发送ENR的请求到这个node
         let has_enr_seq = last_enr_seq.is_some();
 
         let key = kad_key(record.id);
         match self.kbuckets.entry(&key) {
             kbucket::Entry::Present(mut entry, old_status) => {
                 // endpoint is now proven
+                // endpoint现在已经proven
                 entry.value_mut().has_endpoint_proof = true;
                 entry.value_mut().update_with_enr(last_enr_seq);
 
                 if !old_status.is_connected() {
+                    // 如果之前的状态不是connected
                     let _ = entry.update(ConnectionState::Connected, Some(old_status.direction));
                     trace!(target: "discv4", ?record, "added after successful endpoint proof");
                     self.notify(DiscoveryUpdate::Added(record));
 
                     if has_enr_seq {
                         // request the ENR of the node
+                        // 请求node的ENR
                         self.send_enr_request(record);
                     }
                 }
             }
             kbucket::Entry::Pending(mut entry, mut status) => {
                 // endpoint is now proven
+                // endpoint已经被proven
                 entry.value().has_endpoint_proof = true;
                 entry.value().update_with_enr(last_enr_seq);
 
@@ -980,9 +1049,11 @@ impl Discv4Service {
     }
 
     /// Encodes the packet, sends it and returns the hash.
+    /// 对packet进行编码，发送它并且返回hash
     pub(crate) fn send_packet(&mut self, msg: Message, to: SocketAddr) -> B256 {
         let (payload, hash) = msg.encode(&self.secret_key);
         trace!(target: "discv4", r#type=?msg.msg_type(), ?to, ?hash, "sending packet");
+        // 通过egress发送
         let _ = self.egress.try_send((payload, to)).map_err(|err| {
             debug!(
                 target: "discv4",
@@ -994,6 +1065,7 @@ impl Discv4Service {
     }
 
     /// Message handler for an incoming `Ping`
+    /// 对于一个到来的`Ping`的handler
     fn on_ping(&mut self, ping: Ping, remote_addr: SocketAddr, remote_id: PeerId, hash: B256) {
         if self.is_expired(ping.expire) {
             // ping's expiration timestamp is in the past
@@ -1001,6 +1073,7 @@ impl Discv4Service {
         }
 
         // create the record
+        // 创建record
         let record = NodeRecord {
             address: remote_addr.ip(),
             udp_port: remote_addr.port(),
@@ -1014,9 +1087,12 @@ impl Discv4Service {
         // See also <https://github.com/ethereum/devp2p/blob/master/discv4.md#ping-packet-0x01>:
         // > If no communication with the sender of this ping has occurred within the last 12h, a
         // > ping should be sent in addition to pong in order to receive an endpoint proof.
+        // > 如果和ping的sender在最近12h都没有交互，应该在pong之外再携带一个Ping，
+        // > 为了获取一个endpoint proof
         //
         // Note: we only mark if the node is absent because the `last 12h` condition is handled by
         // the ping interval
+        // 注意：我们只标记node是否为absent，因为`最近12h`的条件是被ping interval处理的
         let mut is_new_insert = false;
         let mut needs_bond = false;
         let mut is_proven = false;
@@ -1039,22 +1115,28 @@ impl Discv4Service {
                     NodeStatus {
                         direction: ConnectionDirection::Incoming,
                         // mark as disconnected until endpoint proof established on pong
+                        // 标记为disconnected，直到在pong的时候建立endpoint proof
                         state: ConnectionState::Disconnected,
                     },
                 ) {
                     BucketInsertResult::Inserted | BucketInsertResult::Pending { .. } => {
                         // mark as new insert if insert was successful
+                        // 标记为新插入的，如果插入成功
                         is_new_insert = true;
                     }
                     BucketInsertResult::Full => {
                         // we received a ping but the corresponding bucket for the peer is already
                         // full, we can't add any additional peers to that bucket, but we still want
                         // to emit an event that we discovered the node
+                        // 我们收到一个ping，但是peer对应的bucket已经满了，
+                        // 我们不能增加额外的peers到bucket，但是
+                        // 我们依然想要发送一个event，表示我们发现了node
                         trace!(target: "discv4", ?record, "discovered new record but bucket is full");
                         self.notify(DiscoveryUpdate::DiscoveredAtCapacity(record));
                         needs_bond = true;
                     }
                     BucketInsertResult::TooManyIncoming | BucketInsertResult::NodeExists => {
+                        // 插入失败，但是我们依然想要发送pong
                         needs_bond = true;
                         // insert unsuccessful but we still want to send the pong
                     }
@@ -1078,6 +1160,7 @@ impl Discv4Service {
         self.send_packet(pong, remote_addr);
 
         // if node was absent also send a ping to establish the endpoint proof from our end
+        // 如果node不存在，也发送一个ping来建立endpoint proof，从我们这端
         if is_new_insert {
             self.try_ping(record, PingReason::InitialInsert);
         } else if needs_bond {
@@ -1086,10 +1169,14 @@ impl Discv4Service {
             // if node has been proven, this means we've received a pong and verified its endpoint
             // proof. We've also sent a pong above to verify our endpoint proof, so we can now
             // send our find_nodes request if PingReason::Lookup
+            // 如果node已经被proven，这意味着我们接收到一个pong并且校验它的endpoint
+            // proof，我们同时在上面发送一个 pong来校验我们的endpoint
+            // proof，因此我们可以发送我们自己的find_nodes，如果PingReason为LookUp
             if let Some((_, ctx)) = self.pending_lookup.remove(&record.id) {
                 if self.pending_find_nodes.contains_key(&record.id) {
                     // there's already another pending request, unmark it so the next round can
                     // try to send it
+                    // 已经有一个pending request，unmark，这样下一个轮可以试着发送
                     ctx.unmark_queried(record.id);
                 } else {
                     self.find_node(&record, ctx);
@@ -1097,6 +1184,7 @@ impl Discv4Service {
             }
         } else {
             // Request ENR if included in the ping
+            // 请求ENR，如果包含在ping中
             match (ping.enr_sq, old_enr) {
                 (Some(new), Some(old)) => {
                     if new > old {
@@ -1112,9 +1200,11 @@ impl Discv4Service {
     }
 
     // Guarding function for [`Self::send_ping`] that applies pre-checks
+    // 对于[`Self::send_ping`]的Guarding function，应用pre-checks
     fn try_ping(&mut self, node: NodeRecord, reason: PingReason) {
         if node.id == *self.local_peer_id() {
             // don't ping ourselves
+            // 不要ping自己
             return
         }
 
@@ -1173,6 +1263,7 @@ impl Discv4Service {
     }
 
     /// Message handler for an incoming `Pong`.
+    /// 对于接收到的一个`Pong`的handler
     fn on_pong(&mut self, pong: Pong, remote_addr: SocketAddr, remote_id: PeerId) {
         if self.is_expired(pong.expire) {
             return
@@ -1193,6 +1284,7 @@ impl Discv4Service {
         };
 
         // keep track of the pong
+        // 追踪接收到的pong
         self.received_pongs.on_pong(remote_id, remote_addr.ip());
 
         match reason {
@@ -1209,8 +1301,12 @@ impl Discv4Service {
                 self.update_on_pong(node, pong.enr_sq);
                 // insert node and assoc. lookup_context into the pending_lookup table to complete
                 // our side of the endpoint proof verification.
-                // Start the lookup timer here - and evict accordingly. Note that this is a separate
-                // timer than the ping_request timer.
+                // 插入node以及相关的lookup_context到pending_lookup table来完成我们这端的endpoint
+                // proof verification Start the lookup timer here - and evict
+                // accordingly. Note that this is a separate timer than the
+                // ping_request timer.
+                // 这里启动lookup timer - 相应地驱逐，注意这是一个另外的timer，针对ping_request
+                // timer
                 self.pending_lookup.insert(node.id, (Instant::now(), ctx));
             }
         }
@@ -1288,24 +1384,29 @@ impl Discv4Service {
 
     /// Handler for incoming `Neighbours` messages that are handled if they're responses to
     /// `FindNode` requests.
+    /// 对于`Neighbours` messages的Handler，可以被处理，如果他们是`FindNode`请求的responses
     fn on_neighbours(&mut self, msg: Neighbours, remote_addr: SocketAddr, node_id: PeerId) {
         if self.is_expired(msg.expire) {
             // response is expired
             return
         }
         // check if this request was expected
+        // 检查这个请求是不是预期的
         let ctx = match self.pending_find_nodes.entry(node_id) {
             Entry::Occupied(mut entry) => {
                 {
                     let request = entry.get_mut();
                     // Mark the request as answered
+                    // 将request标记为answered
                     request.answered = true;
                     let total = request.response_count + msg.nodes.len();
 
                     // Neighbours response is exactly 1 bucket (16 entries).
+                    // Neighbours刚好回复了一个bucket（16个entries）
                     if total <= MAX_NODES_PER_BUCKET {
                         request.response_count = total;
                     } else {
+                        // 超过了每个bucket的max nodes的数目
                         trace!(target: "discv4", total, from=?remote_addr, "Received neighbors packet entries exceeds max nodes per bucket");
                         return
                     }
@@ -1313,6 +1414,7 @@ impl Discv4Service {
 
                 if entry.get().response_count == MAX_NODES_PER_BUCKET {
                     // node responding with a full bucket of records
+                    // node回复了一个full bucket of records
                     let ctx = entry.remove().lookup_context;
                     ctx.mark_responded(node_id);
                     ctx
@@ -1322,6 +1424,7 @@ impl Discv4Service {
             }
             Entry::Vacant(_) => {
                 // received neighbours response without requesting it
+                // 收到了neighbours response，没有请求它
                 trace!(target: "discv4", from=?remote_addr, "Received unsolicited Neighbours");
                 return
             }
@@ -1329,8 +1432,10 @@ impl Discv4Service {
 
         // This is the recursive lookup step where we initiate new FindNode requests for new nodes
         // that were discovered.
+        // 这是递归的查找步骤，我们初始化新的FindNode请求，对于发现的新的nodes
         for node in msg.nodes.into_iter().map(NodeRecord::into_ipv4_mapped) {
             // prevent banned peers from being added to the context
+            // 防止banned peers加入context
             if self.config.ban_list.is_banned(&node.id, &node.address) {
                 trace!(target: "discv4", peer_id=?node.id, ip=?node.address, "ignoring banned record");
                 continue
@@ -1340,7 +1445,9 @@ impl Discv4Service {
         }
 
         // get the next closest nodes, not yet queried nodes and start over.
+        // 获取下一个closest nodes，还没有请求nodes并且开始
         let closest =
+            // 已经确认不再pending_find_nodes中
             ctx.filter_closest(ALPHA, |node| !self.pending_find_nodes.contains_key(&node.id));
 
         for closest in closest {
@@ -1350,8 +1457,13 @@ impl Discv4Service {
                     // the node's endpoint is not proven yet, so we need to ping it first, on
                     // success, we will add the node to the pending_lookup table, and wait to send
                     // back a Pong before initiating a FindNode request.
+                    // node的endpoint还没有被proven，因此我们需要先ping，成功的话，
+                    // 我们会将它加入到pending_lookup table并且等待
+                    // 返回一个POng，在初始化一个FindNode请求之前
                     // In order to prevent that this node is selected again on subsequent responses,
                     // while the ping is still active, we always mark it as queried.
+                    // 为了防止在后续的responses再次被选中，当ping依然active的时候，
+                    // 我们总是将它标记为queried
                     ctx.mark_queried(closest.id);
                     let node = NodeEntry::new(closest);
                     match entry.insert(
@@ -1363,10 +1475,12 @@ impl Discv4Service {
                     ) {
                         BucketInsertResult::Inserted | BucketInsertResult::Pending { .. } => {
                             // only ping if the node was added to the table
+                            // 只有node被加入的table的时候ping
                             self.try_ping(closest, PingReason::Lookup(closest, ctx.clone()))
                         }
                         BucketInsertResult::Full => {
                             // new node but the node's bucket is already full
+                            // 新的node，但是node的bucket已经满了
                             self.notify(DiscoveryUpdate::DiscoveredAtCapacity(closest))
                         }
                         _ => {}
@@ -1374,6 +1488,7 @@ impl Discv4Service {
                 }
                 BucketEntry::SelfEntry => {
                     // we received our own node entry
+                    // 我们接收到了自己的node entry
                 }
                 _ => self.find_node(&closest, ctx.clone()),
             }
@@ -1483,9 +1598,12 @@ impl Discv4Service {
     }
 
     /// Re-pings all nodes which endpoint proofs are considered expired: [``NodeEntry::is_expired]
+    /// 重新pings所有的nodes，他们的endpoints proofs被认为是过期了
     ///
     /// This will send a `Ping` to the nodes, if a node fails to respond with a `Pong` to renew the
     /// endpoint proof it will be removed from the table.
+    /// 这会重新发送一个`Ping`到nodes，如果一个nodes回复`Pong`失败，来刷新endpoint
+    /// proof，它会从table中移除
     fn re_ping_oldest(&mut self) {
         let mut nodes = self
             .kbuckets
@@ -1557,6 +1675,7 @@ impl Discv4Service {
     }
 
     /// Polls the socket and advances the state.
+    /// 轮询socket并且推进state
     ///
     /// To prevent traffic amplification attacks, implementations must verify that the sender of a
     /// query participates in the discovery protocol. The sender of a packet is considered verified
@@ -1578,6 +1697,7 @@ impl Discv4Service {
 
             // re-ping some peers
             while self.ping_interval.poll_tick(cx).is_ready() {
+                // 重新ping一些peers
                 self.re_ping_oldest();
             }
 
@@ -1588,6 +1708,7 @@ impl Discv4Service {
             }
 
             // drain all incoming `Discv4` commands, this channel can never close
+            // 排干所有到来的`Discv4` commands，这个channel永远不会关闭
             while let Poll::Ready(Some(cmd)) = self.commands_rx.poll_recv(cx) {
                 match cmd {
                     Discv4Command::Add(enr) => {
@@ -1720,10 +1841,13 @@ impl Stream for Discv4Service {
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Poll the internal poll method
+        // 对内部的poll方法进行轮询
         match ready!(self.get_mut().poll(cx)) {
             // if the service is terminated, return None to terminate the stream
+            // 如果service被终止，返回None来终止stream
             Discv4Event::Terminated => Poll::Ready(None),
             // For any other event, return Poll::Ready(Some(event))
+            // 对于任何其他的事件，返回Poll::Ready(Some(event))
             ev => Poll::Ready(Some(ev)),
         }
     }
@@ -1744,8 +1868,10 @@ impl fmt::Debug for Discv4Service {
 }
 
 /// The Event type the Service stream produces.
+/// Service产生的Event类型
 ///
 /// This is mainly used for testing purposes and represents messages the service processed
+/// 这主要用于测试目的并且代表service处理的messages
 #[derive(Debug, Eq, PartialEq)]
 pub enum Discv4Event {
     /// A `Ping` message was handled.
@@ -1761,6 +1887,7 @@ pub enum Discv4Event {
     /// A `EnrResponse` message was handled.
     EnrResponse,
     /// Service is being terminated
+    /// Service被终止
     Terminated,
 }
 
@@ -1821,6 +1948,7 @@ pub(crate) async fn receive_loop(udp: Arc<UdpSocket>, tx: IngressSender, local_i
 }
 
 /// The commands sent from the frontend [Discv4] to the service [Discv4Service].
+/// 从frontend [Disv4]到service [Discv4Service]的commands
 enum Discv4Command {
     Add(NodeRecord),
     SetTcpPort(u16),
@@ -1900,9 +2028,11 @@ impl LookupTargetRotator {
 }
 
 /// Tracks lookups across multiple `FindNode` requests.
+/// 追踪lookups，跨越多个`FindNode`请求
 ///
 /// If this type is dropped by all Clones, it will send all the discovered nodes to the listener, if
 /// one is present.
+/// 如果这个类型被所有的Clones丢弃，它会发送所有的discovered nodes到listener，如果一个存在
 #[derive(Clone, Debug)]
 struct LookupContext {
     inner: Rc<LookupContextInner>,
@@ -1910,11 +2040,13 @@ struct LookupContext {
 
 impl LookupContext {
     /// Create new context for a recursive lookup
+    /// 创建一个新的context用于recursieve lookup
     fn new(
         target: discv5::Key<NodeKey>,
         nearest_nodes: impl IntoIterator<Item = (Distance, NodeRecord)>,
         listener: Option<NodeRecordSender>,
     ) -> Self {
+        // 获取最近的nodes
         let closest_nodes = nearest_nodes
             .into_iter()
             .map(|(distance, record)| {
@@ -1947,6 +2079,7 @@ impl LookupContext {
     }
 
     /// Returns the closest nodes that have not been queried yet.
+    /// 返回最近的，还没有被请求的nodes
     fn filter_closest<P>(&self, num: usize, filter: P) -> Vec<NodeRecord>
     where
         P: FnMut(&NodeRecord) -> bool,
@@ -1963,10 +2096,13 @@ impl LookupContext {
     }
 
     /// Inserts the node if it's missing
+    /// 插入nodes，如果它是缺失的
     fn add_node(&self, record: NodeRecord) {
+        // 获取distance
         let distance = self.inner.target.distance(&kad_key(record.id));
         let mut closest = self.inner.closest_nodes.borrow_mut();
         if let btree_map::Entry::Vacant(entry) = closest.entry(distance) {
+            // 插入新的nodes
             entry.insert(QueryNode { record, queried: false, responded: false });
         }
     }
@@ -1980,6 +2116,7 @@ impl LookupContext {
     }
 
     /// Marks the node as queried
+    /// 将node标记为queried
     fn mark_queried(&self, id: PeerId) {
         self.set_queried(id, true)
     }
@@ -1990,6 +2127,7 @@ impl LookupContext {
     }
 
     /// Marks the node as responded
+    /// 将node标记为responded
     fn mark_responded(&self, id: PeerId) {
         if let Some((_, node)) =
             self.inner.closest_nodes.borrow_mut().iter_mut().find(|(_, node)| node.record.id == id)
@@ -2000,22 +2138,31 @@ impl LookupContext {
 }
 
 // SAFETY: The [`Discv4Service`] is intended to be spawned as task which requires `Send`.
+// 注意：[`Discv4Service`]会生成task，需要`Send`
 // The `LookupContext` is shared by all active `FindNode` requests that are part of the lookup step.
 // Which can modify the context. The shared context is only ever accessed mutably when a `Neighbour`
 // response is processed and all Clones are stored inside [`Discv4Service`], in other words it is
 // guaranteed that there's only 1 owner ([`Discv4Service`]) of all possible [`Rc`] clones of
 // [`LookupContext`].
+// `LookupContext`被所有活跃的`FindNode`请求共享，是作为lookup步骤的一部分，他们可能会修改context，
+// 共享的context，只有在`Neighbor` response被处理的时候能accessed
+// mutably并且所有Clones被存储在[`Discv4Service`]，换句话说，只有一个owner
+// ([`Discv4Service`])，对于所有 可能的[`LookupContext`]的[`Rc`] clones
 unsafe impl Send for LookupContext {}
 #[derive(Debug)]
 struct LookupContextInner {
     /// The target to lookup.
+    /// 查找的target
     target: discv5::Key<NodeKey>,
     /// The closest nodes
+    /// 最近的nodes
     closest_nodes: RefCell<BTreeMap<Distance, QueryNode>>,
     /// A listener for all the nodes retrieved in this lookup
+    /// 对于lookup中获取的nodes的所有的listener
     ///
     /// This is present if the lookup was triggered manually via [Discv4] and we want to return all
     /// the nodes once the lookup finishes.
+    /// 这会存在，如果lookup通过[Discv4]手动触发并且我们想要返回所有的nodes，在lookup结束的时候
     listener: Option<NodeRecordSender>,
 }
 
@@ -2037,6 +2184,7 @@ impl Drop for LookupContextInner {
 }
 
 /// Tracks the state of a recursive lookup step
+/// 追踪一个recursive lookup step的状态
 #[derive(Debug, Clone, Copy)]
 struct QueryNode {
     record: NodeRecord,
@@ -2049,8 +2197,10 @@ struct FindNodeRequest {
     // Timestamp when the request was sent.
     sent_at: Instant,
     // Number of items sent by the node
+    // node发送的items的数目
     response_count: usize,
     // Whether the request has been answered yet.
+    // 请求是否已经被回答
     answered: bool,
     /// Response buffer
     lookup_context: LookupContext,
@@ -2140,6 +2290,7 @@ impl NodeEntry {
 
 impl NodeEntry {
     /// Returns true if the node should be re-pinged.
+    /// 返回true，如果node应该re-pinged
     fn is_expired(&self) -> bool {
         self.last_seen.elapsed() > ENDPOINT_PROOF_EXPIRATION
     }
@@ -2152,25 +2303,33 @@ enum PingReason {
     InitialInsert,
     /// Initial ping to a previously unknown peer that didn't fit into the table. But we still want
     /// to establish a bond.
+    /// 初始化ping到一个之前未知的peer，不适合table，但是我们依然想要建立一个bond
     EstablishBond,
     /// Re-ping a peer.
     RePing,
     /// Part of a lookup to ensure endpoint is proven before we can send a FindNode request.
+    /// lookup的一部分，确保endpoint已经被proven，在我们发送一个FindNode请求之前
     Lookup(NodeRecord, LookupContext),
 }
 
 /// Represents node related updates state changes in the underlying node table
+/// 代表node相关的，对于state的更新，在底层的node table
 #[derive(Debug, Clone)]
 pub enum DiscoveryUpdate {
     /// A new node was discovered _and_ added to the table.
+    /// 一个新的node被发现并且加入到table中
     Added(NodeRecord),
     /// A new node was discovered but _not_ added to the table because it is currently full.
+    /// 一个新的node被发现，但是没有加入到table，因为它已经满了
     DiscoveredAtCapacity(NodeRecord),
     /// Received a [`ForkId`] via EIP-868 for the given [`NodeRecord`].
+    /// 接收到一个[`ForkId`]，通过EIP-868，对于给定的[`NodeRecord`]
     EnrForkId(NodeRecord, ForkId),
     /// Node that was removed from the table
+    /// Node从table被移除
     Removed(PeerId),
     /// A series of updates
+    /// 一系列的更新
     Batch(Vec<DiscoveryUpdate>),
 }
 
@@ -2399,6 +2558,7 @@ mod tests {
 
         let id = PeerId::random();
         let key = kad_key(id);
+        // 构建一个随机的NodeRecord
         let record = NodeRecord::new("0.0.0.0:0".parse().unwrap(), id);
 
         let _ = service.kbuckets.insert_or_update(

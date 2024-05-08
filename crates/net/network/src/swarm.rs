@@ -249,10 +249,12 @@ where
             StateAction::PeerRemoved(peer_id) => return Some(SwarmEvent::PeerRemoved(peer_id)),
             StateAction::DiscoveredNode { peer_id, socket_addr, fork_id } => {
                 // Don't try to connect to peer if node is shutting down
+                // 不要试着连接peer，如果node正在shutting down
                 if self.is_shutting_down() {
                     return None
                 }
                 // Insert peer only if no fork id or a valid fork id
+                // 插入peer，如果没有fork id或者有一个合法的fork id
                 if fork_id.map_or_else(|| true, |f| self.sessions.is_valid_fork_id(f)) {
                     self.state_mut().peers_mut().add_peer(peer_id, socket_addr, fork_id);
                 }

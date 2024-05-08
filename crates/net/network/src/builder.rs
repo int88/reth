@@ -66,6 +66,7 @@ impl<C, Tx, Eth> NetworkBuilder<C, Tx, Eth> {
     }
 
     /// Creates a new [`EthRequestHandler`] and wires it to the network.
+    /// 创建一个新的[`EthRequestHandler`]并且和network关联
     pub fn request_handler<Client>(
         self,
         client: Client,

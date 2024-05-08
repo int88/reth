@@ -1,4 +1,5 @@
 //! A tokio based CLI runner.
+//! 基于tokio的CLI runner
 
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",
@@ -9,6 +10,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 //! Entrypoint for running commands.
+//! 运行commands的Entrypoint
 
 use futures::pin_mut;
 use reth_tasks::{TaskExecutor, TaskManager};
@@ -16,8 +18,10 @@ use std::future::Future;
 use tracing::{debug, error, trace};
 
 /// Executes CLI commands.
+/// 执行CLI命令
 ///
 /// Provides utilities for running a cli command to completion.
+/// 提供工具用于运行一个cli命令到结束
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct CliRunner;
@@ -41,6 +45,7 @@ impl CliRunner {
         let AsyncCliRunner { context, mut task_manager, tokio_runtime } = AsyncCliRunner::new()?;
 
         // Executes the command until it finished or ctrl-c was fired
+        // 运行命令，直到它结束或者出发了ctrl-c
         let command_res = tokio_runtime.block_on(run_to_completion_or_panic(
             &mut task_manager,
             run_until_ctrl_c(command(context)),
@@ -120,6 +125,7 @@ impl AsyncCliRunner {
 }
 
 /// Additional context provided by the [CliRunner] when executing commands
+/// [CliRunner]额外提供的context，当运行命令时
 #[derive(Debug)]
 pub struct CliContext {
     /// Used to execute/spawn tasks

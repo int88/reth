@@ -460,6 +460,7 @@ mod tests {
             LinkEntry { domain: "nodes.example.org".to_string(), pubkey: secret_key.public() };
         resolver.insert(link.domain.clone(), root.to_string());
 
+        // 构建enr
         let mut builder = Enr::builder();
         let mut buf = Vec::new();
         let fork_id = MAINNET.hardfork_fork_id(Hardfork::Frontier).unwrap();

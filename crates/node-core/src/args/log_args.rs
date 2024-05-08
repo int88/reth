@@ -12,6 +12,7 @@ use tracing::{level_filters::LevelFilter, Level};
 const MB_TO_BYTES: u64 = 1024 * 1024;
 
 /// The log configuration.
+/// log的配置
 #[derive(Debug, Args)]
 #[command(next_help_heading = "Logging")]
 pub struct LogArgs {

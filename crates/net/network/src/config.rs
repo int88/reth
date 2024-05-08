@@ -24,6 +24,7 @@ use crate::protocol::{IntoRlpxSubProtocol, RlpxSubProtocols};
 pub use secp256k1::SecretKey;
 
 /// Convenience function to create a new random [`SecretKey`]
+/// 方便的函数用于创建一个新的random [`SecretKey`]
 pub fn rng_secret_key() -> SecretKey {
     SecretKey::new(&mut rand::thread_rng())
 }
@@ -32,9 +33,11 @@ pub fn rng_secret_key() -> SecretKey {
 #[derive(Debug)]
 pub struct NetworkConfig<C> {
     /// The client type that can interact with the chain.
+    /// client类型可以和chain交互
     ///
     /// This type is used to fetch the block number after we established a session and received the
     /// [Status] block hash.
+    /// 这个类型用于获取block number，在我们建立一个session并且接收到[Status] block hash之后
     pub client: C,
     /// The node's secret key, from which the node's identity is derived.
     pub secret_key: SecretKey,
@@ -152,6 +155,7 @@ where
     C: BlockReader + HeaderProvider + Clone + Unpin + 'static,
 {
     /// Starts the networking stack given a [NetworkConfig] and returns a handle to the network.
+    /// Starts启动networking stack，给定一个[NetworkConfig]并且返回一个对于network的handle
     pub async fn start_network(self) -> Result<NetworkHandle, NetworkError> {
         let client = self.client.clone();
         let (handle, network, _txpool, eth) =

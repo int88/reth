@@ -133,6 +133,7 @@ mod tests {
     async fn test_ping_timeout() {
         let interval = Duration::from_millis(300);
         // we should wait for the interval to elapse and receive a pong before the timeout elapses
+        // 我们应该等待interval流失并且接收pong，在超时之前
         let mut pinger = Pinger::new(interval, Duration::from_millis(20));
         assert_eq!(pinger.next().await.unwrap().unwrap(), PingerEvent::Ping);
         pinger.on_pong().unwrap();

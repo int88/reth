@@ -17,12 +17,14 @@ use reth_transaction_pool::{
 };
 
 /// Type configuration for a regular Ethereum node.
+/// 对于一个正常的Ethereum node的配置
 #[derive(Debug, Default, Clone, Copy)]
 #[non_exhaustive]
 pub struct EthereumNode;
 
 impl EthereumNode {
     /// Returns a [ComponentsBuilder] configured for a regular Ethereum node.
+    /// 返回一个[ComponentsBuilder]的配置，对于一个正常的Ethereum node
     pub fn components<Node>(
     ) -> ComponentsBuilder<Node, EthereumPoolBuilder, EthereumPayloadBuilder, EthereumNetworkBuilder>
     where
