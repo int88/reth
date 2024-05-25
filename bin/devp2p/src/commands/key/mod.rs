@@ -1,25 +1,28 @@
 use clap::{Parser, Subcommand};
 
+mod generate;
+
 /// `devp2p key` command
 #[derive(Debug, Parser)]
 pub struct KeyCommand {
     #[command(subcommand)]
-    command: Subcommands,
+    pub command: Subcommands,
 }
 
 /// `devp2p key` subcommands
 #[derive(Subcommand, Debug)]
 pub enum Subcommands {
-    Generate,
+    // Generates node key files
+    Generate(generate::Command),
 }
 
 impl KeyCommand {
     pub fn execute(&self) -> eyre::Result<()> {
         println!("key command execute");
 
-        match self.command {
-            Subcommands::Generate => {
-                println!("key generate subcommand execute");
+        match &self.command {
+            Subcommands::Generate(command) => {
+                command.execute();
             }
         }
         Ok(())
