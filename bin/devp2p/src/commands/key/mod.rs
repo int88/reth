@@ -18,11 +18,9 @@ pub enum Subcommands {
 
 impl KeyCommand {
     pub fn execute(&self) -> eyre::Result<()> {
-        println!("key command execute");
-
         match &self.command {
             Subcommands::Generate(command) => {
-                command.execute();
+                let _ = command.execute();
             }
         }
         Ok(())

@@ -26,6 +26,7 @@ pub use secp256k1::SecretKey;
 /// Convenience function to create a new random [`SecretKey`]
 /// 方便的函数用于创建一个新的random [`SecretKey`]
 pub fn rng_secret_key() -> SecretKey {
+    // 调用SecretKey的new方法
     SecretKey::new(&mut rand::thread_rng())
 }
 

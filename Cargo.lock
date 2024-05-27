@@ -2333,15 +2333,9 @@ version = "0.0.0"
 dependencies = [
  "clap",
  "eyre",
- "futures",
- "once_cell",
- "reth-discv4",
- "reth-ecies",
- "reth-eth-wire",
  "reth-network",
  "reth-primitives",
  "secp256k1 0.27.0",
- "tokio",
 ]
 
 [[package]]
