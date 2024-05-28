@@ -1,4 +1,5 @@
 //! Example of how to use the network as a standalone component
+//! 如何使用network作为一个独立的组件
 //!
 //! Run with
 //!
@@ -13,24 +14,31 @@ use reth_provider::test_utils::NoopProvider;
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     // This block provider implementation is used for testing purposes.
+    // 这个block provider的实现，用于测试目的
     let client = NoopProvider::default();
 
     // The key that's used for encrypting sessions and to identify our node.
+    // key用于加密sessions以及识别我们的node
     let local_key = rng_secret_key();
 
     // Configure the network
+    // 配置network
     let config = NetworkConfig::builder(local_key).mainnet_boot_nodes().build(client);
 
     // create the network instance
+    // 创建network实例
     let network = NetworkManager::new(config).await?;
 
     // get a handle to the network to interact with it
+    // 获取network的一个handle来和它交互
     let handle = network.handle().clone();
 
     // spawn the network
+    // 启动network
     tokio::task::spawn(network);
 
     // interact with the network
+    // 和network交互
     let mut events = handle.event_listener();
     while let Some(event) = events.next().await {
         println!("Received event: {:?}", event);

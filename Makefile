@@ -50,6 +50,8 @@ install: ## Build and install the reth binary under `~/.cargo/bin`.
 		--profile "$(PROFILE)" \
 		$(CARGO_INSTALL_EXTRA_FLAGS)
 
+.PHONY: install-devp2p
+install-devp2p:
 	cargo install --path bin/devp2p --bin devp2p
 
 .PHONY: install-op

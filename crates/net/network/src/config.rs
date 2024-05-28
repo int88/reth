@@ -174,6 +174,7 @@ where
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NetworkConfigBuilder {
     /// The node's secret key, from which the node's identity is derived.
+    /// node的secret key，从中node的id被衍生出来
     secret_key: SecretKey,
     /// How to configure discovery over DNS.
     dns_discovery_config: Option<DnsDiscoveryConfig>,

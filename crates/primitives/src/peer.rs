@@ -16,6 +16,8 @@ const SECP256K1_TAG_PUBKEY_UNCOMPRESSED: u8 = 4;
 
 /// Converts a [secp256k1::PublicKey] to a [PeerId] by stripping the
 /// `SECP256K1_TAG_PUBKEY_UNCOMPRESSED` tag and storing the rest of the slice in the [PeerId].
+/// 将一个[secp256k1::PublicKey]转换为一个[PeerId]，通过剥离`SECP256K1_TAG_PUBKEY_UNCOMPRESSED`
+/// tag并且将 剩余部分存储到[PeerId]的slice
 #[inline]
 pub fn pk2id(pk: &PublicKey) -> PeerId {
     PeerId::from_slice(&pk.serialize_uncompressed()[1..])

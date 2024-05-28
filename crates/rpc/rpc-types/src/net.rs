@@ -45,10 +45,13 @@ pub struct NodeRecord {
     /// The Address of a node.
     pub address: IpAddr,
     /// TCP port of the port that accepts connections.
+    /// 接受连接的TCP端口
     pub tcp_port: u16,
     /// UDP discovery port.
+    /// UDP的discovery端口
     pub udp_port: u16,
     /// Public key of the discovery service
+    /// discovery service的public key
     pub id: PeerId,
 }
 
@@ -200,6 +203,7 @@ impl TryFrom<&Enr<SecretKey>> for NodeRecord {
             return Err(NodeRecordParseError::InvalidUrl("tcp port missing".to_string()))
         };
 
+        // 从public key到id
         let id = pk_to_id(&enr.public_key());
 
         Ok(NodeRecord { address, tcp_port, udp_port, id }.into_ipv4_mapped())
@@ -285,6 +289,7 @@ mod tests {
 
     #[test]
     fn test_url_parse() {
+        // 解析url
         let url = "enode://6f8a80d14311c39f35f516fa664deaaaa13e85b2f7493f37f6144d86991ec012937307647bd3b9a82abe2974e1407241d54947bbb39763a4cac9f77166ad92a0@10.3.58.6:30303?discport=30301";
         let node: NodeRecord = url.parse().unwrap();
         assert_eq!(node, NodeRecord {
@@ -297,6 +302,7 @@ mod tests {
 
     #[test]
     fn test_node_display() {
+        // 直接display
         let url = "enode://6f8a80d14311c39f35f516fa664deaaaa13e85b2f7493f37f6144d86991ec012937307647bd3b9a82abe2974e1407241d54947bbb39763a4cac9f77166ad92a0@10.3.58.6:30303";
         let node: NodeRecord = url.parse().unwrap();
         assert_eq!(url, &format!("{node}"));
@@ -304,6 +310,7 @@ mod tests {
 
     #[test]
     fn test_node_display_discport() {
+        // 包含discport
         let url = "enode://6f8a80d14311c39f35f516fa664deaaaa13e85b2f7493f37f6144d86991ec012937307647bd3b9a82abe2974e1407241d54947bbb39763a4cac9f77166ad92a0@10.3.58.6:30303?discport=30301";
         let node: NodeRecord = url.parse().unwrap();
         assert_eq!(url, &format!("{node}"));
@@ -335,6 +342,7 @@ mod tests {
         ];
 
         for (node, expected) in cases {
+            // 对node进行序列化
             let ser = serde_json::to_string::<NodeRecord>(&node).expect("couldn't serialize");
             assert_eq!(ser, expected);
         }
