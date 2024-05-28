@@ -5,8 +5,6 @@ publish = false
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
-homepage.workspace = true
-repository.workspace = true
 description = "Rust devp2p binary executable"
 default-run = "devp2p"
 
