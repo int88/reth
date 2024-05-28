@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
+use reth_fs_util as fs;
+
 use clap::Parser;
 use eyre::Ok;
 
-// `devp2p key to-id` command.
+// Create a node ID from a node key file
 #[derive(Debug, Parser)]
 pub struct Command {
     /// The path of the file to load key.

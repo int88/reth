@@ -31,6 +31,7 @@ pub struct Config {
 
 impl Config {
     /// Initializes network config from read data
+    /// 从读取的数据初始化network config
     pub fn network_config(
         &self,
         nat_resolution_method: reth_net_nat::NatResolver,

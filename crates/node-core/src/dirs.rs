@@ -288,6 +288,7 @@ impl<D> ChainPath<D> {
     }
 
     /// Returns the path to the reth p2p secret key for this chain.
+    /// 返回这个chain的reth p2p secret key的路径
     ///
     /// `<DIR>/<CHAIN_ID>/discovery-secret`
     pub fn p2p_secret_path(&self) -> PathBuf {

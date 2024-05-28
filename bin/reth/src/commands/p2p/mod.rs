@@ -24,6 +24,7 @@ use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 #[derive(Debug, Parser)]
 pub struct Command {
     /// The path to the configuration file to use.
+    /// 要使用的配置文件的路径
     #[arg(long, value_name = "FILE", verbatim_doc_comment)]
     config: Option<PathBuf>,
 
@@ -50,8 +51,10 @@ pub struct Command {
     datadir: MaybePlatformPath<DataDirPath>,
 
     /// Secret key to use for this node.
+    /// 这个node使用的Secret key
     ///
     /// This also will deterministically set the peer ID.
+    /// 这会确定性地设置peer ID
     #[arg(long, value_name = "PATH")]
     p2p_secret_key: Option<PathBuf>,
 
@@ -125,6 +128,7 @@ impl Command {
 
         let default_secret_key_path = data_dir.p2p_secret_path();
         let secret_key_path = self.p2p_secret_key.clone().unwrap_or(default_secret_key_path);
+        // 获取secret key
         let p2p_secret_key = get_secret_key(&secret_key_path)?;
 
         let mut network_config_builder = config

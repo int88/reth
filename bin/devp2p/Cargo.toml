@@ -10,6 +10,7 @@ eyre.workspace = true
 
 reth-primitives.workspace = true
 reth-network.workspace = true
+reth-fs-util.workspace = true
 secp256k1 = { workspace = true, features = ["global-context", "rand-std", "recovery"] }
 
 clap = { workspace = true, features = ["derive", "env"] }
