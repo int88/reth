@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use reth_fs_util as fs;
+use reth_network_types::pk2id;
 
+use discv5::enr::NodeId;
 use clap::Parser;
 use eyre::Ok;
 use secp256k1::{SecretKey, SECP256K1};
@@ -16,14 +18,13 @@ pub struct Command {
 
 impl Command {
     pub fn execute(&self) -> eyre::Result<()> {
-        println!("to-id command being called");
-        let contents = fs::read_to_string(self.file)?;
+        let contents = fs::read_to_string(&self.file)?;
 
         let key = contents.as_str().parse::<SecretKey>()?;
 
-        let id = pk2id(key.public_key(SECP256K1));
+        let id = NodeId::from(key.public_key(SECP256K1));
 
-        println!("{}", id);
+        println!("{:?}", id);
 
         Ok(())
     }

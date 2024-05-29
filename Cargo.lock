@@ -2471,10 +2471,13 @@ dependencies = [
 name = "devp2p"
 version = "0.0.0"
 dependencies = [
+ "alloy-primitives",
  "clap",
+ "discv5",
  "eyre",
  "reth-fs-util",
  "reth-network",
+ "reth-network-types",
  "reth-primitives",
  "secp256k1 0.28.2",
 ]
