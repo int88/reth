@@ -25,7 +25,7 @@ impl Cli {
     pub fn run(self) -> eyre::Result<()> {
         match self.command {
             Commands::Key(command) => {
-                let _ = command.execute();
+                let _ = command.execute()?;
             }
         }
 

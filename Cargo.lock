@@ -2471,9 +2471,8 @@ dependencies = [
 name = "devp2p"
 version = "0.0.0"
 dependencies = [
- "alloy-primitives",
  "clap",
- "discv5",
+ "enr",
  "eyre",
  "reth-fs-util",
  "reth-network",

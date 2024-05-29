@@ -19,8 +19,7 @@ reth-network-types.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }
 eyre.workspace = true
 secp256k1 = { workspace = true, features = ["global-context", "rand-std", "recovery"] }
-
-# eth
-alloy-primitives = { workspace = true, features = ["rlp"] }
-
-discv5 = { workspace = true, features = ["libp2p"] }
+enr = { version = "0.12.0", default-features = false, features = [
+    "k256",
+    "rust-secp256k1",
+] }

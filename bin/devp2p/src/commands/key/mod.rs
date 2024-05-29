@@ -24,10 +24,10 @@ impl KeyCommand {
     pub fn execute(&self) -> eyre::Result<()> {
         match &self.command {
             Subcommands::Generate(command) => {
-                let _ = command.execute();
+                let _ = command.execute()?;
             }
             Subcommands::ToID(command) => {
-                let _ = command.execute();
+                let _ = command.execute()?;
             }
         }
         Ok(())
