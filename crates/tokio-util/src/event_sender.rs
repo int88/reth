@@ -5,9 +5,11 @@ use tracing::trace;
 const DEFAULT_SIZE_BROADCAST_CHANNEL: usize = 2000;
 
 /// A bounded broadcast channel for a task.
+/// 对于一个task的bounded broadcast channel
 #[derive(Debug, Clone)]
 pub struct EventSender<T> {
     /// The sender part of the broadcast channel
+    /// 广播channel的sender部分
     sender: Sender<T>,
 }
 
@@ -36,6 +38,7 @@ impl<T: Clone + Send + Sync + 'static> EventSender<T> {
 
     /// Creates a new event stream with a subscriber to the sender as the
     /// receiver.
+    /// 创建一个新的event stream，有一个sender的subscriber作为receiver
     pub fn new_listener(&self) -> EventStream<T> {
         EventStream::new(self.sender.subscribe())
     }

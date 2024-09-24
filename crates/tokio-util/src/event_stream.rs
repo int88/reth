@@ -8,6 +8,7 @@ use tokio_stream::Stream;
 use tracing::warn;
 
 /// Thin wrapper around tokio's `BroadcastStream` to allow skipping broadcast errors.
+/// 对于tokio的`BroadcastStream`，允许跳过broadcast errors
 #[derive(Debug)]
 pub struct EventStream<T> {
     inner: tokio_stream::wrappers::BroadcastStream<T>,

@@ -9,6 +9,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 /// Settings for the [`DnsDiscoveryService`](crate::DnsDiscoveryService).
+/// 对于[`DnsDiscoveryService`](crate::DnsDiscoveryService)的设置
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DnsDiscoveryConfig {
@@ -27,6 +28,7 @@ pub struct DnsDiscoveryConfig {
     /// Maximum number of cached DNS records.
     pub dns_record_cache_limit: NonZeroU32,
     /// Links to the DNS networks to bootstrap.
+    /// 用于启动的到DNS networks的Links
     pub bootstrap_dns_networks: Option<HashSet<LinkEntry>>,
 }
 

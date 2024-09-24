@@ -1,4 +1,5 @@
 //! A set of configuration parameters to tune the discovery protocol.
+//! 一系列的配置，对于调整discovery protocol
 //!
 //! This basis of this file has been taken from the discv5 codebase:
 //! <https://github.com/sigp/discv5>
@@ -16,6 +17,7 @@ use std::{
 };
 
 /// Configuration parameters that define the performance of the discovery network.
+/// 配置参数用于决定discovery network的性能
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Discv4Config {
@@ -24,11 +26,13 @@ pub struct Discv4Config {
     /// Size of the channel buffer for outgoing messages.
     pub udp_egress_message_buffer: usize,
     /// Size of the channel buffer for incoming messages.
+    /// 对于incoming messages的channel buffer的大小
     pub udp_ingress_message_buffer: usize,
     /// The number of allowed failures for `FindNode` requests. Default: 5.
     pub max_find_node_failures: u8,
     /// The interval to use when checking for expired nodes that need to be re-pinged. Default:
     /// 10min.
+    /// 使用的时间间隔，当检查expired nodes，需要被re-pinged，默认为10min
     pub ping_interval: Duration,
     /// The duration of we consider a ping timed out.
     pub ping_expiration: Duration,
@@ -50,10 +54,13 @@ pub struct Discv4Config {
     /// Nodes to boot from.
     pub bootstrap_nodes: HashSet<NodeRecord>,
     /// Whether to randomly discover new peers.
+    /// 是否随机发现新的peers
     ///
     /// If true, the node will automatically randomly walk the DHT in order to find new peers.
+    /// 如果为true，node会自动随机遍历DHT，为了找到新的peers
     pub enable_dht_random_walk: bool,
     /// Whether to automatically lookup peers.
+    /// 是否自动查找peers
     pub enable_lookup: bool,
     /// Whether to enforce EIP-868 extension.
     pub enable_eip868: bool,
@@ -62,11 +69,14 @@ pub struct Discv4Config {
     /// Additional pairs to include in The [`Enr`](enr::Enr) if EIP-868 extension is enabled <https://eips.ethereum.org/EIPS/eip-868>
     pub additional_eip868_rlp_pairs: HashMap<Vec<u8>, Bytes>,
     /// If configured, try to resolve public ip
+    /// 如果配置的话，试着解析public IP
     pub external_ip_resolver: Option<NatResolver>,
     /// If configured and a `external_ip_resolver` is configured, try to resolve the external ip
     /// using this interval.
+    /// 如果配置了一个`external_ip_resolver`，试着解析外部的ip，使用这个interval
     pub resolve_external_ip_interval: Option<Duration>,
     /// The duration after which we consider a bond expired.
+    /// 我们认为bond超时的时间间隔
     pub bond_expiration: Duration,
 }
 
@@ -143,6 +153,7 @@ impl Default for Discv4Config {
 }
 
 /// Builder type for [`Discv4Config`]
+/// 对于[`Discv4Config`]的Builder类型
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Discv4ConfigBuilder {
@@ -308,6 +319,7 @@ impl Discv4ConfigBuilder {
     }
 
     /// Returns the configured [`Discv4Config`]
+    /// 返回配置的[`Discv4Config`]
     pub fn build(&self) -> Discv4Config {
         self.config.clone()
     }

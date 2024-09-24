@@ -35,36 +35,46 @@ use crate::{
 pub const DEFAULT_MAX_CAPACITY_DISCOVERED_PEERS_CACHE: u32 = 10_000;
 
 /// An abstraction over the configured discovery protocol.
+/// 对于配置的discovery protocol的抽象
 ///
 /// Listens for new discovered nodes and emits events for discovered nodes and their
 /// address.
+/// 监听新发现的nodes，发射事件关于发现的nodes和他们的地址
 #[derive(Debug)]
 pub struct Discovery {
     /// All nodes discovered via discovery protocol.
+    /// 所有通过discovery protocol发现的nodes
     ///
     /// These nodes can be ephemeral and are updated via the discovery protocol.
+    /// 这些nodes可以是临时的并且通过discovery protocol更新
     discovered_nodes: LruMap<PeerId, PeerAddr>,
     /// Local ENR of the discovery v4 service (discv5 ENR has same [`PeerId`]).
     local_enr: NodeRecord,
     /// Handler to interact with the Discovery v4 service
     discv4: Option<Discv4>,
     /// All KAD table updates from the discv4 service.
+    /// 所有来自discv4 service的KAD table更新
     discv4_updates: Option<ReceiverStream<DiscoveryUpdate>>,
     /// The handle to the spawned discv4 service
+    /// 对于生成的disv4 service的handle
     _discv4_service: Option<JoinHandle<()>>,
     /// Handler to interact with the Discovery v5 service
+    /// 用于和Discovery v5 service交互的Handle
     discv5: Option<Discv5>,
     /// All KAD table updates from the discv5 service.
     discv5_updates: Option<ReceiverStream<discv5::Event>>,
     /// Handler to interact with the DNS discovery service
+    /// 用于和DNS discovery service交互的Handler
     _dns_discovery: Option<DnsDiscoveryHandle>,
     /// Updates from the DNS discovery service.
     dns_discovery_updates: Option<ReceiverStream<DnsNodeRecordUpdate>>,
     /// The handle to the spawned DNS discovery service
     _dns_disc_service: Option<JoinHandle<()>>,
     /// Events buffered until polled.
+    /// 缓存的Events直到被轮询
     queued_events: VecDeque<DiscoveryEvent>,
     /// List of listeners subscribed to discovery events.
+    /// 一系列的listeners，订阅discovery events
     discovery_listeners: Vec<mpsc::UnboundedSender<DiscoveryEvent>>,
 }
 
@@ -140,6 +150,7 @@ impl Discovery {
     }
 
     /// Registers a listener for receiving [`DiscoveryEvent`] updates.
+    /// 注册一个listener，对于获取[`DiscoveryEvent`]更新
     pub(crate) fn add_listener(&mut self, tx: mpsc::UnboundedSender<DiscoveryEvent>) {
         self.discovery_listeners.push(tx);
     }

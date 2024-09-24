@@ -16,8 +16,10 @@ use serde_with::{DeserializeFromStr, SerializeDisplay};
 use enr::Enr;
 
 /// Represents a ENR in discovery.
+/// 代表discovery中的一个ENR
 ///
 /// Note: this is only an excerpt of the [`NodeRecord`] data structure.
+/// 这只是对[`NodeRecord`]数据结构的一个摘抄
 #[derive(
     Clone,
     Copy,
@@ -32,12 +34,14 @@ use enr::Enr;
 )]
 pub struct NodeRecord {
     /// The Address of a node.
+    /// 一个node的Address
     pub address: IpAddr,
     /// UDP discovery port.
     pub udp_port: u16,
     /// TCP port of the port that accepts connections.
     pub tcp_port: u16,
     /// Public key of the discovery service
+    /// discovery service的Public key
     pub id: PeerId,
 }
 

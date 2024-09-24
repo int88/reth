@@ -27,12 +27,15 @@ pub trait NetworkEventListenerProvider: Send + Sync {
 }
 
 /// (Non-exhaustive) Events emitted by the network that are of interest for subscribers.
+/// (非穷尽的)network发出的Events，订阅者可能感兴趣
 ///
 /// This includes any event types that may be relevant to tasks, for metrics, keep track of peers
+/// 这包括任何和tasks相关的events，用于metrcis, 追踪peers等等
 /// etc.
 #[derive(Debug, Clone)]
 pub enum NetworkEvent {
     /// Closed the peer session.
+    /// 关闭peer session
     SessionClosed {
         /// The identifier of the peer to which a session was closed.
         peer_id: PeerId,
@@ -40,44 +43,56 @@ pub enum NetworkEvent {
         reason: Option<DisconnectReason>,
     },
     /// Established a new session with the given peer.
+    /// 和给定的peer建立一个新的session
     SessionEstablished {
         /// The identifier of the peer to which a session was established.
         peer_id: PeerId,
         /// The remote addr of the peer to which a session was established.
         remote_addr: SocketAddr,
         /// The client version of the peer to which a session was established.
+        /// 和peer建立session的client的版本
         client_version: Arc<str>,
         /// Capabilities the peer announced
         capabilities: Arc<Capabilities>,
         /// A request channel to the session task.
+        /// 到session task的request channel
         messages: PeerRequestSender,
         /// The status of the peer to which a session was established.
+        /// 建立session的peer的status
         status: Arc<Status>,
         /// negotiated eth version of the session
         version: EthVersion,
     },
     /// Event emitted when a new peer is added
+    /// 当一个新的peer被添加时发射
     PeerAdded(PeerId),
     /// Event emitted when a new peer is removed
+    /// 当一个peer被移除时发射
     PeerRemoved(PeerId),
 }
 
 /// Events produced by the `Discovery` manager.
+/// `Discovery` manager产生的Events
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DiscoveryEvent {
     /// Discovered a node
+    /// 发现了一个node
     NewNode(DiscoveredEvent),
     /// Retrieved a [`ForkId`] from the peer via ENR request, See <https://eips.ethereum.org/EIPS/eip-868>
+    /// 从peer获取一个[`ForkId`]通过ENR请求
     EnrForkId(PeerId, ForkId),
 }
 
 /// Represents events related to peer discovery in the network.
+/// 代表network中peer discovery相关的事件
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DiscoveredEvent {
     /// Indicates that a new peer has been discovered and queued for potential connection.
+    /// 表示一个新的peer被发现并且排队，对于潜在的连接
     ///
     /// This event is generated when the system becomes aware of a new peer
     /// but hasn't yet established a connection.
+    /// 这个事件生成，当系统意识到一个新的peer，但是还没有建立一个连接
     ///
     /// # Fields
     ///
@@ -97,6 +112,7 @@ pub enum DiscoveredEvent {
 }
 
 /// Protocol related request messages that expect a response
+/// 协议相关的请求，期望一个response
 #[derive(Debug)]
 pub enum PeerRequest {
     /// Requests block headers from the peer.

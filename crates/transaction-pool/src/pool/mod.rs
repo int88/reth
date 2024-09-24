@@ -131,6 +131,7 @@ pub const NEW_TX_LISTENER_BUFFER_SIZE: usize = 1024;
 const BLOB_SIDECAR_LISTENER_BUFFER_SIZE: usize = 512;
 
 /// Transaction pool internals.
+/// Tx pool的内部
 pub struct PoolInner<V, T, S>
 where
     T: TransactionOrdering,
@@ -148,8 +149,10 @@ where
     /// Manages listeners for transaction state change events.
     event_listener: RwLock<PoolEventBroadcast<T::Transaction>>,
     /// Listeners for new _full_ pending transactions.
+    /// 对于新的_full_ pending txs的Listener
     pending_transaction_listener: Mutex<Vec<PendingTransactionHashListener>>,
     /// Listeners for new transactions added to the pool.
+    /// 新加入的pool的新的tx的Listener
     transaction_listener: Mutex<Vec<TransactionListener<T::Transaction>>>,
     /// Listener for new blob transaction sidecars added to the pool.
     blob_transaction_sidecar_listener: Mutex<Vec<BlobTransactionSidecarListener>>,
@@ -238,6 +241,7 @@ where
 
     /// Adds a new transaction listener to the pool that gets notified about every new _pending_
     /// transaction inserted into the pool
+    /// 添加一个新的tx listener到pool，当所有新的pending tx被插入到pool时会被通知
     pub fn add_pending_listener(&self, kind: TransactionListenerKind) -> mpsc::Receiver<TxHash> {
         let (sender, rx) = mpsc::channel(self.config.pending_tx_listener_buffer_size);
         let listener = PendingTransactionHashListener { sender, kind };
@@ -851,10 +855,12 @@ impl<V, T: TransactionOrdering, S> fmt::Debug for PoolInner<V, T, S> {
 }
 
 /// An active listener for new pending transactions.
+/// 一个active listener，对于新的pending txs
 #[derive(Debug)]
 struct PendingTransactionHashListener {
     sender: mpsc::Sender<TxHash>,
     /// Whether to include transactions that should not be propagated over the network.
+    /// 是否包含txs，那些不应该通过网络传播
     kind: TransactionListenerKind,
 }
 

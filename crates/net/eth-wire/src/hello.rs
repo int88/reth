@@ -16,12 +16,17 @@ use serde::{Deserialize, Serialize};
 /// This is a superset of [`HelloMessage`] that provides additional protocol [Protocol] information
 /// about the number of messages used by each capability in order to do proper message ID
 /// multiplexing.
+/// 这是[`HelloMessage`]的超集，提供额外的protocol信息，关于每个capability使用的messages的数目，
+/// 为了做合适的message ID multiplexing
 ///
 /// This type is required for the `p2p` handshake because the [`HelloMessage`] does not share the
 /// number of messages used by each capability.
+/// 这对于`p2p`握手是需要的，因为[`HelloMessage`]没有共享每个capability使用的messages的数目
 ///
 /// To get the encodable [`HelloMessage`] without the additional protocol information, use the
 /// [`HelloMessageWithProtocols::message`].
+/// 为了获得encodable
+/// [`HelloMessage`]，而没有额外的protocol信息，使用[`HelloMessageWithProtocols::message`]
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct HelloMessageWithProtocols {
@@ -31,8 +36,10 @@ pub struct HelloMessageWithProtocols {
     /// "Ethereum(++)/1.0.0").
     pub client_version: String,
     /// The list of supported capabilities and their versions.
+    /// 一系列支持的capabilities以及他们的版本
     pub protocols: Vec<Protocol>,
     /// The port that the client is listening on, zero indicates the client is not listening.
+    /// client正在监听的版本，zero表示client没有在监听
     ///
     /// By default this is `30303` which is the same as the default discovery port.
     pub port: u16,
@@ -101,6 +108,7 @@ impl HelloMessageWithProtocols {
 // TODO: determine if we should allow for the extra fields at the end like EIP-706 suggests
 /// Raw rlpx protocol message used in the `p2p` handshake, containing information about the
 /// supported RLPx protocol version and capabilities.
+/// 在`p2p`握手中使用的Raw rlpx protocol message，包含信息关于支持的RLPx协议的版本以及capabilities
 ///
 /// See also <https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00>
 #[derive(Clone, Debug, PartialEq, Eq, RlpEncodable, RlpDecodable)]

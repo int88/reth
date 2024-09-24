@@ -50,6 +50,7 @@ impl TrustedPeer {
     }
 
     /// Tries to resolve directly to a [`NodeRecord`] if the host is an IP address.
+    /// 试着直接解析为一个[`NodeRecord`]，如果host是一个IP地址
     fn try_node_record(&self) -> Result<NodeRecord, &str> {
         match &self.host {
             Host::Ipv4(ip) => Ok(self.to_node_record((*ip).into())),
@@ -76,6 +77,7 @@ impl TrustedPeer {
     }
 
     /// Resolves the host in a [`TrustedPeer`] to an IP address, returning a [`NodeRecord`].
+    /// 解析[`TrustedPeer`]到一个IP地址，返回一个[`NodeRecord`]
     #[cfg(any(test, feature = "net"))]
     pub async fn resolve(&self) -> Result<NodeRecord, Error> {
         let domain = match self.try_node_record() {
@@ -84,6 +86,7 @@ impl TrustedPeer {
         };
 
         // Resolve the domain to an IP address
+        // 将domain解析到一个IP地址
         let mut ips = tokio::net::lookup_host(format!("{domain}:0")).await?;
         let ip = ips
             .next()

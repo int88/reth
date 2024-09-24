@@ -34,13 +34,17 @@ use tokio::sync::mpsc::Receiver;
 pub type PeerId = alloy_primitives::B512;
 
 /// General purpose abstraction of a transaction-pool.
+/// 对于一个tx-pool的通用的抽象
 ///
 /// This is intended to be used by API-consumers such as RPC that need inject new incoming,
 /// unverified transactions. And by block production that needs to get transactions to execute in a
 /// new block.
+/// 这用于API-consumers，例如RPC，需要注入incoming, unverified txs，以及block
+/// production，需要获取txs来在一个新的block中执行
 ///
 /// Note: This requires `Clone` for convenience, since it is assumed that this will be implemented
 /// for a wrapped `Arc` type, see also [`Pool`](crate::Pool).
+/// 注意：这需要`Clone`为了方便，因为它假设实现用于一个wrapped `Arc`
 #[auto_impl::auto_impl(&, Arc)]
 pub trait TransactionPool: Send + Sync + Clone {
     /// The transaction type of the pool
@@ -53,14 +57,18 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn pool_size(&self) -> PoolSize;
 
     /// Returns the block the pool is currently tracking.
+    /// 返回pool当前正在追踪的block
     ///
     /// This tracks the block that the pool has last seen.
+    /// 这追踪pool最新看到的block
     fn block_info(&self) -> BlockInfo;
 
     /// Imports an _external_ transaction.
+    /// 导入一个外部的tx
     ///
     /// This is intended to be used by the network to insert incoming transactions received over the
     /// p2p network.
+    /// 这被network使用来插入incoming txs，从p2p network中接收到
     ///
     /// Consumer: P2P
     fn add_external_transaction(
@@ -71,6 +79,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Imports all _external_ transactions
+    /// 导入所有外部的txs
     ///
     ///
     /// Consumer: Utility
@@ -460,13 +469,17 @@ pub trait TransactionPoolExt: TransactionPool {
 }
 
 /// Determines what kind of new transactions should be emitted by a stream of transactions.
+/// 决定哪种类型的新的txs是否应该被一个stream of txs发送
 ///
 /// This gives control whether to include transactions that are allowed to be propagated.
+/// 这给了控制权关于包含txs，允许被传播
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionListenerKind {
     /// Any new pending transactions
+    /// 任意新的pending txs
     All,
     /// Only transactions that are allowed to be propagated.
+    /// 只有txs允许被传播
     ///
     /// See also [`ValidPoolTransaction`]
     PropagateOnly,
@@ -946,9 +959,12 @@ pub trait EthPoolTransaction:
 }
 
 /// The default [`PoolTransaction`] for the [Pool](crate::Pool) for Ethereum.
+/// 默认的[`PoolTransaction`]，对于Eth中的[Pool](crate::Pool)
 ///
 /// This type is essentially a wrapper around [`TransactionSignedEcRecovered`] with additional
 /// fields derived from the transaction that are frequently used by the pools for ordering.
+/// 这个类型是[`TransactionSignedEcRecovered`]的wrapper，有着额外的从transaction继承的字段，
+/// pools用来排序
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EthPooledTransaction {
     /// `EcRecovered` transaction info

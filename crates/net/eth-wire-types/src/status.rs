@@ -9,9 +9,11 @@ use std::fmt::{Debug, Display};
 
 /// The status message is used in the eth protocol handshake to ensure that peers are on the same
 /// network and are following the same fork.
+/// statsu message是在eth protocol握手的时候来确保peers在同一个network并且遵循同样的fork
 ///
 /// When performing a handshake, the total difficulty is not guaranteed to correspond to the block
 /// hash. This information should be treated as untrusted.
+/// 当执行一个握手，td不一定确保对应block hash，这个信息应该被认为是不可信的
 #[derive(Copy, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(any(test, feature = "arbitrary"), derive(arbitrary::Arbitrary))]
@@ -29,6 +31,7 @@ pub struct Status {
     pub total_difficulty: U256,
 
     /// The highest difficulty block hash the peer has seen
+    /// 最高的difficulty的block hash，peer已经看到
     pub blockhash: B256,
 
     /// The genesis hash of the peer's chain.
@@ -71,9 +74,11 @@ impl Status {
     }
 
     /// Create a [`StatusBuilder`] from the given [`ChainSpec`] and head block.
+    /// 从给定的[`ChainSpec`]和head block创建一个[`StatusBuilder`]
     ///
     /// Sets the `chain` and `genesis`, `blockhash`, and `forkid` fields based on the [`ChainSpec`]
     /// and head.
+    /// 设置`chain`以及`genesis`, `blockhash`以及`forkid`字段，基于[`ChainSpec`]以及head
     pub fn spec_builder(spec: &ChainSpec, head: &Head) -> StatusBuilder {
         Self::builder()
             .chain(spec.chain)
@@ -149,6 +154,7 @@ impl Default for Status {
 }
 
 /// Builder for [`Status`] messages.
+/// 对于[`Status`] messages的Builder
 ///
 /// # Example
 /// ```

@@ -18,9 +18,11 @@ pub trait PeersHandleProvider {
 }
 
 /// A communication channel to the `PeersManager` to apply manual changes to the peer set.
+/// 一个到`PeerManager`的communication channel，来应用changes到peer set
 #[derive(Clone, Debug, Constructor)]
 pub struct PeersHandle {
     /// Sender half of command channel back to the `PeersManager`
+    /// command channel的Sender部分，发送命令到`PeersManager`
     manager_tx: mpsc::UnboundedSender<PeerCommand>,
 }
 
@@ -64,18 +66,25 @@ impl PeersHandle {
 }
 
 /// Commands the `PeersManager` listens for.
+/// `PeerManager`监听的commands
 #[derive(Debug)]
 pub enum PeerCommand {
     /// Command for manually add
+    /// 手动添加的命令
     Add(PeerId, SocketAddr),
     /// Remove a peer from the set
+    /// 从集合中移除一个peer
     ///
     /// If currently connected this will disconnect the session
+    /// 如果当前是已经连接的，会断开session
     Remove(PeerId),
     /// Apply a reputation change to the given peer.
+    /// 对给定的peer应用reputation change
     ReputationChange(PeerId, ReputationChangeKind),
     /// Get information about a peer
+    /// 获取关于一个peer的信息
     GetPeer(PeerId, oneshot::Sender<Option<Peer>>),
     /// Get node information on all peers
+    /// 获取关于所有peers的node信息
     GetPeers(oneshot::Sender<Vec<NodeRecord>>),
 }

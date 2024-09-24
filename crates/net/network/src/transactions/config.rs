@@ -11,12 +11,15 @@ use crate::transactions::constants::tx_fetcher::{
 };
 
 /// Configuration for managing transactions within the network.
+/// 用于管理network中txs的配置
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionsManagerConfig {
     /// Configuration for fetching transactions.
+    /// 用于获取txs的配置
     pub transaction_fetcher_config: TransactionFetcherConfig,
     /// Max number of seen transactions to store for each peer.
+    /// 每个peer存储的seen txs的最大数目
     pub max_transactions_seen_by_peer_history: u32,
 }
 
@@ -30,6 +33,7 @@ impl Default for TransactionsManagerConfig {
 }
 
 /// Configuration for fetching transactions.
+/// 抓取txs的配置
 #[derive(Debug, Constructor, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionFetcherConfig {

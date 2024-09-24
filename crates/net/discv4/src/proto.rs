@@ -56,11 +56,14 @@ impl MessageId {
 }
 
 /// Enum representing various message types exchanged in the Discovery v4 protocol.
+/// Enum代表各种message类型，在Discv4交换
 #[derive(Debug, Eq, PartialEq)]
 pub enum Message {
     /// Represents a ping message sent during liveness checks.
+    /// 代表一个ping message，在livenss checks之间发送
     Ping(Ping),
     /// Represents a pong message, which is a reply to a PING message.
+    /// 代表一个pong message，代表对于PING message的reply
     Pong(Pong),
     /// Represents a query for nodes in the given bucket.
     FindNode(FindNode),
@@ -137,8 +140,10 @@ impl Message {
     }
 
     /// Decodes the [`Message`] from the given buffer.
+    /// 从给定的buffer对[`Message`]进行解码
     ///
     /// Returns the decoded message and the public key of the sender.
+    /// 返回decoded message以及sender的public key
     pub fn decode(packet: &[u8]) -> Result<Packet, DecodePacketError> {
         if packet.len() < MIN_PACKET_SIZE {
             return Err(DecodePacketError::PacketTooShort)

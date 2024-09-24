@@ -48,18 +48,23 @@ const MAX_BODIES_SERVE: usize = 1024;
 const SOFT_RESPONSE_LIMIT: usize = 2 * 1024 * 1024;
 
 /// Manages eth related requests on top of the p2p network.
+/// 管理eth相关的请求，在p2p network之上
 ///
 /// This can be spawned to another task and is supposed to be run as background service.
+/// 这应该作为另一个task生成并且应该作为background service运行
 #[derive(Debug)]
 #[must_use = "Manager does nothing unless polled."]
 pub struct EthRequestHandler<C> {
     /// The client type that can interact with the chain.
+    /// client类型可以和chain交互
     client: C,
     /// Used for reporting peers.
+    /// 用于汇报peers
     // TODO use to report spammers
     #[allow(dead_code)]
     peers: PeersHandle,
     /// Incoming request from the [`NetworkManager`](crate::NetworkManager).
+    /// 来自 [`NetworkManager`](crate::NetworkManager)的请求
     incoming_requests: ReceiverStream<IncomingEthRequest>,
     /// Metrics for the eth request handler.
     metrics: EthRequestHandlerMetrics,
@@ -269,11 +274,14 @@ where
 }
 
 /// All `eth` request related to blocks delegated by the network.
+/// 所有的`eth`请求，关于network委托的blocks
 #[derive(Debug)]
 pub enum IncomingEthRequest {
     /// Request Block headers from the peer.
+    /// 从peer请求Blcok headers
     ///
     /// The response should be sent through the channel.
+    /// response应该通过channel发送
     GetBlockHeaders {
         /// The ID of the peer to request block headers from.
         peer_id: PeerId,
@@ -283,6 +291,7 @@ pub enum IncomingEthRequest {
         response: oneshot::Sender<RequestResult<BlockHeaders>>,
     },
     /// Request Block bodies from the peer.
+    /// 从peer请求Block bodies
     ///
     /// The response should be sent through the channel.
     GetBlockBodies {

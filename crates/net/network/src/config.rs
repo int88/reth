@@ -26,60 +26,83 @@ use crate::protocol::{IntoRlpxSubProtocol, RlpxSubProtocols};
 pub use secp256k1::SecretKey;
 
 /// Convenience function to create a new random [`SecretKey`]
+/// 方便的函数用来创建一个新的随机的[`SecretKey`]
 pub fn rng_secret_key() -> SecretKey {
     SecretKey::new(&mut rand::thread_rng())
 }
 
 /// All network related initialization settings.
+/// 所有network相关的初始设置
 #[derive(Debug)]
 pub struct NetworkConfig<C> {
     /// The client type that can interact with the chain.
+    /// client类型用于和chain交互
     ///
     /// This type is used to fetch the block number after we established a session and received the
     /// [Status] block hash.
+    /// 这个类型用于获取block number，在我们建立一个session并且接收到[Status] block hash之后
     pub client: C,
     /// The node's secret key, from which the node's identity is derived.
+    /// node的secret key，从中衍生出node的identity
     pub secret_key: SecretKey,
     /// All boot nodes to start network discovery with.
+    /// 所有的boot nodes，开始network discovery
     pub boot_nodes: HashSet<TrustedPeer>,
     /// How to set up discovery over DNS.
+    /// 如何通过DNS设置discovery
     pub dns_discovery_config: Option<DnsDiscoveryConfig>,
     /// Address to use for discovery v4.
+    /// 用于discovery V4的地址
     pub discovery_v4_addr: SocketAddr,
     /// How to set up discovery.
+    /// 如何设置discovery
     pub discovery_v4_config: Option<Discv4Config>,
     /// How to set up discovery version 5.
+    /// 如何设置discovery v5
     pub discovery_v5_config: Option<reth_discv5::Config>,
     /// Address to listen for incoming connections
+    /// 用于监听incoming connections的地址
     pub listener_addr: SocketAddr,
     /// How to instantiate peer manager.
+    /// 如何初始化peer manager
     pub peers_config: PeersConfig,
     /// How to configure the [`SessionManager`](crate::session::SessionManager).
+    /// 如何配置[`SessionManager`]
     pub sessions_config: SessionsConfig,
     /// The chain spec
     pub chain_spec: Arc<ChainSpec>,
     /// The [`ForkFilter`] to use at launch for authenticating sessions.
+    /// [`ForkFilter`]在启动的时候用于认证sessions
     ///
     /// See also <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2124.md#stale-software-examples>
     ///
     /// For sync from block `0`, this should be the default chain [`ForkFilter`] beginning at the
     /// first hardfork, `Frontier` for mainnet.
+    /// 对于从block `0`开始同步，这应该为默认的chain的[`ForkFilter`]从第一个hardfork，
+    /// 即`Frontier`，对于mainnet来说，开始
     pub fork_filter: ForkFilter,
     /// The block importer type.
+    /// block importer类型
     pub block_import: Box<dyn BlockImport>,
     /// The default mode of the network.
     pub network_mode: NetworkMode,
     /// The executor to use for spawning tasks.
+    /// 用于生成tasks的executor
     pub executor: Box<dyn TaskSpawner>,
     /// The `Status` message to send to peers at the beginning.
+    /// 在开始的时候发送给peers的`Status`
     pub status: Status,
     /// Sets the hello message for the p2p handshake in `RLPx`
+    /// 用于在`RLPx`的p2p握手时设置hello message
     pub hello_message: HelloMessageWithProtocols,
     /// Additional protocols to announce and handle in `RLPx`
+    /// 在`RLPx`中处理和声明的额外的protocols
     pub extra_protocols: RlpxSubProtocols,
     /// Whether to disable transaction gossip
+    /// 是否禁止transaction gossip
     pub tx_gossip_disabled: bool,
     /// How to instantiate transactions manager.
+    /// 如何初始化txs managers
     pub transactions_manager_config: TransactionsManagerConfig,
 }
 
@@ -87,6 +110,7 @@ pub struct NetworkConfig<C> {
 
 impl NetworkConfig<()> {
     /// Convenience method for creating the corresponding builder type
+    /// 用于创建对应的builder类型
     pub fn builder(secret_key: SecretKey) -> NetworkConfigBuilder {
         NetworkConfigBuilder::new(secret_key)
     }
@@ -150,6 +174,7 @@ where
 }
 
 /// Builder for [`NetworkConfig`](struct.NetworkConfig.html).
+/// 对于[`NetworkConfig`]的Builder
 #[derive(Debug)]
 pub struct NetworkConfigBuilder {
     /// The node's secret key, from which the node's identity is derived.
@@ -161,14 +186,17 @@ pub struct NetworkConfigBuilder {
     /// How to set up discovery version 5.
     discovery_v5_builder: Option<reth_discv5::ConfigBuilder>,
     /// All boot nodes to start network discovery with.
+    /// 启动network discovery的boot nodes类型
     boot_nodes: HashSet<TrustedPeer>,
     /// Address to use for discovery
     discovery_addr: Option<SocketAddr>,
     /// Listener for incoming connections
     listener_addr: Option<SocketAddr>,
     /// How to instantiate peer manager.
+    /// 如何实例化peer manager
     peers_config: Option<PeersConfig>,
     /// How to configure the sessions manager
+    /// 如何配置sessions manager
     sessions_config: Option<SessionsConfig>,
     /// The network's chain spec
     chain_spec: Arc<ChainSpec>,
@@ -181,12 +209,15 @@ pub struct NetworkConfigBuilder {
     /// The executor to use for spawning tasks.
     extra_protocols: RlpxSubProtocols,
     /// Head used to start set for the fork filter and status.
+    /// Head用于开始设置fork filter以及status
     head: Option<Head>,
     /// Whether tx gossip is disabled
     tx_gossip_disabled: bool,
     /// The block importer type
+    /// block importer类型
     block_import: Option<Box<dyn BlockImport>>,
     /// How to instantiate transactions manager.
+    /// 如何初始化tx manager
     transactions_manager_config: TransactionsManagerConfig,
 }
 
@@ -195,14 +226,17 @@ pub struct NetworkConfigBuilder {
 #[allow(missing_docs)]
 impl NetworkConfigBuilder {
     /// Create a new builder instance with a random secret key.
+    /// 创建一个新的builder，有着随机的secret key
     pub fn with_rng_secret_key() -> Self {
         Self::new(rng_secret_key())
     }
 
     /// Create a new builder instance with the given secret key.
+    /// 创建一个新的builder instance，有着给定的secret key
     pub fn new(secret_key: SecretKey) -> Self {
         Self {
             secret_key,
+            // 都是默认配置
             dns_discovery_config: Some(Default::default()),
             discovery_v4_builder: Some(Default::default()),
             discovery_v5_builder: None,
@@ -211,6 +245,7 @@ impl NetworkConfigBuilder {
             listener_addr: None,
             peers_config: None,
             sessions_config: None,
+            // 克隆MAINNET
             chain_spec: MAINNET.clone(),
             network_mode: Default::default(),
             executor: None,
@@ -377,6 +412,7 @@ impl NetworkConfigBuilder {
     }
 
     /// Convenience function for setting [`Self::boot_nodes`] to the mainnet boot nodes.
+    /// 将[`Self::boot_nodes`]设置为mainnet boot nodes
     pub fn mainnet_boot_nodes(self) -> Self {
         self.boot_nodes(mainnet_nodes())
     }
@@ -469,10 +505,13 @@ impl NetworkConfigBuilder {
 
     /// Consumes the type and creates the actual [`NetworkConfig`]
     /// for the given client type that can interact with the chain.
+    /// 消费类型并且创建真正的[`NetworkConfig`]，用给定的client类型和chain进行交互
     ///
     /// The given client is to be used for interacting with the chain, for example fetching the
     /// corresponding block for a given block hash we receive from a peer in the status message when
     /// establishing a connection.
+    /// 给定的client用于和chain交互，例如获取对应的block，对于给定的block
+    /// hash，我们从一个peer的status message接收得到，当建立一个连接的时候
     pub fn build<C>(self, client: C) -> NetworkConfig<C> {
         let peer_id = self.get_peer_id();
         let Self {
@@ -496,6 +535,7 @@ impl NetworkConfigBuilder {
             transactions_manager_config,
         } = self;
 
+        // 构建discovery v5 builder
         discovery_v5_builder = discovery_v5_builder.map(|mut builder| {
             if let Some(network_stack_id) = NetworkStackId::id(&chain_spec) {
                 let fork_id = chain_spec.latest_fork_id();
@@ -507,6 +547,7 @@ impl NetworkConfigBuilder {
 
         let listener_addr = listener_addr.unwrap_or(DEFAULT_DISCOVERY_ADDRESS);
 
+        // 构建hello message
         let mut hello_message =
             hello_message.unwrap_or_else(|| HelloMessage::builder(peer_id).build());
         hello_message.port = listener_addr.port();
@@ -520,12 +561,15 @@ impl NetworkConfigBuilder {
         });
 
         // set the status
+        // 设置status
         let status = Status::spec_builder(&chain_spec, &head).build();
 
         // set a fork filter based on the chain spec and head
+        // 设置一个fork filter，基于chain spec以及head
         let fork_filter = chain_spec.fork_filter(head);
 
         // If default DNS config is used then we add the known dns network to bootstrap from
+        // 如果使用默认的DNS config，那么我们增加已知的dns network到bootstrap from
         if let Some(dns_networks) =
             dns_discovery_config.as_mut().and_then(|c| c.bootstrap_dns_networks.as_mut())
         {
@@ -536,6 +580,7 @@ impl NetworkConfigBuilder {
             }
         }
 
+        // 最终生成NetworkConfig
         NetworkConfig {
             client,
             secret_key,

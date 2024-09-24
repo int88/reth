@@ -1,4 +1,5 @@
 //! Contains connection-oriented interfaces.
+//! 包含面向连接的接口
 
 use std::{
     io,
@@ -11,21 +12,26 @@ use futures::{ready, Stream};
 use tokio::net::{TcpListener, TcpStream};
 
 /// A tcp connection listener.
+/// 一个tcp connection listener
 ///
 /// Listens for incoming connections.
+/// 监听到来的connections
 #[must_use = "Transport does nothing unless polled."]
 #[pin_project::pin_project]
 #[derive(Debug)]
 pub struct ConnectionListener {
     /// Local address of the listener stream.
+    /// listener stream的本地地址
     local_address: SocketAddr,
     /// The active tcp listener for incoming connections.
+    /// 对于incoming connections的active tcp listener
     #[pin]
     incoming: TcpListenerStream,
 }
 
 impl ConnectionListener {
     /// Creates a new [`TcpListener`] that listens for incoming connections.
+    /// 创建一个新的[`TcpListener`]，监听到来的连接
     pub async fn bind(addr: SocketAddr) -> io::Result<Self> {
         let listener = TcpListener::bind(addr).await?;
         let local_addr = listener.local_addr()?;
@@ -33,11 +39,13 @@ impl ConnectionListener {
     }
 
     /// Creates a new connection listener stream.
+    /// 创建一个新的connection listener stream
     pub(crate) const fn new(listener: TcpListener, local_address: SocketAddr) -> Self {
         Self { local_address, incoming: TcpListenerStream { inner: listener } }
     }
 
     /// Polls the type to make progress.
+    /// 轮询这个类型来推进
     pub fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<ListenerEvent> {
         let this = self.project();
         match ready!(this.incoming.poll_next(cx)) {
@@ -45,6 +53,7 @@ impl ConnectionListener {
                 if let Err(err) = stream.set_nodelay(true) {
                     tracing::warn!(target: "net", "set nodelay failed: {:?}", err);
                 }
+                // 构建incoming stream
                 Poll::Ready(ListenerEvent::Incoming { stream, remote_addr })
             }
             Some(Err(err)) => Poll::Ready(ListenerEvent::Error(err)),

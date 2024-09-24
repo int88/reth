@@ -115,14 +115,17 @@ impl From<Transactions> for Vec<TransactionSigned> {
 }
 
 /// Same as [`Transactions`] but this is intended as egress message send from local to _many_ peers.
+/// 和[`Transactions`]相同，但是主要作为egress message从local到很多peers
 ///
 /// The list of transactions is constructed on per-peers basis, but the underlying transaction
 /// objects are shared.
+/// 一系列的txs以每个peers为基础构建，但是底层的对象是共享的
 #[derive(Clone, Debug, PartialEq, Eq, RlpEncodableWrapper, RlpDecodableWrapper)]
 #[cfg_attr(any(test, feature = "arbitrary"), derive(arbitrary::Arbitrary))]
 #[add_arbitrary_tests(rlp, 20)]
 pub struct SharedTransactions(
     /// New transactions for the peer to include in its mempool.
+    /// 新的txs，对于peer，包含在它的mempool中
     pub Vec<Arc<TransactionSigned>>,
 );
 

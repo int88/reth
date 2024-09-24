@@ -46,14 +46,17 @@ pub mod shutdown;
 pub mod pool;
 
 /// A type that can spawn tasks.
+/// 一个可以生成tasks的类型
 ///
 /// The main purpose of this type is to abstract over [`TaskExecutor`] so it's more convenient to
 /// provide default impls for testing.
+/// 这个类型的主要作用是对[`TaskExecutor`]的抽象，这样更方便提供默认的实现用于测试
 ///
 ///
 /// # Examples
 ///
 /// Use the [`TokioTaskExecutor`] that spawns with [`tokio::task::spawn`]
+/// 使用[`TokioTaskExecutor`]可以生成[`tokio::task::spawn`]
 ///
 /// ```
 /// # async fn t() {
@@ -87,16 +90,20 @@ pub mod pool;
 #[auto_impl::auto_impl(&, Arc)]
 pub trait TaskSpawner: Send + Sync + Unpin + std::fmt::Debug + DynClone {
     /// Spawns the task onto the runtime.
+    /// 生成task到runtime
     /// See also [`Handle::spawn`].
     fn spawn(&self, fut: BoxFuture<'static, ()>) -> JoinHandle<()>;
 
     /// This spawns a critical task onto the runtime.
+    /// 这会生成一个critical task到runtime
     fn spawn_critical(&self, name: &'static str, fut: BoxFuture<'static, ()>) -> JoinHandle<()>;
 
     /// Spawns a blocking task onto the runtime.
+    /// 这会生成一个blocking task到runtime
     fn spawn_blocking(&self, fut: BoxFuture<'static, ()>) -> JoinHandle<()>;
 
     /// This spawns a critical blocking task onto the runtime.
+    /// 这会生成一个critical blocking task到runtime
     fn spawn_critical_blocking(
         &self,
         name: &'static str,

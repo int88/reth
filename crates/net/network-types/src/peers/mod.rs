@@ -16,13 +16,16 @@ use crate::{
 };
 
 /// Tracks info about a single peer.
+/// 追踪关于单个peer的信息
 #[derive(Debug, Clone)]
 pub struct Peer {
     /// Where to reach the peer.
+    /// 哪里访问peer
     pub addr: PeerAddr,
     /// Reputation of the peer.
     pub reputation: i32,
     /// The state of the connection, if any.
+    /// 连接的状态，如果有的话
     pub state: PeerConnectionState,
     /// The [`ForkId`] that the peer announced via discovery.
     pub fork_id: Option<ForkId>,

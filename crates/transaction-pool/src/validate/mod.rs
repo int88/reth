@@ -29,15 +29,18 @@ pub use constants::{
 };
 
 /// A Result type returned after checking a transaction's validity.
+/// 在检查了一个tx的validity之后的Result type
 #[derive(Debug)]
 pub enum TransactionValidationOutcome<T: PoolTransaction> {
     /// The transaction is considered _currently_ valid and can be inserted into the pool.
+    /// 这个tx被认为是合法的并且可以插入到pool中
     Valid {
         /// Balance of the sender at the current point.
         balance: U256,
         /// Current nonce of the sender.
         state_nonce: u64,
         /// The validated transaction.
+        /// 合法的tx
         ///
         /// See also [`ValidTransaction`].
         ///
@@ -45,6 +48,7 @@ pub enum TransactionValidationOutcome<T: PoolTransaction> {
         /// sidecar.
         transaction: ValidTransaction<T>,
         /// Whether to propagate the transaction to the network.
+        /// 是否传播tx到network
         propagate: bool,
     },
     /// The transaction is considered invalid indefinitely: It violates constraints that prevent

@@ -82,6 +82,7 @@ pub enum OnNotSupported {
 }
 
 /// A wrapper type for a `RLPx` sub-protocol.
+/// 对于一个`RLPx`子协议的封装类型
 #[derive(Debug)]
 pub struct RlpxSubProtocol(Box<dyn DynProtocolHandler>);
 
@@ -107,9 +108,11 @@ impl IntoRlpxSubProtocol for RlpxSubProtocol {
 }
 
 /// Additional RLPx-based sub-protocols.
+/// 额外的基于RLPx的子协议
 #[derive(Debug, Default)]
 pub struct RlpxSubProtocols {
     /// All extra protocols
+    /// 所有额外的protocols
     protocols: Vec<RlpxSubProtocol>,
 }
 

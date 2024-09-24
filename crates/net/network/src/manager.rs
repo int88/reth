@@ -68,46 +68,65 @@ use crate::{
 
 #[cfg_attr(doc, aquamarine::aquamarine)]
 /// Manages the _entire_ state of the network.
+/// 管理整个network的state
 ///
 /// This is an endless [`Future`] that consistently drives the state of the entire network forward.
+/// 这是一个endless [`Future`]，持续驱动整个network的状态向前
 ///
 /// The [`NetworkManager`] is the container type for all parts involved with advancing the network.
+/// [`NetworkManager`]是容器类型，对于所有包含的部分，推动network
 ///
 /// include_mmd!("docs/mermaid/network-manager.mmd")
 #[derive(Debug)]
 #[must_use = "The NetworkManager does nothing unless polled"]
 pub struct NetworkManager {
     /// The type that manages the actual network part, which includes connections.
+    /// 管理真正的network部分的类型，包含连接
     swarm: Swarm,
     /// Underlying network handle that can be shared.
+    /// 可以被共享的底层的network handle
     handle: NetworkHandle,
     /// Receiver half of the command channel set up between this type and the [`NetworkHandle`]
+    /// command channel的Receiver部分，设置于这个类型和[`NetworkHandle`]之间
     from_handle_rx: UnboundedReceiverStream<NetworkHandleMessage>,
     /// Handles block imports according to the `eth` protocol.
+    /// 根据`eth` protocol处理block imports
     block_import: Box<dyn BlockImport>,
     /// Sender for high level network events.
+    /// high level的network events的Sender
     event_sender: EventSender<NetworkEvent>,
     /// Sender half to send events to the
     /// [`TransactionsManager`](crate::transactions::TransactionsManager) task, if configured.
+    /// Sender部分用于发送events到[`TransactionsManager`](crate::transactions::TransactionsManager)，如果配置了的话
     to_transactions_manager: Option<UnboundedMeteredSender<NetworkTransactionEvent>>,
     /// Sender half to send events to the
     /// [`EthRequestHandler`](crate::eth_requests::EthRequestHandler) task, if configured.
+    /// Sender部分用于发送events到[`EthRequestHandler`](crate::eth_requests::EthRequestHandler)
+    /// task，如果配置了的话
     ///
     /// The channel that originally receives and bundles all requests from all sessions is already
     /// bounded. However, since handling an eth request is more I/O intensive than delegating
     /// them from the bounded channel to the eth-request channel, it is possible that this
     /// builds up if the node is flooded with requests.
+    /// 这个channel开始接收并且打包来自所有sessions的所有请求，
+    /// 然而因为处理一个eth请求是更IO密集的，相比将他们委托给eth-request
+    /// channel，可能会让node被requests冲击
     ///
     /// Even though nonmalicious requests are relatively cheap, it's possible to craft
     /// body requests with bogus data up until the allowed max message size limit.
     /// Thus, we use a bounded channel here to avoid unbounded build up if the node is flooded with
     /// requests. This channel size is set at
     /// [`ETH_REQUEST_CHANNEL_CAPACITY`](crate::builder::ETH_REQUEST_CHANNEL_CAPACITY)
+    /// 因此，我们使用一个bounded channel，来避免unbounded build
+    /// up，如果node被requests冲击，
+    /// 这个channel的size设置为[`ETH_REQUEST_CHANNEL_CAPACITY`](crate::builder::ETH_REQUEST_CHANNEL_CAPACITY)
     to_eth_request_handler: Option<mpsc::Sender<IncomingEthRequest>>,
     /// Tracks the number of active session (connected peers).
+    /// 追踪活跃的session的数目（连接的peers）
     ///
     /// This is updated via internal events and shared via `Arc` with the [`NetworkHandle`]
     /// Updated by the `NetworkWorker` and loaded by the `NetworkService`.
+    /// 这通过internal events更新并且通过`Arc`和[`NetworkHandle`]共享
     num_active_peers: Arc<AtomicUsize>,
     /// Metrics for the Network
     metrics: NetworkMetrics,
@@ -126,6 +145,7 @@ impl NetworkManager {
 
     /// Sets the dedicated channel for events indented for the
     /// [`EthRequestHandler`](crate::eth_requests::EthRequestHandler).
+    /// 设置专用通道，对于为[`EthRequestHandler`](crate::eth_requests::EthRequestHandler)准备的事件
     pub fn set_eth_request_handler(&mut self, tx: mpsc::Sender<IncomingEthRequest>) {
         self.to_eth_request_handler = Some(tx);
     }
@@ -136,8 +156,10 @@ impl NetworkManager {
     }
 
     /// Returns the [`NetworkHandle`] that can be cloned and shared.
+    /// 返回[`NetworkHandle`]，可以被克隆和共享
     ///
     /// The [`NetworkHandle`] can be used to interact with this [`NetworkManager`]
+    /// [`NetworkHandle`]可以用于和这个[`NetworkManager`]进行交互
     pub const fn handle(&self) -> &NetworkHandle {
         &self.handle
     }
@@ -163,9 +185,11 @@ impl NetworkManager {
 
 impl NetworkManager {
     /// Creates the manager of a new network.
+    /// 创建一个新的network的manager
     ///
     /// The [`NetworkManager`] is an endless future that needs to be polled in order to advance the
     /// state of the entire network.
+    /// [`NetworkManager`]是一个endless future需要被polled，为了推动整个network的状态
     pub async fn new<C: BlockNumReader + 'static>(
         config: NetworkConfig<C>,
     ) -> Result<Self, NetworkError> {
@@ -192,31 +216,39 @@ impl NetworkManager {
             transactions_manager_config: _,
         } = config;
 
+        // 构建peer manager
         let peers_manager = PeersManager::new(peers_config);
+        // 获取peers handle
         let peers_handle = peers_manager.handle();
 
+        // 构建conneciton listener
         let incoming = ConnectionListener::bind(listener_addr).await.map_err(|err| {
             NetworkError::from_io_error(err, ServiceKind::Listener(listener_addr))
         })?;
 
         // retrieve the tcp address of the socket
+        // 获取这个socket的tcp地址
         let listener_addr = incoming.local_address();
 
         // resolve boot nodes
+        // 解析boot nodes
         let resolved_boot_nodes =
             futures::future::try_join_all(boot_nodes.iter().map(|record| record.resolve())).await?;
 
         if let Some(disc_config) = discovery_v4_config.as_mut() {
             // merge configured boot nodes
+            // 合并配置的boot nodes
             disc_config.bootstrap_nodes.extend(resolved_boot_nodes.clone());
             disc_config.add_eip868_pair("eth", status.forkid);
         }
 
         if let Some(discv5) = discovery_v5_config.as_mut() {
             // merge configured boot nodes
+            // 合并配置的boot nodes
             discv5.extend_unsigned_boot_nodes(resolved_boot_nodes)
         }
 
+        // 构建discovery
         let discovery = Discovery::new(
             listener_addr,
             discovery_v4_addr,
@@ -227,12 +259,14 @@ impl NetworkManager {
         )
         .await?;
         // need to retrieve the addr here since provided port could be `0`
+        // 需要获取addr，因为提供的port可能为`0`
         let local_peer_id = discovery.local_id();
         let discv4 = discovery.discv4();
         let discv5 = discovery.discv5();
 
         let num_active_peers = Arc::new(AtomicUsize::new(0));
 
+        // 构建session manager
         let sessions = SessionManager::new(
             secret_key,
             sessions_config,
@@ -243,6 +277,7 @@ impl NetworkManager {
             extra_protocols,
         );
 
+        // 构建network state
         let state = NetworkState::new(
             crate::state::BlockNumReader::new(client),
             discovery,
@@ -250,12 +285,14 @@ impl NetworkManager {
             Arc::clone(&num_active_peers),
         );
 
+        // 构建swarm
         let swarm = Swarm::new(incoming, sessions, state);
 
         let (to_manager_tx, from_handle_rx) = mpsc::unbounded_channel();
 
         let event_sender: EventSender<NetworkEvent> = Default::default();
 
+        // 构建NetworkHandle
         let handle = NetworkHandle::new(
             Arc::clone(&num_active_peers),
             Arc::new(Mutex::new(listener_addr)),

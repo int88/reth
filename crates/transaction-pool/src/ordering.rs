@@ -21,8 +21,10 @@ impl<T: Ord + Clone> From<Option<T>> for Priority<T> {
 }
 
 /// Transaction ordering trait to determine the order of transactions.
+/// Transaction ordering用于决定txs的order
 ///
 /// Decides how transactions should be ordered within the pool, depending on a `Priority` value.
+/// 决定txs如何在pool中排序，取决于`Priority` value
 ///
 /// The returned priority must reflect [total order](https://en.wikipedia.org/wiki/Total_order).
 pub trait TransactionOrdering: Send + Sync + 'static {

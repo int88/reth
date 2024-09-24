@@ -1,4 +1,5 @@
 //! Low level example of connecting to and communicating with a peer.
+//! 底层的例子关于连接和peer交互
 //!
 //! Run with
 //!
@@ -34,10 +35,12 @@ async fn main() -> eyre::Result<()> {
     let our_enr = NodeRecord::from_secret_key(DEFAULT_DISCOVERY_ADDRESS, &our_key);
 
     // Setup discovery v4 protocol to find peers to talk to
+    // 设置discovery v4 protocol来找到peers进行talk
     let mut discv4_cfg = Discv4ConfigBuilder::default();
     discv4_cfg.add_boot_nodes(MAINNET_BOOT_NODES.clone()).lookup_interval(Duration::from_secs(1));
 
     // Start discovery protocol
+    // 开始discovery protocol
     let discv4 = Discv4::spawn(our_enr.udp_addr(), our_enr, our_key, discv4_cfg.build()).await?;
     let mut discv4_stream = discv4.update_stream().await?;
 

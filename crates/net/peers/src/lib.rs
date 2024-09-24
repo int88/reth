@@ -60,6 +60,7 @@ use std::str::FromStr;
 pub use enr::Enr;
 
 /// Alias for a peer identifier
+/// 对于peer id的别名
 pub type PeerId = B512;
 
 pub mod node_record;

@@ -208,6 +208,7 @@ pub type EthTransactionPool<Client, S> = Pool<
 >;
 
 /// A shareable, generic, customizable `TransactionPool` implementation.
+/// 一个共享的，通用的，自定义的`TransactionPool`实现
 #[derive(Debug)]
 pub struct Pool<V, T: TransactionOrdering, S> {
     /// Arc'ed instance of the pool internals
@@ -223,6 +224,7 @@ where
     S: BlobStore,
 {
     /// Create a new transaction pool instance.
+    /// 创建一个新的tx pool instance
     pub fn new(validator: V, ordering: T, blob_store: S, config: PoolConfig) -> Self {
         Self { pool: Arc::new(PoolInner::new(validator, ordering, blob_store, config)) }
     }
@@ -378,6 +380,7 @@ where
     }
 
     fn pending_transactions_listener_for(&self, kind: TransactionListenerKind) -> Receiver<TxHash> {
+        // 增加tx listener
         self.pool.add_pending_listener(kind)
     }
 

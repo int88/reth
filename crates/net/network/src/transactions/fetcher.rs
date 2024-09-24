@@ -64,13 +64,16 @@ use crate::{
 };
 
 /// The type responsible for fetching missing transactions from peers.
+/// 这个类型负责从peers抓取txs
 ///
 /// This will keep track of unique transaction hashes that are currently being fetched and submits
 /// new requests on announced hashes.
+/// 这会追踪独特的tx hashes，当前正在被抓取并且提交新的请求，对于声明的hashes
 #[derive(Debug)]
 #[pin_project]
 pub struct TransactionFetcher {
     /// All peers with to which a [`GetPooledTransactions`] request is inflight.
+    /// 所有的peers，一个[`GetPooledTransactions`]请求正在处理
     pub active_peers: LruMap<PeerId, u8, ByLength>,
     /// All currently active [`GetPooledTransactions`] requests.
     ///

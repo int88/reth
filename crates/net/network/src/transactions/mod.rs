@@ -1,4 +1,5 @@
 //! Transactions management for the p2p network.
+//! p2p network中的tx管理
 
 /// Aggregation on configurable parameters for [`TransactionsManager`].
 pub mod config;
@@ -78,15 +79,20 @@ use crate::{
 pub type PoolImportFuture = Pin<Box<dyn Future<Output = Vec<PoolResult<TxHash>>> + Send + 'static>>;
 
 /// Api to interact with [`TransactionsManager`] task.
+/// 和[`TransactionsManager`] task交互的API
 ///
 /// This can be obtained via [`TransactionsManager::handle`] and can be used to manually interact
 /// with the [`TransactionsManager`] task once it is spawned.
+/// 这可以通过[`TransactionsManager::handle`]获取并且可以用于手动和[`TransactionsManager`]
+/// task交互，一旦生成
 ///
 /// For example [`TransactionsHandle::get_peer_transaction_hashes`] returns the transaction hashes
 /// known by a specific peer.
+/// 例如，[`TransactionsHandle::get_peer_transaction_hashes`]返回一个特定的peer已知的tx hashes
 #[derive(Debug, Clone)]
 pub struct TransactionsHandle {
     /// Command channel to the [`TransactionsManager`]
+    /// 用于和[`TransactionsManager`]交互的commmand channel
     manager_tx: mpsc::UnboundedSender<TransactionsCommand>,
 }
 
@@ -175,22 +181,33 @@ impl TransactionsHandle {
 }
 
 /// Manages transactions on top of the p2p network.
+/// 在p2p network之上管理txs
 ///
 /// This can be spawned to another task and is supposed to be run as background service.
 /// [`TransactionsHandle`] can be used as frontend to programmatically send commands to it and
 /// interact with it.
+/// 这可以生成为另一个task并且应该作为background
+/// service运行，[`TransactionsHandle`]可以用于frontend来发送commands并且交互
 ///
 /// The [`TransactionsManager`] is responsible for:
+/// [`TransactionsManager`]负责：
 ///    - handling incoming eth messages for transactions.
+///    - 处理到来的为了txs的eth messages
 ///    - serving transaction requests.
+///    - 服务tx请求
 ///    - propagate transactions
+///    - 传播txs
 ///
 /// This type communicates with the [`NetworkManager`](crate::NetworkManager) in both directions.
+/// 这个类型在同时两个方向和[`NetworkManager`](crate::NetworkManager)交互
 ///   - receives incoming network messages.
+///   - 接收到来的network messages
 ///   - sends messages to dispatch (responses, propagate tx)
+///   - 发送messages进行分发（response, propagate tx）
 ///
 /// It is directly connected to the [`TransactionPool`] to retrieve requested transactions and
 /// propagate new transactions over the network.
+/// 它直接和[`TransactionPool`]相连来获取请求的txs并且传播新的txs，通过network
 #[derive(Debug)]
 #[must_use = "Manager does nothing unless polled."]
 pub struct TransactionsManager<Pool> {
@@ -199,10 +216,13 @@ pub struct TransactionsManager<Pool> {
     /// Network access.
     network: NetworkHandle,
     /// Subscriptions to all network related events.
+    /// 订阅所有network相关的事件
     ///
     /// From which we get all new incoming transaction related messages.
+    /// 从中我们获取所有新到来的tx相关的messages
     network_events: EventStream<NetworkEvent>,
     /// Transaction fetcher to handle inflight and missing transaction requests.
+    /// Tx fetcher用于处理inflight和丢失的tx请求
     transaction_fetcher: TransactionFetcher,
     /// All currently pending transactions grouped by peers.
     ///
@@ -210,6 +230,7 @@ pub struct TransactionsManager<Pool> {
     /// transaction
     transactions_by_peers: HashMap<TxHash, HashSet<PeerId>>,
     /// Transactions that are currently imported into the `Pool`.
+    /// 当前正在被倒入到`Pool`中的txs
     ///
     /// The import process includes:
     ///  - validation of the transactions, e.g. transaction is well formed: valid tx type, fees are
@@ -230,6 +251,7 @@ pub struct TransactionsManager<Pool> {
     /// Send half for the command channel.
     ///
     /// This is kept so that a new [`TransactionsHandle`] can be created at any time.
+    /// 维护它，这样新的[`TransactionsHandle`]可以随时创建
     command_tx: mpsc::UnboundedSender<TransactionsCommand>,
     /// Incoming commands from [`TransactionsHandle`].
     ///
@@ -246,6 +268,7 @@ pub struct TransactionsManager<Pool> {
     ///   - account has enough balance to cover the transaction's gas
     pending_transactions: ReceiverStream<TxHash>,
     /// Incoming events from the [`NetworkManager`](crate::NetworkManager).
+    /// 来自[`NetworkManager`](crate::NetworkManager)的新的events
     transaction_events: UnboundedMeteredReceiver<NetworkTransactionEvent>,
     /// Max number of seen transactions to store for each peer.
     max_transactions_seen_by_peer_history: u32,
@@ -255,8 +278,10 @@ pub struct TransactionsManager<Pool> {
 
 impl<Pool: TransactionPool> TransactionsManager<Pool> {
     /// Sets up a new instance.
+    /// 构建一个新的示例
     ///
     /// Note: This expects an existing [`NetworkManager`](crate::NetworkManager) instance.
+    /// 注意：这期望一个已经存在的[`NetworkManager`](crate::NetworkManager)实例
     pub fn new(
         network: NetworkHandle,
         pool: Pool,
@@ -267,12 +292,14 @@ impl<Pool: TransactionPool> TransactionsManager<Pool> {
 
         let (command_tx, command_rx) = mpsc::unbounded_channel();
 
+        // 构建tx fetcher
         let transaction_fetcher = TransactionFetcher::with_transaction_fetcher_config(
             &transactions_manager_config.transaction_fetcher_config,
         );
 
         // install a listener for new __pending__ transactions that are allowed to be propagated
         // over the network
+        // 安装一个listener，对于新的__pending__ txs，允许通过network传播
         let pending = pool.pending_transactions_listener();
         let pending_pool_imports_info = PendingPoolImportsInfo::default();
         let metrics = TransactionsManagerMetrics::default();
@@ -313,6 +340,7 @@ where
     Pool: TransactionPool,
 {
     /// Returns a new handle that can send commands to this type.
+    /// 返回一个新的handle，可以给这个类型发送commands
     pub fn handle(&self) -> TransactionsHandle {
         TransactionsHandle { manager_tx: self.command_tx.clone() }
     }
@@ -1221,8 +1249,10 @@ where
 
 /// An endless future. Preemption ensure that future is non-blocking, nonetheless. See
 /// [`crate::NetworkManager`] for more context on the design pattern.
+/// 一个endless future，抢占确保future是非阻塞的，尽管如此
 ///
 /// This should be spawned or used as part of `tokio::select!`.
+/// 这应该被生成或者作为`tokio::select!`的一部分
 //
 // spawned in `NodeConfig::start_network`(reth_node_core::NodeConfig) and
 // `NetworkConfig::start_network`(reth_network::NetworkConfig)
@@ -1642,6 +1672,7 @@ impl PeerMetadata {
 }
 
 /// Commands to send to the [`TransactionsManager`]
+/// 用于发送到[`TransactionsManager`]到命令
 #[derive(Debug)]
 enum TransactionsCommand {
     /// Propagate a transaction hash to the network.
@@ -1649,8 +1680,10 @@ enum TransactionsCommand {
     /// Propagate transaction hashes to a specific peer.
     PropagateHashesTo(Vec<B256>, PeerId),
     /// Request the list of active peer IDs from the [`TransactionsManager`].
+    /// 从[`TransactionsManager`]请求一系列的active peer IDs
     GetActivePeers(oneshot::Sender<HashSet<PeerId>>),
     /// Propagate a collection of full transactions to a specific peer.
+    /// 传播一系列的full txs到特定的peer
     PropagateTransactionsTo(Vec<TxHash>, PeerId),
     /// Request transaction hashes known by specific peers from the [`TransactionsManager`].
     GetTransactionHashes {
@@ -1665,11 +1698,14 @@ enum TransactionsCommand {
 }
 
 /// All events related to transactions emitted by the network.
+/// 所有network发送的和txs相关的events
 #[derive(Debug)]
 pub enum NetworkTransactionEvent {
     /// Represents the event of receiving a list of transactions from a peer.
+    /// 代表从peer收到一系列txs的事件
     ///
     /// This indicates transactions that were broadcasted to us from the peer.
+    /// 这表明从peer广播事件到我们
     IncomingTransactions {
         /// The ID of the peer from which the transactions were received.
         peer_id: PeerId,
@@ -1677,6 +1713,7 @@ pub enum NetworkTransactionEvent {
         msg: Transactions,
     },
     /// Represents the event of receiving a list of transaction hashes from a peer.
+    /// 代表从peer收到一系列的tx hashes
     IncomingPooledTransactionHashes {
         /// The ID of the peer from which the transaction hashes were received.
         peer_id: PeerId,
@@ -1684,6 +1721,7 @@ pub enum NetworkTransactionEvent {
         msg: NewPooledTransactionHashes,
     },
     /// Represents the event of receiving a `GetPooledTransactions` request from a peer.
+    /// 代表从peer收到一个`GetPooledTransactions`请求
     GetPooledTransactions {
         /// The ID of the peer from which the request was received.
         peer_id: PeerId,
@@ -1693,6 +1731,7 @@ pub enum NetworkTransactionEvent {
         response: oneshot::Sender<RequestResult<PooledTransactions>>,
     },
     /// Represents the event of receiving a `GetTransactionsHandle` request.
+    /// 代表收到一个`GetTransactionsHandle`请求
     GetTransactionsHandle(oneshot::Sender<Option<TransactionsHandle>>),
 }
 

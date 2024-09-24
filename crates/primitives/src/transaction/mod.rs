@@ -73,6 +73,7 @@ pub(crate) static PARALLEL_SENDER_RECOVERY_THRESHOLD: Lazy<usize> =
     });
 
 /// A raw transaction.
+/// 裸的tx
 ///
 /// Transaction types were introduced in [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, derive_more::From)]
@@ -999,6 +1000,7 @@ impl From<TransactionSigned> for TransactionSignedNoHash {
 }
 
 /// Signed transaction.
+/// 签名的tx
 #[cfg_attr(any(test, feature = "reth-codec"), reth_codecs::add_arbitrary_tests(rlp))]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, AsRef, Deref, Default, Serialize, Deserialize)]
 pub struct TransactionSigned {
@@ -1541,6 +1543,7 @@ impl<'a> arbitrary::Arbitrary<'a> for TransactionSigned {
 }
 
 /// Signed transaction with recovered signer.
+/// 有着recovered signer的Signed tx
 #[derive(Debug, Clone, PartialEq, Hash, Eq, AsRef, Deref, Default)]
 pub struct TransactionSignedEcRecovered {
     /// Signer of the transaction

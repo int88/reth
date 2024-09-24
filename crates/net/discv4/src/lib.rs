@@ -98,6 +98,7 @@ pub const DEFAULT_DISCOVERY_ADDR: IpAddr = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 pub const DEFAULT_DISCOVERY_PORT: u16 = 30303;
 
 /// The default address for discv4 via UDP: "0.0.0.0:30303"
+/// 默认的discv4地址，通过UDP："0.0.0.0:30303"
 ///
 /// Note: The default TCP address is the same.
 pub const DEFAULT_DISCOVERY_ADDRESS: SocketAddr =
@@ -113,9 +114,11 @@ const MIN_PACKET_SIZE: usize = 32 + 65 + 1;
 const ALPHA: usize = 3;
 
 /// Maximum number of nodes to ping at concurrently.
+/// 并发ping的Nodes的数目
 ///
 /// This corresponds to 2 full `Neighbours` responses with 16 _new_ nodes. This will apply some
 /// backpressure in recursive lookups.
+/// 这对应2个完整的`Neighbours`，对应16个新的nodes，这会应用一些backpressure，在recursive lookups
 const MAX_NODES_PING: usize = 2 * MAX_NODES_PER_BUCKET;
 
 /// Maximum number of pings to keep queued.
@@ -135,6 +138,7 @@ const MAX_QUEUED_PINGS: usize = 2 * MAX_NODES_PER_BUCKET;
 const SAFE_MAX_DATAGRAM_NEIGHBOUR_RECORDS: usize = (MAX_PACKET_SIZE - 109) / 91;
 
 /// The timeout used to identify expired nodes, 24h
+/// 表示超时的nodes，时间是24h
 ///
 /// Mirrors geth's `bondExpiration` of 24h
 const ENDPOINT_PROOF_EXPIRATION: Duration = Duration::from_secs(24 * 60 * 60);
@@ -157,8 +161,10 @@ pub(crate) type IngressReceiver = mpsc::Receiver<IngressEvent>;
 type NodeRecordSender = OneshotSender<Vec<NodeRecord>>;
 
 /// The Discv4 frontend
+/// Discv4的前端
 ///
 /// This communicates with the [`Discv4Service`] by sending commands over a channel.
+/// 这和[`Discv4Service`]交互，通过channel发送
 ///
 /// See also [`Discv4::spawn`]
 #[derive(Debug, Clone)]
@@ -166,10 +172,13 @@ pub struct Discv4 {
     /// The address of the udp socket
     local_addr: SocketAddr,
     /// channel to send commands over to the service
+    /// 用于发送到这个service的commmand channel
     to_service: mpsc::UnboundedSender<Discv4Command>,
     /// Tracks the local node record.
+    /// 追踪本地的node record
     ///
     /// This includes the currently tracked external IP address of the node.
+    /// 这包含当前正在追踪的外部的IP地址
     node_record: Arc<Mutex<NodeRecord>>,
 }
 
@@ -177,6 +186,7 @@ pub struct Discv4 {
 
 impl Discv4 {
     /// Same as [`Self::bind`] but also spawns the service onto a new task,
+    /// 和[`Self::bind`]相同，但是生成的service到一个新的task
     /// [`Discv4Service::spawn()`]
     pub async fn spawn(
         local_address: SocketAddr,
@@ -192,6 +202,7 @@ impl Discv4 {
     }
 
     /// Returns a new instance with the given channel directly
+    /// 返回一个新的实例，直接有着给定的channel
     ///
     /// NOTE: this is only intended for test setups.
     #[cfg(feature = "test-utils")]
@@ -210,6 +221,7 @@ impl Discv4 {
     }
 
     /// Binds a new `UdpSocket` and creates the service
+    /// 绑定到一个新的`UdpSocket`并且创建service
     ///
     /// ```
     /// # use std::io;
@@ -250,6 +262,7 @@ impl Discv4 {
     ) -> io::Result<(Self, Discv4Service)> {
         let socket = UdpSocket::bind(local_address).await?;
         let local_addr = socket.local_addr()?;
+        // 设置udp port
         local_node_record.udp_port = local_addr.port();
         trace!(target: "discv4", ?local_addr,"opened UDP socket");
 
@@ -417,9 +430,12 @@ impl Discv4 {
 }
 
 /// Manages discv4 peer discovery over UDP.
+/// 管理通过UDP进行discv4的peer discovery
 ///
 /// This is a [Stream] to handles incoming and outgoing discv4 messages and emits updates via:
 /// [`Discv4Service::update_stream`].
+/// 这是一个[Stream]来处理incoming以及outgoing disv4
+/// messages并且发射更新，通过[`Discv4Service::update_stream`]
 #[must_use = "Stream does nothing unless polled"]
 pub struct Discv4Service {
     /// Local address of the UDP socket.
@@ -441,50 +457,63 @@ pub struct Discv4Service {
     /// The routing table.
     kbuckets: KBucketsTable<NodeKey, NodeEntry>,
     /// Receiver for incoming messages
+    /// 接受incoming messages
     ///
     /// Receives incoming messages from the UDP task.
     ingress: IngressReceiver,
     /// Sender for sending outgoing messages
+    /// 发送outging messages
     ///
     /// Sends outgoind messages to the UDP task.
     egress: EgressSender,
     /// Buffered pending pings to apply backpressure.
+    /// pending pings的缓存来施加backpressure
     ///
     /// Lookups behave like bursts of requests: Endpoint proof followed by `FindNode` request. [Recursive lookups](https://github.com/ethereum/devp2p/blob/master/discv4.md#recursive-lookup) can trigger multiple followup Pings+FindNode requests.
-    /// A cap on concurrent `Ping` prevents escalation where: A large number of new nodes
-    /// discovered via `FindNode` in a recursive lookup triggers a large number of `Ping`s, and
-    /// followup `FindNode` requests.... Buffering them effectively prevents high `Ping` peaks.
+    /// Lookups的行为就像请求的爆发：`FindNode`请求紧跟Endpoint proof，[Recursive
+    /// lookups]可以触发多个后续的Pings+FindNode请求 A cap on concurrent `Ping` prevents
+    /// escalation where: A large number of new nodes discovered via `FindNode` in a recursive
+    /// lookup triggers a large number of `Ping`s, and followup `FindNode` requests....
+    /// Buffering them effectively prevents high `Ping` peaks.
     queued_pings: VecDeque<(NodeRecord, PingReason)>,
     /// Currently active pings to specific nodes.
+    /// 当前对于特定nodes的active pings
     pending_pings: HashMap<PeerId, PingRequest>,
     /// Currently active endpoint proof verification lookups to specific nodes.
+    /// 当前活跃的endpoint proof verification lookups，对于特定的nodes
     ///
     /// Entries here means we've proven the peer's endpoint but haven't completed our end of the
     /// endpoint proof
     pending_lookup: HashMap<PeerId, (Instant, LookupContext)>,
     /// Currently active `FindNode` requests
+    /// 当前活跃的`FinNode`请求
     pending_find_nodes: HashMap<PeerId, FindNodeRequest>,
     /// Currently active ENR requests
     pending_enr_requests: HashMap<PeerId, EnrRequestState>,
     /// Copy of he sender half of the commands channel for [Discv4]
     to_service: mpsc::UnboundedSender<Discv4Command>,
     /// Receiver half of the commands channel for [Discv4]
+    /// 对于[Discv4]的command channel的Receiver部分
     commands_rx: mpsc::UnboundedReceiver<Discv4Command>,
     /// All subscribers for table updates
     update_listeners: Vec<mpsc::Sender<DiscoveryUpdate>>,
     /// The interval when to trigger random lookups
+    /// 触发随机查找的时间间隔
     lookup_interval: Interval,
     /// Used to rotate targets to lookup
+    /// 用于轮转查找的targets
     lookup_rotator: LookupTargetRotator,
     /// Interval when to recheck active requests
     evict_expired_requests_interval: Interval,
     /// Interval when to resend pings.
+    /// 重发pings的时间间隔
     ping_interval: Interval,
     /// The interval at which to attempt resolving external IP again.
     resolve_external_ip_interval: Option<ResolveNatInterval>,
     /// How this services is configured
     config: Discv4Config,
     /// Buffered events populated during poll.
+    /// 在轮询期间填充的events
     queued_events: VecDeque<Discv4Event>,
     /// Keeps track of nodes from which we have received a `Pong` message.
     received_pongs: PongTable,
@@ -494,6 +523,7 @@ pub struct Discv4Service {
 
 impl Discv4Service {
     /// Create a new instance for a bound [`UdpSocket`].
+    /// 创建一个新的instance，对于一个bound [`UdpSocket`]
     pub(crate) fn new(
         socket: UdpSocket,
         local_address: SocketAddr,
@@ -524,6 +554,7 @@ impl Discv4Service {
 
         // Wait `ping_interval` and then start pinging every `ping_interval` because we want to wait
         // for
+        // 等待`ping_interval`并且开始在每个`ping_interval`进行pinging，因为我们想要等待
         let ping_interval = tokio::time::interval_at(
             tokio::time::Instant::now() + config.ping_interval,
             config.ping_interval,
@@ -542,6 +573,7 @@ impl Discv4Service {
 
         // for EIP-868 construct an ENR
         let local_eip_868_enr = {
+            // 设置enr builder
             let mut builder = Enr::builder();
             builder.ip(local_node_record.address);
             if local_node_record.address.is_ipv4() {
@@ -594,6 +626,7 @@ impl Discv4Service {
     }
 
     /// Returns the frontend handle that can communicate with the service via commands.
+    /// 返回frontend handle，可以和service交互，通过commands
     pub fn handle(&self) -> Discv4 {
         Discv4 {
             local_addr: self.local_address,
@@ -985,9 +1018,11 @@ impl Discv4Service {
     }
 
     /// Encodes the packet, sends it and returns the hash.
+    /// 编码packet，发送它并且返回hash
     pub(crate) fn send_packet(&self, msg: Message, to: SocketAddr) -> B256 {
         let (payload, hash) = msg.encode(&self.secret_key);
         trace!(target: "discv4", r#type=?msg.msg_type(), ?to, ?hash, "sending packet");
+        // 试着往egress发送packet
         let _ = self.egress.try_send((payload, to)).map_err(|err| {
             debug!(
                 target: "discv4",
@@ -1117,32 +1152,40 @@ impl Discv4Service {
     }
 
     // Guarding function for [`Self::send_ping`] that applies pre-checks
+    // 对于[`Self::send_ping`]的守护函数，应用pre-checks
     fn try_ping(&mut self, node: NodeRecord, reason: PingReason) {
         if node.id == *self.local_peer_id() {
             // don't ping ourselves
+            // 不要ping自己
             return
         }
 
         if self.pending_pings.contains_key(&node.id) ||
             self.pending_find_nodes.contains_key(&node.id)
         {
+            // 如果在pending_pings和pending_find_nodes包含该node id
             return
         }
 
         if self.queued_pings.iter().any(|(n, _)| n.id == node.id) {
+            // 如果在queued_pings中包含这个node
             return
         }
 
         if self.pending_pings.len() < MAX_NODES_PING {
+            // 如果pending_pings的数目小于MAX_NODES_PING
             self.send_ping(node, reason);
         } else if self.queued_pings.len() < MAX_QUEUED_PINGS {
+            // 如果queud_pings的长度小于MAX_QUEUED_PINGS，则加入
             self.queued_pings.push_back((node, reason));
         }
     }
 
     /// Sends a ping message to the node's UDP address.
+    /// 发送一个ping message到node的UDP地址
     ///
     /// Returns the echo hash of the ping message.
+    /// 返回ping message的echo hash
     pub(crate) fn send_ping(&mut self, node: NodeRecord, reason: PingReason) -> B256 {
         let remote_addr = node.udp_addr();
         let id = node.id;
@@ -1153,8 +1196,10 @@ impl Discv4Service {
             enr_sq: self.enr_seq(),
         };
         trace!(target: "discv4", ?ping, "sending ping");
+        // 发送packet
         let echo_hash = self.send_packet(Message::Ping(ping), remote_addr);
 
+        // 插入pending pings
         self.pending_pings
             .insert(id, PingRequest { sent_at: Instant::now(), node, echo_hash, reason });
         echo_hash
@@ -1503,13 +1548,17 @@ impl Discv4Service {
     }
 
     /// Re-pings all nodes which endpoint proofs are considered expired: [`NodeEntry::is_expired`]
+    /// 重新ping所有的nodes，他们的endpoint proofs被认为超时
     ///
     /// This will send a `Ping` to the nodes, if a node fails to respond with a `Pong` to renew the
     /// endpoint proof it will be removed from the table.
+    /// 这会发送一个`Ping`到所有的nodes，如果一个node不能用一个`Pong`回复来刷新endpoint
+    /// proof，他会从table移除
     fn re_ping_oldest(&mut self) {
         let mut nodes = self
             .kbuckets
             .iter_ref()
+            // 获取过期的nodes
             .filter(|entry| entry.node.value.is_expired())
             .map(|n| n.node.value)
             .collect::<Vec<_>>();
@@ -1577,18 +1626,24 @@ impl Discv4Service {
     }
 
     /// Polls the socket and advances the state.
+    /// 轮询socket并且推进state
     ///
     /// To prevent traffic amplification attacks, implementations must verify that the sender of a
     /// query participates in the discovery protocol. The sender of a packet is considered verified
     /// if it has sent a valid Pong response with matching ping hash within the last 12 hours.
+    /// 为了防止流量放大攻击，implementation必须校验query的sneder必须参与到discovery
+    /// protocol，packet的sender 被认为是verified，如果它已经发送一个合法的Pong
+    /// reponse，匹配ping hash，在12个小时以内
     pub(crate) fn poll(&mut self, cx: &mut Context<'_>) -> Poll<Discv4Event> {
         loop {
             // drain buffered events first
+            // 首先排干缓存的events
             if let Some(event) = self.queued_events.pop_front() {
                 return Poll::Ready(event)
             }
 
             // trigger self lookup
+            // 触发self lookup
             if self.config.enable_lookup {
                 while self.lookup_interval.poll_tick(cx).is_ready() {
                     let target = self.lookup_rotator.next(&self.local_node_record.id);
@@ -1597,6 +1652,7 @@ impl Discv4Service {
             }
 
             // re-ping some peers
+            // 重新Ping一些peers
             while self.ping_interval.poll_tick(cx).is_ready() {
                 self.re_ping_oldest();
             }
@@ -1604,10 +1660,12 @@ impl Discv4Service {
             if let Some(Poll::Ready(Some(ip))) =
                 self.resolve_external_ip_interval.as_mut().map(|r| r.poll_tick(cx))
             {
+                // 设置external ip地址
                 self.set_external_ip_addr(ip);
             }
 
             // drain all incoming `Discv4` commands, this channel can never close
+            // 排干所有到来的`Disv4`，这个channel永远不会关闭
             while let Poll::Ready(Some(cmd)) = self.commands_rx.poll_recv(cx) {
                 match cmd {
                     Discv4Command::Add(enr) => {
@@ -1658,9 +1716,11 @@ impl Discv4Service {
             }
 
             // restricts how many messages we process in a single poll before yielding back control
+            // 限制我们在单个poll处理的messags，在返回control之前
             let mut udp_message_budget = UDP_MESSAGE_POLL_LOOP_BUDGET;
 
             // process all incoming datagrams
+            // 处理所有到来的datagrams
             while let Poll::Ready(Some(event)) = self.ingress.poll_recv(cx) {
                 match event {
                     IngressEvent::RecvError(err) => {
@@ -1715,14 +1775,17 @@ impl Discv4Service {
             }
 
             // try resending buffered pings
+            // 试着重新发送缓存的pings
             self.ping_buffered();
 
             // evict expired requests
+            // 驱逐过期的请求
             while self.evict_expired_requests_interval.poll_tick(cx).is_ready() {
                 self.evict_expired_requests(Instant::now());
             }
 
             // evict expired nodes
+            // 驱逐超时的nodes
             while self.expire_interval.poll_tick(cx).is_ready() {
                 self.received_pongs.evict_expired(Instant::now(), EXPIRE_DURATION);
             }
@@ -1785,6 +1848,7 @@ pub enum Discv4Event {
 }
 
 /// Continuously reads new messages from the channel and writes them to the socket
+/// 持续从channel收到新的messages并且将他们写入sockets
 pub(crate) async fn send_loop(udp: Arc<UdpSocket>, rx: EgressReceiver) {
     let mut stream = ReceiverStream::new(rx);
     while let Some((payload, to)) = stream.next().await {
@@ -1803,9 +1867,11 @@ pub(crate) async fn send_loop(udp: Arc<UdpSocket>, rx: EgressReceiver) {
 const MAX_INCOMING_PACKETS_PER_MINUTE_BY_IP: usize = 60usize;
 
 /// Continuously awaits new incoming messages and sends them back through the channel.
+/// 持续等待新到来的messages并且将他们发送回到channel
 ///
 /// The receive loop enforce primitive rate limiting for ips to prevent message spams from
 /// individual IPs
+/// receive loop执行原始的rate limiting，对于ips，防止message spams，来自单个的IPs
 pub(crate) async fn receive_loop(udp: Arc<UdpSocket>, tx: IngressSender, local_id: PeerId) {
     let send = |event: IngressEvent| async {
         let _ = tx.send(event).await.map_err(|err| {
@@ -1820,6 +1886,7 @@ pub(crate) async fn receive_loop(udp: Arc<UdpSocket>, tx: IngressSender, local_i
     let mut cache = ReceiveCache::default();
 
     // tick at half the rate of the limit
+    // 在rate limit的一半触发
     let tick = MAX_INCOMING_PACKETS_PER_MINUTE_BY_IP / 2;
     let mut interval = tokio::time::interval(Duration::from_secs(tick as u64));
 
@@ -1829,11 +1896,14 @@ pub(crate) async fn receive_loop(udp: Arc<UdpSocket>, tx: IngressSender, local_i
         match res {
             Err(err) => {
                 debug!(target: "discv4", %err, "Failed to read datagram.");
+                // 调用send方法
                 send(IngressEvent::RecvError(err)).await;
             }
             Ok((read, remote_addr)) => {
                 // rate limit incoming packets by IP
+                // 通过IP对到来的packets进行限速
                 if cache.inc_ip(remote_addr.ip()) > MAX_INCOMING_PACKETS_PER_MINUTE_BY_IP {
+                    // 根据IP做rate limit
                     trace!(target: "discv4", ?remote_addr, "Too many incoming packets from IP.");
                     continue
                 }
@@ -1843,11 +1913,13 @@ pub(crate) async fn receive_loop(udp: Arc<UdpSocket>, tx: IngressSender, local_i
                     Ok(packet) => {
                         if packet.node_id == local_id {
                             // received our own message
+                            // 收到了我们自己的message
                             debug!(target: "discv4", ?remote_addr, "Received own packet.");
                             continue
                         }
 
                         // skip if we've already received the same packet
+                        // 跳过，如果我们已经收到了同样的packet
                         if cache.contains_packet(packet.hash) {
                             debug!(target: "discv4", ?remote_addr, "Received duplicate packet.");
                             continue
@@ -1905,6 +1977,7 @@ impl ReceiveCache {
     }
 
     /// Increases the counter for the given IP address and returns the new count.
+    /// 对于给定的IP地址增加counter并且返回新的count
     fn inc_ip(&mut self, ip: IpAddr) -> usize {
         let ctn = self.ip_messages.entry(ip).or_default();
         *ctn = ctn.saturating_add(1);
@@ -1927,6 +2000,7 @@ impl Default for ReceiveCache {
 }
 
 /// The commands sent from the frontend [Discv4] to the service [`Discv4Service`].
+/// 从frontend [Discv4]发送来的commands，到service [`Discv4Service`]
 enum Discv4Command {
     Add(NodeRecord),
     SetTcpPort(u16),
@@ -1942,6 +2016,7 @@ enum Discv4Command {
 }
 
 /// Event type receiver produces
+/// receiver生成的事件类型
 #[derive(Debug)]
 pub(crate) enum IngressEvent {
     /// Encountered an error when reading a datagram message.
@@ -1953,21 +2028,28 @@ pub(crate) enum IngressEvent {
 }
 
 /// Tracks a sent ping
+/// 追踪一个发送的ping
 #[derive(Debug)]
 struct PingRequest {
     // Timestamp when the request was sent.
+    // 请求被发送的时间戳
     sent_at: Instant,
     // Node to which the request was sent.
+    // 请求发送的Node
     node: NodeRecord,
     // Hash sent in the Ping request
+    // Ping请求中的Hash
     echo_hash: B256,
     /// Why this ping was sent.
+    /// 这个ping被发送的理由
     reason: PingReason,
 }
 
 /// Rotates the `PeerId` that is periodically looked up.
+/// 轮转`PeerId`，阶段性地查找
 ///
 /// By selecting different targets, the lookups will be seeded with different ALPHA seed nodes.
+/// 通过选择不同的targets，lookups会用不同的ALPHA seed nodes
 #[derive(Debug)]
 struct LookupTargetRotator {
     interval: usize,
@@ -2246,22 +2328,27 @@ impl NodeEntry {
 
 impl NodeEntry {
     /// Returns true if the node should be re-pinged.
+    /// 返回true，如果node应该被re-pinged
     fn is_expired(&self) -> bool {
         self.last_seen.elapsed() > ENDPOINT_PROOF_EXPIRATION
     }
 }
 
 /// Represents why a ping is issued
+/// 代表为什么一个ping被发送
 #[derive(Debug)]
 enum PingReason {
     /// Initial ping to a previously unknown peer that was inserted into the table.
+    /// 初始化ping到一个之前未知的peer，刚刚被插入到table
     InitialInsert,
     /// Initial ping to a previously unknown peer that didn't fit into the table. But we still want
     /// to establish a bond.
+    /// 初始ping到一个之前未知的peer，不适配table，但是我们依然想要建立一个bond
     EstablishBond,
     /// Re-ping a peer.
     RePing,
     /// Part of a lookup to ensure endpoint is proven before we can send a `FindNode` request.
+    /// lookup的一部分，确保endpoint是proven，在我们可以发送一个`FindNode`请求之前
     Lookup(NodeRecord, LookupContext),
 }
 

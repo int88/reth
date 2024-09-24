@@ -38,11 +38,13 @@ use crate::{
 };
 
 /// A _shareable_ network frontend. Used to interact with the network.
+/// 一个共享的network frontend，可以用于和network交互
 ///
 /// See also [`NetworkManager`](crate::NetworkManager).
 #[derive(Clone, Debug)]
 pub struct NetworkHandle {
     /// The Arc'ed delegate that contains the state.
+    /// 包含state的Arc的委托
     inner: Arc<NetworkInner>,
 }
 
@@ -50,6 +52,7 @@ pub struct NetworkHandle {
 
 impl NetworkHandle {
     /// Creates a single new instance.
+    /// 创建单个新的instance
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         num_active_peers: Arc<AtomicUsize>,
@@ -404,8 +407,10 @@ impl BlockDownloaderProvider for NetworkHandle {
 #[derive(Debug)]
 struct NetworkInner {
     /// Number of active peer sessions the node's currently handling.
+    /// node当前正在处理的active peer sessions的数目
     num_active_peers: Arc<AtomicUsize>,
     /// Sender half of the message channel to the [`crate::NetworkManager`].
+    /// 发往[`crate::NetworkManager`]的message channel的Sender部分
     to_manager_tx: UnboundedSender<NetworkHandleMessage>,
     /// The local address that accepts incoming connections.
     listener_address: Arc<Mutex<SocketAddr>>,
@@ -418,18 +423,23 @@ struct NetworkInner {
     /// The mode of the network
     network_mode: NetworkMode,
     /// Represents if the network is currently syncing.
+    /// 代表network是否正在同步
     is_syncing: Arc<AtomicBool>,
     /// Used to differentiate between an initial pipeline sync or a live sync
+    /// 用于区分initial pipeline或者一个live sync
     initial_sync_done: Arc<AtomicBool>,
     /// The chain id
     chain_id: Arc<AtomicU64>,
     /// Whether to disable transaction gossip
     tx_gossip_disabled: bool,
     /// The instance of the discv4 service
+    /// discv4服务
     discv4: Option<Discv4>,
     /// The instance of the discv5 service
+    /// discv5服务
     discv5: Option<Discv5>,
     /// Sender for high level network events.
+    /// high level的network events的Sender
     event_sender: EventSender<NetworkEvent>,
 }
 
@@ -440,6 +450,7 @@ pub trait NetworkProtocols: Send + Sync {
 }
 
 /// Internal messages that can be passed to the  [`NetworkManager`](crate::NetworkManager).
+/// 内部的messages，可以发送给 [`NetworkManager`](crate::NetworkManager)
 #[derive(Debug)]
 pub(crate) enum NetworkHandleMessage {
     /// Marks a peer as trusted.
@@ -451,15 +462,19 @@ pub(crate) enum NetworkHandleMessage {
     /// Disconnects a connection to a peer if it exists, optionally providing a disconnect reason.
     DisconnectPeer(PeerId, Option<DisconnectReason>),
     /// Broadcasts an event to announce a new block to all nodes.
+    /// 广播一个event，声明一个新的block到所有的nodes
     AnnounceBlock(NewBlock, B256),
     /// Sends a list of transactions to the given peer.
+    /// 发送一系列的txs到给定的peer
     SendTransaction {
         /// The ID of the peer to which the transactions are sent.
         peer_id: PeerId,
         /// The shared transactions to send.
+        /// 发送的共享的txs
         msg: SharedTransactions,
     },
     /// Sends a list of transaction hashes to the given peer.
+    /// 发送一系列的tx hashes到给定的peer
     SendPooledTransactionHashes {
         /// The ID of the peer to which the transaction hashes are sent.
         peer_id: PeerId,
@@ -467,6 +482,7 @@ pub(crate) enum NetworkHandleMessage {
         msg: NewPooledTransactionHashes,
     },
     /// Sends an `eth` protocol request to the peer.
+    /// 发送一个`eth`协议请求到peer
     EthRequest {
         /// The peer to send the request to.
         peer_id: PeerId,

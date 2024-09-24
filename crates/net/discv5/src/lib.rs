@@ -63,6 +63,7 @@ pub const MAX_KBUCKET_INDEX: usize = 255;
 pub const DEFAULT_MIN_TARGET_KBUCKET_INDEX: usize = 0;
 
 /// Transparent wrapper around [`discv5::Discv5`].
+/// 对于[`discv5::Discv5`]的透明的wrapper
 #[derive(Clone)]
 pub struct Discv5 {
     /// sigp/discv5 node.
@@ -72,6 +73,7 @@ pub struct Discv5 {
     /// Key used in kv-pair to ID chain, e.g. 'opstack' or 'eth'.
     fork_key: Option<&'static [u8]>,
     /// Filter applied to a discovered peers before passing it up to app.
+    /// 应用到discovered peers的Filter，在传递给app之前
     discovered_peer_filter: MustNotIncludeKeys,
     /// Metrics for underlying [`discv5::Discv5`] node and filtered discovered peers.
     metrics: Discv5Metrics,
