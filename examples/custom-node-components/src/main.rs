@@ -1,4 +1,5 @@
 //! This example shows how to configure custom components for a reth node.
+//! 这个例子展示如何配置自定义的组件，对于一个reth node
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
@@ -22,9 +23,12 @@ fn main() {
         .run(|builder, _| async move {
             let handle = builder
                 // use the default ethereum node types
+                // 使用默认的eth node类型
                 .with_types::<EthereumNode>()
                 // Configure the components of the node
+                // 配置node的components
                 // use default ethereum components but use our custom pool
+                // 使用默认的eth components，但是使用我们自定义的pool
                 .with_components(EthereumNode::components().pool(CustomPoolBuilder::default()))
                 .with_add_ons(EthereumAddOns::default())
                 .launch()

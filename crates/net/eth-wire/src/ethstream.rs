@@ -40,6 +40,7 @@ pub struct UnauthedEthStream<S> {
 
 impl<S> UnauthedEthStream<S> {
     /// Create a new `UnauthedEthStream` from a type `S` which implements `Stream` and `Sink`.
+    /// 从类型`S`创建一个新的`UnauthedEthStream`，实现了`Stream`和`Sink`
     pub const fn new(inner: S) -> Self {
         Self { inner }
     }
@@ -58,6 +59,8 @@ where
     /// Consumes the [`UnauthedEthStream`] and returns an [`EthStream`] after the `Status`
     /// handshake is completed successfully. This also returns the `Status` message sent by the
     /// remote peer.
+    /// 消费[`UnauthedEthStream`]并且返回一个[`EthStream`]，在`Status`握手完成之后，这也返回remote
+    /// peer发送的`Status` message
     pub async fn handshake<N: NetworkPrimitives>(
         self,
         status: Status,
@@ -67,6 +70,7 @@ where
     }
 
     /// Wrapper around handshake which enforces a timeout.
+    /// 封装handshake，执行一个timeout
     pub async fn handshake_with_timeout<N: NetworkPrimitives>(
         self,
         status: Status,
@@ -79,6 +83,7 @@ where
     }
 
     /// Handshake with no timeout
+    /// 有超时时间的握手
     pub async fn handshake_without_timeout<N: NetworkPrimitives>(
         mut self,
         status: Status,
@@ -90,14 +95,17 @@ where
         );
 
         // we need to encode and decode here on our own because we don't have an `EthStream` yet
+        // 这里我们需要自己encode以及decode，因为我们还没有一个`EthStream`
         // The max length for a status with TTD is: <msg id = 1 byte> + <rlp(status) = 88 byte>
         self.inner
+            // 直接发送message
             .send(
                 alloy_rlp::encode(ProtocolMessage::<N>::from(EthMessage::<N>::Status(status)))
                     .into(),
             )
             .await?;
 
+        // 从inner获取下一个message
         let their_msg_res = self.inner.next().await;
 
         let their_msg = match their_msg_res {
@@ -109,11 +117,13 @@ where
         }?;
 
         if their_msg.len() > MAX_STATUS_SIZE {
+            // 大于MAX_STATUS_SIZE，直接disconnect
             self.inner.disconnect(DisconnectReason::ProtocolBreach).await?;
             return Err(EthStreamError::MessageTooBig(their_msg.len()))
         }
 
         let version = status.version;
+        // 对message进行decode
         let msg = match ProtocolMessage::<N>::decode_message(version, &mut their_msg.as_ref()) {
             Ok(m) => m,
             Err(err) => {
@@ -177,6 +187,7 @@ where
 
                 // now we can create the `EthStream` because the peer has successfully completed
                 // the handshake
+                // 现在我们可以创建`EthStream`，因为peer已经成功完成了握手
                 let stream = EthStream::new(version, self.inner);
 
                 Ok((stream, resp))
@@ -207,6 +218,7 @@ pub struct EthStream<S, N = EthNetworkPrimitives> {
 impl<S, N> EthStream<S, N> {
     /// Creates a new unauthed [`EthStream`] from a provided stream. You will need
     /// to manually handshake a peer.
+    /// 创建一个新的unauthed [`EthStream`]，从提供的stream，我们需要和一个peer手动握手
     #[inline]
     pub const fn new(version: EthVersion, inner: S) -> Self {
         Self { version, inner, _pd: std::marker::PhantomData }
@@ -699,6 +711,7 @@ mod tests {
         let (mut client_stream, _) =
             UnauthedEthStream::new(p2p_stream).handshake(status, fork_filter).await.unwrap();
 
+        // 发送test message
         client_stream.send(test_msg).await.unwrap();
 
         // make sure the server receives the message and asserts before ending the test

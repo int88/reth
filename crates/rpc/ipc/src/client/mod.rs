@@ -15,6 +15,7 @@ use tokio::io::AsyncWriteExt;
 use tokio_util::codec::FramedRead;
 
 /// Sending end of IPC transport.
+/// IPC transport的Sending部分
 #[derive(Debug)]
 pub(crate) struct Sender {
     inner: SendHalf,
@@ -58,6 +59,7 @@ impl TransportReceiverT for Receiver {
 }
 
 /// Builder for IPC transport [`Sender`] and [`Receiver`] pair.
+/// 对于IPC transport [`Sender`]和[`Receiver`]对的builder
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive]
 pub(crate) struct IpcTransportClientBuilder;
@@ -79,6 +81,7 @@ impl IpcTransportClientBuilder {
 }
 
 /// Builder type for [`Client`]
+/// [`Client`]的Builder类型
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct IpcClientBuilder;

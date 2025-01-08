@@ -53,6 +53,7 @@ pub struct NetworkConfig<C, N: NetworkPrimitives = EthNetworkPrimitives> {
     /// Address to listen for incoming connections
     pub listener_addr: SocketAddr,
     /// How to instantiate peer manager.
+    /// 如何初始化peer manager
     pub peers_config: PeersConfig,
     /// How to configure the [`SessionManager`](crate::session::SessionManager).
     pub sessions_config: SessionsConfig,
@@ -172,6 +173,7 @@ where
 #[derive(Debug)]
 pub struct NetworkConfigBuilder<N: NetworkPrimitives = EthNetworkPrimitives> {
     /// The node's secret key, from which the node's identity is derived.
+    /// node的secret key，从中可以推导出node的identity
     secret_key: SecretKey,
     /// How to configure discovery over DNS.
     dns_discovery_config: Option<DnsDiscoveryConfig>,
@@ -182,8 +184,10 @@ pub struct NetworkConfigBuilder<N: NetworkPrimitives = EthNetworkPrimitives> {
     /// All boot nodes to start network discovery with.
     boot_nodes: HashSet<TrustedPeer>,
     /// Address to use for discovery
+    /// 地址用于discovery
     discovery_addr: Option<SocketAddr>,
     /// Listener for incoming connections
+    /// 对于incoming connections的Listener
     listener_addr: Option<SocketAddr>,
     /// How to instantiate peer manager.
     peers_config: Option<PeersConfig>,
@@ -348,8 +352,10 @@ impl<N: NetworkPrimitives> NetworkConfigBuilder<N> {
     }
 
     /// Sets the port of the address the network will listen on.
+    /// 设置network会监听的地址的端口
     ///
     /// By default, this is [`DEFAULT_DISCOVERY_PORT`](reth_discv4::DEFAULT_DISCOVERY_PORT)
+    /// 默认为[`DEFAULT_DISCOVERY_PORT`]
     pub fn listener_port(mut self, port: u16) -> Self {
         self.listener_addr.get_or_insert(DEFAULT_DISCOVERY_ADDRESS).set_port(port);
         self
@@ -362,8 +368,10 @@ impl<N: NetworkPrimitives> NetworkConfigBuilder<N> {
     }
 
     /// Sets the port of the address the discovery network will listen on.
+    /// 设置disc network会监听的端口
     ///
     /// By default, this is [`DEFAULT_DISCOVERY_PORT`](reth_discv4::DEFAULT_DISCOVERY_PORT)
+    /// 默认为[`DEFAULT_DISCOVERY_PORT`]
     pub fn discovery_port(mut self, port: u16) -> Self {
         self.discovery_addr.get_or_insert(DEFAULT_DISCOVERY_ADDRESS).set_port(port);
         self
@@ -447,6 +455,7 @@ impl<N: NetworkPrimitives> NetworkConfigBuilder<N> {
     }
 
     /// Disables all discovery.
+    /// 禁止所有的发现功能
     pub fn disable_discovery(self) -> Self {
         self.disable_discv4_discovery().disable_dns_discovery().disable_nat()
     }
@@ -485,6 +494,7 @@ impl<N: NetworkPrimitives> NetworkConfigBuilder<N> {
     }
 
     /// Adds a new additional protocol to the `RLPx` sub-protocol list.
+    /// 添加一个新的additional protocol，到`RLPx`的子协议列表中
     pub fn add_rlpx_sub_protocol(mut self, protocol: impl IntoRlpxSubProtocol) -> Self {
         self.extra_protocols.push(protocol);
         self
@@ -522,10 +532,13 @@ impl<N: NetworkPrimitives> NetworkConfigBuilder<N> {
 
     /// Consumes the type and creates the actual [`NetworkConfig`]
     /// for the given client type that can interact with the chain.
+    /// 消费类型并且创建真正的[`NetworkConfig`]，对于给定的client类型，可以和chain交互
     ///
     /// The given client is to be used for interacting with the chain, for example fetching the
     /// corresponding block for a given block hash we receive from a peer in the status message when
     /// establishing a connection.
+    /// 给定的client用于和chain交互，例如获取对应的block，对于给定的block
+    /// hash，当建立连接时，我们从peer接收到的status message
     pub fn build<C>(self, client: C) -> NetworkConfig<C, N>
     where
         C: ChainSpecProvider<ChainSpec: Hardforks>,

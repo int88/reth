@@ -32,6 +32,7 @@ impl PeersHandle {
     }
 
     /// Adds a peer to the set.
+    /// 添加一个Peer到集合中
     pub fn add_peer(&self, peer_id: PeerId, addr: SocketAddr) {
         self.send(PeerCommand::Add(peer_id, addr));
     }

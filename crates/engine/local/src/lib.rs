@@ -1,4 +1,5 @@
 //! A local engine service that can be used to drive a dev chain.
+//! 一个local engine service，可以用来驱动一个dev chain
 
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",

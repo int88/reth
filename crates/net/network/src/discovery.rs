@@ -43,6 +43,7 @@ pub struct Discovery {
     /// These nodes can be ephemeral and are updated via the discovery protocol.
     discovered_nodes: LruMap<PeerId, PeerAddr>,
     /// Local ENR of the discovery v4 service (discv5 ENR has same [`PeerId`]).
+    /// disc v4 service的Local ENR（discv5 ENR有着相同的[`PeerId`]）
     local_enr: NodeRecord,
     /// Handler to interact with the Discovery v4 service
     discv4: Option<Discv4>,
@@ -82,6 +83,8 @@ impl Discovery {
         // setup discv4 with the discovery address and tcp port
         let local_enr =
             NodeRecord::from_secret_key(discovery_v4_addr, &sk).with_tcp_port(tcp_addr.port());
+
+        print!("local enr is {}\n", local_enr);
 
         let discv4_future = async {
             let Some(disc_config) = discv4_config else { return Ok((None, None, None)) };

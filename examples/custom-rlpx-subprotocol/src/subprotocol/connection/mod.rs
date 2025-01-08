@@ -12,16 +12,20 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 pub(crate) mod handler;
 
 /// We define some custom commands that the subprotocol supports.
+/// 我们定义一些自定义的commands，子协议支持
 pub(crate) enum CustomCommand {
     /// Sends a message to the peer
+    /// 发送一个message到peer
     Message {
         msg: String,
         /// The response will be sent to this channel.
+        /// response会被送到这个channel
         response: oneshot::Sender<String>,
     },
 }
 
 /// The connection handler for the custom RLPx protocol.
+/// 用于custom RLPx protocol的connection handler
 pub(crate) struct CustomRlpxConnection {
     conn: ProtocolConnection,
     initial_ping: Option<CustomRlpxProtoMessage>,

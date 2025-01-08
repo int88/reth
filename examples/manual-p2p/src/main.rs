@@ -1,9 +1,10 @@
 //! Low level example of connecting to and communicating with a peer.
+//! 底层的例子关于连接和一个peer交互
 //!
 //! Run with
 //!
 //! ```not_rust
-//! cargo run -p manual-p2p
+//! cargo run -p example-manual-p2p
 //! ```
 
 use std::time::Duration;
@@ -35,10 +36,12 @@ async fn main() -> eyre::Result<()> {
     let our_enr = NodeRecord::from_secret_key(DEFAULT_DISCOVERY_ADDRESS, &our_key);
 
     // Setup discovery v4 protocol to find peers to talk to
+    // 设置disc v4协议来找到交互的peer
     let mut discv4_cfg = Discv4ConfigBuilder::default();
     discv4_cfg.add_boot_nodes(MAINNET_BOOT_NODES.clone()).lookup_interval(Duration::from_secs(1));
 
     // Start discovery protocol
+    // 开始discovery protocol
     let discv4 = Discv4::spawn(our_enr.udp_addr(), our_enr, our_key, discv4_cfg.build()).await?;
     let mut discv4_stream = discv4.update_stream().await?;
 
@@ -66,7 +69,9 @@ async fn main() -> eyre::Result<()> {
                     }
                 };
 
+                println!("NODE RECORD IS {}", peer);
                 println!(
+                    // 成功连接到一个peer，使用eth-wire的版本为xxx
                     "Successfully connected to a peer at {}:{} ({}) using eth-wire version eth/{}",
                     peer.address, peer.tcp_port, their_hello.client_version, their_status.version
                 );
@@ -94,6 +99,7 @@ async fn handshake_p2p(
 }
 
 // Perform a ETH Wire handshake with a peer
+// 执行一个ETH Wire的握手，和peer
 async fn handshake_eth(p2p_stream: AuthedP2PStream) -> eyre::Result<(AuthedEthStream, Status)> {
     let fork_filter = MAINNET.fork_filter(Head {
         timestamp: MAINNET.fork(EthereumHardfork::Shanghai).as_timestamp().unwrap(),
@@ -113,7 +119,9 @@ async fn handshake_eth(p2p_stream: AuthedP2PStream) -> eyre::Result<(AuthedEthSt
 }
 
 // Snoop by greedily capturing all broadcasts that the peer emits
+// Snoop通过贪婪地抓取peer发射的所有广播
 // note: this node cannot handle request so will be disconnected by peer when challenged
+// 注意：这个node不能处理请求，因此会被peer断开连接，当被挑战的时候
 async fn snoop(peer: NodeRecord, mut eth_stream: AuthedEthStream) {
     while let Some(Ok(update)) = eth_stream.next().await {
         match update {

@@ -142,6 +142,7 @@ pub struct PeersConfig {
     /// Note: this does not apply to trusted peers.
     pub max_backoff_count: u8,
     /// Basic nodes to connect to.
+    /// 连接的basic nodes
     #[cfg_attr(feature = "serde", serde(skip))]
     pub basic_nodes: HashSet<NodeRecord>,
     /// How long to ban bad peers.

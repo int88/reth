@@ -188,9 +188,11 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
     }
 
     /// Creates the manager of a new network.
+    /// 创建一个network的manager
     ///
     /// The [`NetworkManager`] is an endless future that needs to be polled in order to advance the
     /// state of the entire network.
+    /// [`NetworkManager`]是一个endless future，需要被polled以推进整个网络的状态
     pub async fn new<C: BlockNumReader + 'static>(
         config: NetworkConfig<C, N>,
     ) -> Result<Self, NetworkError> {
@@ -314,6 +316,7 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
 
     /// Create a new [`NetworkManager`] instance and start a [`NetworkBuilder`] to configure all
     /// components of the network
+    /// 创建一个新的[`NetworkManager`]实例并且启动一个[`NetworkBuilder`]来配置network的所有组件
     ///
     /// ```
     /// use reth_network::{

@@ -60,6 +60,7 @@ where
 }
 
 /// Network primitive types used by Ethereum networks.
+/// Network primitive类型，用于Eth networks
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct EthNetworkPrimitives;

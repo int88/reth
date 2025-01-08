@@ -1,10 +1,14 @@
 //! Provides a local dev service engine that can be used to run a dev chain.
+//! 提供一个本地的dev service engine，可以用于运行一个dev chain
 //!
 //! [`LocalEngineService`] polls the payload builder based on a mining mode
 //! which can be set to `Instant` or `Interval`. The `Instant` mode will
 //! constantly poll the payload builder and initiate block building
 //! with a single transaction. The `Interval` mode will initiate block
 //! building at a fixed interval.
+//! [`LocalEngineService`]轮询payload builder，基于一个mining mode，可以是`Instant`或者`Interval`。
+//! `Instant`模式会不断地轮询payload builder，并且用一个单笔交易来初始化block building。
+//! `Interval`模式会以一个固定的间隔来初始化block building。
 
 use core::fmt;
 use std::{

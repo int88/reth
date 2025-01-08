@@ -1,4 +1,5 @@
 //! CLI definition and entrypoint to executable
+//! CLI的定义以及可执行文件的入口
 
 use crate::{
     args::LogArgs,
@@ -32,8 +33,10 @@ use tracing::info;
 pub use crate::core::cli::*;
 
 /// The main reth cli interface.
+/// main reth cli的接口
 ///
 /// This is the entrypoint to the executable.
+/// 这是可执行文件的入口
 #[derive(Debug, Parser)]
 #[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about = "Reth", long_about = None)]
 pub struct Cli<C: ChainSpecParser = EthereumChainSpecParser, Ext: clap::Args + fmt::Debug = NoArgs>
@@ -94,9 +97,11 @@ impl Cli {
 
 impl<C: ChainSpecParser<ChainSpec = ChainSpec>, Ext: clap::Args + fmt::Debug> Cli<C, Ext> {
     /// Execute the configured cli command.
+    /// 执行配置的cli命令
     ///
     /// This accepts a closure that is used to launch the node via the
     /// [`NodeCommand`](node::NodeCommand).
+    /// 这个接收一个closure，用于启动node，通过 [`NodeCommand`](node::NodeCommand)
     ///
     ///
     /// # Example
@@ -117,6 +122,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>, Ext: clap::Args + fmt::Debug> Cl
     /// # Example
     ///
     /// Parse additional CLI arguments for the node command and use it to configure the node.
+    /// 解析额外的CLI参数用于node命令并且用于配置node
     ///
     /// ```no_run
     /// use clap::Parser;

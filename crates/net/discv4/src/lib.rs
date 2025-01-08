@@ -179,6 +179,7 @@ pub struct Discv4 {
 impl Discv4 {
     /// Same as [`Self::bind`] but also spawns the service onto a new task,
     /// [`Discv4Service::spawn()`]
+    /// 和[`Self::bind`]相同，但是也生成service到一个新的task，[`Discv4Service::spawn()`]
     pub async fn spawn(
         local_address: SocketAddr,
         local_enr: NodeRecord,
@@ -418,9 +419,12 @@ impl Discv4 {
 }
 
 /// Manages discv4 peer discovery over UDP.
+/// 基于UDP管理discv4的peer discovery
 ///
 /// This is a [Stream] to handles incoming and outgoing discv4 messages and emits updates via:
 /// [`Discv4Service::update_stream`].
+/// 这是一个[Stream]来管理incoming和outgoing的discv4
+/// messages并且发射更新，通过[`Discv4Service::update_stream`]
 #[must_use = "Stream does nothing unless polled"]
 pub struct Discv4Service {
     /// Local address of the UDP socket.
@@ -446,8 +450,10 @@ pub struct Discv4Service {
     /// Receives incoming messages from the UDP task.
     ingress: IngressReceiver,
     /// Sender for sending outgoing messages
+    /// Sender用于发送outgoing messages
     ///
     /// Sends outgoind messages to the UDP task.
+    /// 发送outgoing messages到UDP task
     egress: EgressSender,
     /// Buffered pending pings to apply backpressure.
     ///
@@ -1039,6 +1045,7 @@ impl Discv4Service {
     }
 
     /// Encodes the packet, sends it and returns the hash.
+    /// 对packet进行编码，发送并且返回hash
     pub(crate) fn send_packet(&self, msg: Message, to: SocketAddr) -> B256 {
         let (payload, hash) = msg.encode(&self.secret_key);
         trace!(target: "discv4", r#type=?msg.msg_type(), ?to, ?hash, "sending packet");
@@ -1139,6 +1146,7 @@ impl Discv4Service {
 
         // send the pong first, but the PONG and optionally PING don't need to be send in a
         // particular order
+        // 首先发送pong，但是PONG以及可选的PING不需要按特定顺序发送
         let pong = Message::Pong(Pong {
             // we use the actual address of the peer
             to: record.into(),
@@ -1185,6 +1193,7 @@ impl Discv4Service {
     }
 
     // Guarding function for [`Self::send_ping`] that applies pre-checks
+    // [`Self::send_ping`]的Guard function，应用pre-checks
     fn try_ping(&mut self, node: NodeRecord, reason: PingReason) {
         if node.id == *self.local_peer_id() {
             // don't ping ourselves
@@ -1202,6 +1211,7 @@ impl Discv4Service {
         }
 
         if self.pending_pings.len() < MAX_NODES_PING {
+            // 直接发送ping
             self.send_ping(node, reason);
         } else if self.queued_pings.len() < MAX_QUEUED_PINGS {
             self.queued_pings.push_back((node, reason));
@@ -1209,8 +1219,10 @@ impl Discv4Service {
     }
 
     /// Sends a ping message to the node's UDP address.
+    /// 发送一个ping message到node的UDP address
     ///
     /// Returns the echo hash of the ping message.
+    /// 返回ping message的echo hash
     pub(crate) fn send_ping(&mut self, node: NodeRecord, reason: PingReason) -> B256 {
         let remote_addr = node.udp_addr();
         let id = node.id;
@@ -1836,8 +1848,10 @@ impl Stream for Discv4Service {
         // Poll the internal poll method
         match ready!(self.get_mut().poll(cx)) {
             // if the service is terminated, return None to terminate the stream
+            // 如果service被终止了，返回None来终止stream
             Discv4Event::Terminated => Poll::Ready(None),
             // For any other event, return Poll::Ready(Some(event))
+            // 对于其他任何的事件，返回Poll::Ready(Some(event))
             ev => Poll::Ready(Some(ev)),
         }
     }
@@ -2832,6 +2846,7 @@ mod tests {
             expire: service.ping_expiration(),
             enr_sq: service.enr_seq(),
         };
+        // 发送packet
         let echo_hash = service.send_packet(Message::Ping(ping), record.udp_addr());
         let ping_request = PingRequest {
             sent_at: Instant::now(),
