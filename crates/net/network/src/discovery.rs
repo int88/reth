@@ -33,9 +33,11 @@ use tracing::trace;
 pub const DEFAULT_MAX_CAPACITY_DISCOVERED_PEERS_CACHE: u32 = 10_000;
 
 /// An abstraction over the configured discovery protocol.
+/// 对于配置的disc protocol的抽象
 ///
 /// Listens for new discovered nodes and emits events for discovered nodes and their
 /// address.
+/// 监听新发现的nodes并且发射事件，对于发现的nodes以及他们的地址
 #[derive(Debug)]
 pub struct Discovery {
     /// All nodes discovered via discovery protocol.

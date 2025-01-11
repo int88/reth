@@ -163,8 +163,10 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
     }
 
     /// Returns the [`NetworkHandle`] that can be cloned and shared.
+    /// 返回[`NetworkHandle`]可以被克隆和共享
     ///
     /// The [`NetworkHandle`] can be used to interact with this [`NetworkManager`]
+    /// [`NetworkHandle`]可以用于和[`NetworkManager`]进行交互
     pub const fn handle(&self) -> &NetworkHandle<N> {
         &self.handle
     }
@@ -220,6 +222,7 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
             nat,
         } = config;
 
+        // 构建peer manager
         let peers_manager = PeersManager::new(peers_config);
         let peers_handle = peers_manager.handle();
 
@@ -236,6 +239,7 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
 
         if let Some(disc_config) = discovery_v4_config.as_mut() {
             // merge configured boot nodes
+            // 合入配置的boot nodes
             disc_config.bootstrap_nodes.extend(resolved_boot_nodes.clone());
             disc_config.add_eip868_pair("eth", status.forkid);
         }
@@ -261,6 +265,7 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
 
         let num_active_peers = Arc::new(AtomicUsize::new(0));
 
+        // 构建session manager
         let sessions = SessionManager::new(
             secret_key,
             sessions_config,
@@ -271,6 +276,7 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
             extra_protocols,
         );
 
+        // 构建network state
         let state = NetworkState::new(
             crate::state::BlockNumReader::new(client),
             discovery,
@@ -278,12 +284,14 @@ impl<N: NetworkPrimitives> NetworkManager<N> {
             Arc::clone(&num_active_peers),
         );
 
+        // 构建swarm
         let swarm = Swarm::new(incoming, sessions, state);
 
         let (to_manager_tx, from_handle_rx) = mpsc::unbounded_channel();
 
         let event_sender: EventSender<NetworkEvent<PeerRequest<N>>> = Default::default();
 
+        // 构建network handle
         let handle = NetworkHandle::new(
             Arc::clone(&num_active_peers),
             Arc::new(Mutex::new(listener_addr)),
@@ -1031,6 +1039,7 @@ impl<N: NetworkPrimitives> Future for NetworkManager<N> {
         let this = self.get_mut();
 
         // poll new block imports (expected to be a noop for POS)
+        // 轮询新的block imports（对于POS来说应该为noop）
         while let Poll::Ready(outcome) = this.block_import.poll(cx) {
             this.on_block_import_result(outcome);
         }
@@ -1064,12 +1073,14 @@ impl<N: NetworkPrimitives> Future for NetworkManager<N> {
             "Network message channel",
             DEFAULT_BUDGET_TRY_DRAIN_NETWORK_HANDLE_CHANNEL,
             this.from_handle_rx.poll_next_unpin(cx),
+            // 对network message
             |msg| this.on_handle_message(msg),
             error!("Network channel closed");
         );
         poll_durations.acc_network_handle = start_network_handle.elapsed();
 
         // process incoming messages from the network
+        // 处理从network来的messages
         let maybe_more_swarm_events = poll_nested_stream_with_budget!(
             "net",
             "Swarm events stream",
@@ -1081,6 +1092,7 @@ impl<N: NetworkPrimitives> Future for NetworkManager<N> {
             start_network_handle.elapsed() - poll_durations.acc_network_handle;
 
         // all streams are fully drained and import futures pending
+        // 所有streams被完全排干并且导入pending的futures
         if maybe_more_handle_messages || maybe_more_swarm_events {
             // make sure we're woken up again
             cx.waker().wake_by_ref();

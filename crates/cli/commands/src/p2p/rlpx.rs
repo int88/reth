@@ -1,7 +1,7 @@
 //! RLPx subcommand of P2P Debugging tool.
 
 use clap::{Parser, Subcommand};
-use futures::SinkExt;
+use futures::{SinkExt, StreamExt};
 use reth_ecies::stream::ECIESStream;
 use reth_eth_wire::{HelloMessage, UnauthedP2PStream};
 use reth_network::config::rng_secret_key;
@@ -36,6 +36,7 @@ impl Command {
 
                 let peer_id = pk2id(&key.public_key(SECP256K1));
                 let hello = HelloMessage::builder(peer_id).build();
+                println!("Before calling handshake");
 
                 let (mut p2p_stream, their_hello) =
                     UnauthedP2PStream::new(ecies_stream).handshake(hello).await?;
@@ -44,20 +45,23 @@ impl Command {
 
                 let mut rx = p2p_stream.subscribe_pong();
 
-                //p2p_stream.send_ping();
-                println!("Don't SEND ANYTHING");
-                // p2p_stream.flush().await?;
+                p2p_stream.send_ping();
+                // println!("Don't SEND ANYTHING");
+                p2p_stream.flush().await?;
 
-                match timeout(Duration::from_secs(10), &mut rx).await {
-                    Ok(Ok(())) => {
-                        println!("Successfully ping");
-                    } // 成功接收到消息
-                    Ok(Err(_)) => {
-                        println!("Sender dropped");
+                while let Some(_) = p2p_stream.next().await {
+                    match timeout(Duration::from_secs(1), &mut rx).await {
+                        Ok(Ok(())) => {
+                            println!("Successfully ping");
+                            break;
+                        } // 成功接收到消息
+                        Ok(Err(_)) => {
+                            println!("Sender dropped");
+                        }
+                        Err(_) => {
+                            println!("Timeout");
+                        } // 超时
                     }
-                    Err(_) => {
-                        println!("Timeout");
-                    } // 超时
                 }
             }
         }

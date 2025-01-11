@@ -141,6 +141,7 @@ where
     N: NetworkPrimitives,
 {
     /// Convenience method for calling [`NetworkManager::new`].
+    /// 方便的方法用于调用[`NetworkManager::new`]
     pub async fn manager(self) -> Result<NetworkManager<N>, NetworkError> {
         NetworkManager::new(self).await
     }

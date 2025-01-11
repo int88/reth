@@ -76,15 +76,21 @@ pub enum Subcommands {
 impl<C: ChainSpecParser<ChainSpec: EthChainSpec + EthereumHardforks>> Command<C> {
     /// Execute `p2p` command
     pub async fn execute<N: NetworkPrimitives>(self) -> eyre::Result<()> {
+        if let Subcommands::Rlpx(command) = self.command {
+            command.execute().await?;
+            return Ok(());
+        }
         let data_dir = self.datadir.clone().resolve_datadir(self.chain.chain());
         let config_path = self.config.clone().unwrap_or_else(|| data_dir.config());
 
         // Load configuration
+        // 加载配置
         let mut config = Config::from_path(&config_path).unwrap_or_default();
 
         config.peers.trusted_nodes.extend(self.network.trusted_peers.clone());
 
         if config.peers.trusted_nodes.is_empty() && self.network.trusted_only {
+            // 没有trusted nodes
             eyre::bail!("No trusted nodes. Set trusted peer with `--trusted-peer <enode record>` or set `--trusted-only` to `false`")
         }
 
@@ -100,6 +106,7 @@ impl<C: ChainSpecParser<ChainSpec: EthChainSpec + EthereumHardforks>> Command<C>
         let net = NetworkConfigBuilder::<N>::new(p2p_secret_key)
             .peer_config(config.peers_config_with_basic_nodes_from_file(None))
             .external_ip_resolver(self.network.nat)
+            // 禁止discv4
             .disable_discv4_discovery_if(self.chain.chain().is_optimism())
             .boot_nodes(boot_nodes.clone())
             .apply(|builder| {
@@ -108,9 +115,11 @@ impl<C: ChainSpecParser<ChainSpec: EthChainSpec + EthereumHardforks>> Command<C>
             .build_with_noop_provider(self.chain)
             .manager()
             .await?;
+        // 生成network handle
         let network = net.handle().clone();
         tokio::task::spawn(net);
 
+        // 构建fetch client
         let fetch_client = network.fetch_client().await?;
         let retries = self.retries.max(1);
         let backoff = ConstantBuilder::default().with_max_times(retries);
@@ -155,8 +164,9 @@ impl<C: ChainSpecParser<ChainSpec: EthChainSpec + EthereumHardforks>> Command<C>
                 let body = result.into_iter().next().unwrap();
                 println!("Successfully downloaded body: {body:?}")
             }
-            Subcommands::Rlpx(command) => {
-                command.execute().await?;
+            _ => {
+                // command.execute().await?;
+                println!("Bad command");
             }
         }
 
