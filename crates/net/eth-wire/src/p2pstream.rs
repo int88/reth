@@ -534,6 +534,7 @@ where
                     // if we were waiting for a pong, this will reset the pinger state
                     // 如果我们在等待一个pong，这会重置pinger state
                     println!("--- Received Pong");
+                    cx.waker().wake_by_ref();
                     if let Some(tx) = this.pong_notifier.take() {
                         tx.send(()).unwrap();
                     }

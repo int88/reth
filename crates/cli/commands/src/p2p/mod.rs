@@ -80,6 +80,7 @@ impl<C: ChainSpecParser<ChainSpec: EthChainSpec + EthereumHardforks>> Command<C>
             command.execute().await?;
             return Ok(());
         }
+
         let data_dir = self.datadir.clone().resolve_datadir(self.chain.chain());
         let config_path = self.config.clone().unwrap_or_else(|| data_dir.config());
 
@@ -164,10 +165,7 @@ impl<C: ChainSpecParser<ChainSpec: EthChainSpec + EthereumHardforks>> Command<C>
                 let body = result.into_iter().next().unwrap();
                 println!("Successfully downloaded body: {body:?}")
             }
-            _ => {
-                // command.execute().await?;
-                println!("Bad command");
-            }
+            _ => {}
         }
 
         Ok(())

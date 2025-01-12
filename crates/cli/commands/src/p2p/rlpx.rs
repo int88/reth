@@ -1,5 +1,7 @@
 //! RLPx subcommand of P2P Debugging tool.
 
+use std::time::Instant;
+
 use clap::{Parser, Subcommand};
 use futures::{SinkExt, StreamExt};
 use reth_ecies::stream::ECIESStream;
@@ -9,7 +11,8 @@ use reth_network_peers::{pk2id, AnyNode};
 use secp256k1::SECP256K1;
 use tokio::{
     net::TcpStream,
-    time::{timeout, Duration},
+    sync::oneshot::error::TryRecvError,
+    time::{self, Duration},
 };
 
 use crate::p2p;
@@ -36,36 +39,41 @@ impl Command {
 
                 let peer_id = pk2id(&key.public_key(SECP256K1));
                 let hello = HelloMessage::builder(peer_id).build();
-                println!("Before calling handshake");
 
                 let (mut p2p_stream, their_hello) =
                     UnauthedP2PStream::new(ecies_stream).handshake(hello).await?;
 
-                println!("{:#?}", their_hello);
-
                 let mut rx = p2p_stream.subscribe_pong();
 
                 p2p_stream.send_ping();
-                // println!("Don't SEND ANYTHING");
                 p2p_stream.flush().await?;
 
-                while let Some(_) = p2p_stream.next().await {
-                    match timeout(Duration::from_secs(1), &mut rx).await {
-                        Ok(Ok(())) => {
-                            println!("Successfully ping");
-                            break;
-                        } // 成功接收到消息
-                        Ok(Err(_)) => {
-                            println!("Sender dropped");
+                let start_time = Instant::now();
+                let time_duration = Duration::from_secs(3);
+
+                loop {
+                    tokio::select! {
+                            Some(_) = p2p_stream.next() => {
+                                                    match rx.try_recv() {
+                            Ok(_) => {
+                                println!("Sucessfully ping");
+                                println!("{:#?}", their_hello);
+                                return Ok(());
+                            },
+                            Err(TryRecvError::Empty) => {},
+                            _ => return Err(eyre::eyre!("failed to get pong from node {}", node)),
                         }
-                        Err(_) => {
-                            println!("Timeout");
-                        } // 超时
+                    },
+                        _ = time::sleep(Duration::from_millis(100)) => {
+                            if start_time.elapsed() >= time_duration {
+                                println!("Timeout");
+                                return Err(eyre::eyre!("Timeout"));
+                            }
+                        },
                     }
                 }
             }
         }
-        Ok(())
     }
 }
 
