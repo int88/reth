@@ -1,4 +1,5 @@
 //! Transaction pool errors
+//! tx pool的错误
 
 use std::any::Any;
 
@@ -7,6 +8,7 @@ use alloy_primitives::{Address, TxHash, U256};
 use reth_primitives::InvalidTransactionError;
 
 /// Transaction pool result type.
+/// Tx pool的结果类型
 pub type PoolResult<T> = Result<T, PoolError>;
 
 /// A trait for additional errors that can be thrown by the transaction pool.
@@ -36,8 +38,10 @@ impl core::error::Error for Box<dyn PoolTransactionError> {
 #[error("[{hash}]: {kind}")]
 pub struct PoolError {
     /// The transaction hash that caused the error.
+    /// 导致error的tx hash
     pub hash: TxHash,
     /// The error kind.
+    /// error的类型
     pub kind: PoolErrorKind,
 }
 
@@ -45,29 +49,36 @@ pub struct PoolError {
 #[derive(Debug, thiserror::Error)]
 pub enum PoolErrorKind {
     /// Same transaction already imported
+    /// 同样的tx已经被打入
     #[error("already imported")]
     AlreadyImported,
     /// Thrown if a replacement transaction's gas price is below the already imported transaction
+    /// 如果一个替代的tx的gas price低于已经导入的tx
     #[error("insufficient gas price to replace existing transaction")]
     ReplacementUnderpriced,
     /// The fee cap of the transaction is below the minimum fee cap determined by the protocol
+    /// tx的fee cap低于protocol决定的最低的fee cap
     #[error("transaction feeCap {0} below chain minimum")]
     FeeCapBelowMinimumProtocolFeeCap(u128),
     /// Thrown when the number of unique transactions of a sender exceeded the slot capacity.
+    /// 当一个sender的unique txs的数目超过了slot capacity
     #[error("rejected due to {0} being identified as a spammer")]
     SpammerExceededCapacity(Address),
     /// Thrown when a new transaction is added to the pool, but then immediately discarded to
     /// respect the size limits of the pool.
+    /// 当一个新的tx被加入到pool，但是立即被丢弃，因为pool的size limits
     #[error("transaction discarded outright due to pool size constraints")]
     DiscardedOnInsert,
     /// Thrown when the transaction is considered invalid.
     #[error(transparent)]
     InvalidTransaction(#[from] InvalidPoolTransactionError),
     /// Thrown if the mutual exclusivity constraint (blob vs normal transaction) is violated.
+    /// 如果触发了互斥的场景
     #[error("transaction type {1} conflicts with existing transaction for {0}")]
     ExistingConflictingTransactionType(Address, u8),
     /// Any other error that occurred while inserting/validating a transaction. e.g. IO database
     /// error
+    /// 任何其他的error，当插入/校验一个tx，例如，IO数据库错误
     #[error(transparent)]
     Other(#[from] Box<dyn core::error::Error + Send + Sync>),
 }

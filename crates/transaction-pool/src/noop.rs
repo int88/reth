@@ -318,6 +318,7 @@ impl TransactionPool for NoopTransactionPool {
 }
 
 /// A [`TransactionValidator`] that does nothing.
+/// 一个[`TransactionValidator`]什么都不做
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct MockTransactionValidator<T> {

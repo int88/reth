@@ -1,19 +1,27 @@
 //! Transaction Pool internals.
 //!
 //! Incoming transactions are validated before they enter the pool first. The validation outcome can
+//! Incoming txs首先被校验，在它们放入pool之前，校验的结果有三种状态：
 //! have 3 states:
 //!
 //!  1. Transaction can _never_ be valid
+//!  1. tx不可能合法
 //!  2. Transaction is _currently_ valid
+//!  2. tx当前是合法的
 //!  3. Transaction is _currently_ invalid, but could potentially become valid in the future
+//!  3. tx当前是非法的，但是可能在未来变得合法
 //!
 //! However, (2.) and (3.) of a transaction can only be determined on the basis of the current
 //! state, whereas (1.) holds indefinitely. This means once the state changes (2.) and (3.) the
 //! state of a transaction needs to be reevaluated again.
+//! 然而，2和3的tx只能基于当前的状态来判断，然而1的话就是永远这样。这意味着一旦状态改变，
+//! 2和3状态的tx需要重新评估
 //!
 //! The transaction pool is responsible for storing new, valid transactions and providing the next
 //! best transactions sorted by their priority. Where priority is determined by the transaction's
 //! score ([`TransactionOrdering`]).
+//! tx pool负责存储新的，合法的txs并且提供下一个best
+//! tx，基于他们的优先级排序。优先级基于txs的[`TransactionOrdering`]分数
 //!
 //! Furthermore, the following characteristics fall under (3.):
 //!
@@ -38,16 +46,21 @@
 //!    a)(1): _No_ nonce gaps. A _pending_ transaction is considered _ready_ when it has the lowest
 //!    nonce of all transactions from the same sender. Once a _ready_ transaction with nonce `n` has
 //!    been executed, the next highest transaction from the same sender `n + 1` becomes ready.
+//!  - Pending Pool: 包含所有在当前状态下合法的txs
 //!
 //!  - Queued Pool: Contains all transactions that are currently blocked by missing transactions:
 //!    (3. a)(2): _With_ nonce gaps or due to lack of funds.
+//!  - Queued Pool: 包含所有txs当前被缺失的txs阻塞
 //!
 //!  - Basefee Pool: To account for the dynamic base fee requirement (3. b) which could render an
 //!    EIP-1559 and all subsequent transactions of the sender currently invalid.
+//!  - Basefee Pool: 考虑动态的base fee的要求
 //!
 //! The classification of transactions is always dependent on the current state that is changed as
 //! soon as a new block is mined. Once a new block is mined, the account changeset must be applied
 //! to the transaction pool.
+//! tx的分类总是基于当前的状态，当一个新的block
+//! mined的时候就会改变，一旦一个新的block被mined，account changeset必须应用到tx pool
 //!
 //!
 //! Depending on the use case, consumers of the [`TransactionPool`](crate::traits::TransactionPool)
@@ -127,27 +140,37 @@ pub const NEW_TX_LISTENER_BUFFER_SIZE: usize = 1024;
 const BLOB_SIDECAR_LISTENER_BUFFER_SIZE: usize = 512;
 
 /// Transaction pool internals.
+/// tx pool的内部表示
 pub struct PoolInner<V, T, S>
 where
     T: TransactionOrdering,
 {
     /// Internal mapping of addresses to plain ints.
+    /// 地址到plain ints的内部映射
     identifiers: RwLock<SenderIdentifiers>,
     /// Transaction validation.
+    /// 校验tx
     validator: V,
     /// Storage for blob transactions
+    /// 存储blob txs
     blob_store: S,
     /// The internal pool that manages all transactions.
+    /// 内部的pool管理所有的txs
     pool: RwLock<TxPool<T>>,
     /// Pool settings.
+    /// pool的配置
     config: PoolConfig,
     /// Manages listeners for transaction state change events.
+    /// 管理listeners，对于tx state的change events
     event_listener: RwLock<PoolEventBroadcast<T::Transaction>>,
     /// Listeners for new _full_ pending transactions.
+    /// Listeners对于新的_full_ pending txs的监听
     pending_transaction_listener: Mutex<Vec<PendingTransactionHashListener>>,
     /// Listeners for new transactions added to the pool.
+    /// Listeners对于加入pool的新的txs的监听
     transaction_listener: Mutex<Vec<TransactionListener<T::Transaction>>>,
     /// Listener for new blob transaction sidecars added to the pool.
+    /// Listener对于加入到pool的新的blob tx sidecars的监听
     blob_transaction_sidecar_listener: Mutex<Vec<BlobTransactionSidecarListener>>,
     /// Metrics for the blob store
     blob_store_metrics: BlobStoreMetrics,
@@ -424,9 +447,11 @@ where
     }
 
     /// Add a single validated transaction into the pool.
+    /// 添加单个合法的tx到pool
     ///
     /// Note: this is only used internally by [`Self::add_transactions()`], all new transaction(s)
     /// come in through that function, either as a batch or `std::iter::once`.
+    /// 注意：这只被[`Self::add_transactions()`]在内部使用
     fn add_transaction(
         &self,
         pool: &mut RwLockWriteGuard<'_, TxPool<T>>,
@@ -526,24 +551,30 @@ where
     }
 
     /// Adds all transactions in the iterator to the pool, returning a list of results.
+    /// 添加所有的iter中的txs到pool，返回一系列的结果
     ///
     /// Note: A large batch may lock the pool for a long time that blocks important operations
     /// like updating the pool on canonical state changes. The caller should consider having
     /// a max batch size to balance transaction insertions with other updates.
+    /// 注意：一个大的batch可能锁定pool太长是啊金，block的重要操作，例如在canonical state
+    /// changes的时候更新pool，caller应该考虑最大的batch size来平衡tx的插入和其他更新操作
     pub fn add_transactions(
         &self,
         origin: TransactionOrigin,
         transactions: impl IntoIterator<Item = TransactionValidationOutcome<T::Transaction>>,
     ) -> Vec<PoolResult<TxHash>> {
         // Add the transactions and enforce the pool size limits in one write lock
+        // 添加txs并且执行Pool size limits，在一次write lock
         let (mut added, discarded) = {
             let mut pool = self.pool.write();
             let added = transactions
                 .into_iter()
+                // 添加单个tx
                 .map(|tx| self.add_transaction(&mut pool, origin, tx))
                 .collect::<Vec<_>>();
 
             // Enforce the pool size limits if at least one transaction was added successfully
+            // 执行pool size limits，如果至少一个tx被成功添加
             let discarded = if added.iter().any(Result::is_ok) {
                 pool.discard_worst()
             } else {
@@ -555,6 +586,7 @@ where
 
         if !discarded.is_empty() {
             // Delete any blobs associated with discarded blob transactions
+            // 删除任何的blobs，和丢弃的blob txs相关
             self.delete_discarded_blobs(discarded.iter());
 
             let discarded_hashes =
@@ -567,6 +599,7 @@ where
 
             // A newly added transaction may be immediately discarded, so we need to
             // adjust the result here
+            // 一个新加入的tx可能立即被丢弃，因此我们需要调整结果
             for res in &mut added {
                 if let Ok(hash) = res {
                     if discarded_hashes.contains(hash) {

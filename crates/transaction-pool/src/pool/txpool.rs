@@ -83,31 +83,43 @@ use tracing::trace;
 /// ```
 pub struct TxPool<T: TransactionOrdering> {
     /// Contains the currently known information about the senders.
+    /// 包含当前知道的关于senders的信息
     sender_info: FxHashMap<SenderId, SenderInfo>,
     /// pending subpool
+    /// pending的子Pool
     ///
     /// Holds transactions that are ready to be executed on the current state.
+    /// 维护txs准备在当前的state执行
     pending_pool: PendingPool<T>,
     /// Pool settings to enforce limits etc.
+    /// Pool配置用于执行limits
     config: PoolConfig,
     /// queued subpool
     ///
     /// Holds all parked transactions that depend on external changes from the sender:
+    /// 维护所有的parked txs，取决于来自sender的外部变更
     ///
     ///    - blocked by missing ancestor transaction (has nonce gaps)
+    ///    - 被缺失的ancestor tx阻塞
     ///    - sender lacks funds to pay for this transaction.
+    ///    - sender缺少funds来支付这个tx
     queued_pool: ParkedPool<QueuedOrd<T::Transaction>>,
     /// base fee subpool
     ///
     /// Holds all parked transactions that currently violate the dynamic fee requirement but could
     /// be moved to pending if the base fee changes in their favor (decreases) in future blocks.
+    /// 维护所有的parked txs，当前违背dynamic fee requirement，但是可以移动到Pending，如果base
+    /// fee改变他们的favor（下降）在未来的blocks
     basefee_pool: ParkedPool<BasefeeOrd<T::Transaction>>,
     /// Blob transactions in the pool that are __not pending__.
+    /// pool中的blob txs，处于not pending状态
     ///
     /// This means they either do not satisfy the dynamic fee requirement or the blob fee
     /// requirement. These transactions can be moved to pending if the base fee or blob fee changes
     /// in their favor (decreases) in future blocks. The transaction may need both the base fee and
     /// blob fee to decrease to become executable.
+    /// 这意味着不满足dynamic fee的要求或者blob fee的要求，这些txs可以被移动到Pending，如果base
+    /// fee或者blob fee改变他们的favor
     blob_pool: BlobTransactions<T::Transaction>,
     /// All transactions in the pool.
     all_transactions: AllTransactions<T::Transaction>,
@@ -1087,9 +1099,12 @@ impl<T: TransactionOrdering> fmt::Debug for TxPool<T> {
 }
 
 /// Container for _all_ transaction in the pool.
+/// 包含pool中的所有tx
 ///
 /// This is the sole entrypoint that's guarding all sub-pools, all sub-pool actions are always
 /// derived from this set. Updates returned from this type must be applied to the sub-pools.
+/// 这是唯一的入口，对于管理所有的sub-pools，所有sub-pool
+/// actions都衍生自这个set，从这个etype返回的Updates必须apply到subpools
 pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// Minimum base fee required by the protocol.
     ///
@@ -2410,10 +2425,12 @@ mod tests {
         let on_chain_balance = U256::ZERO;
         let on_chain_nonce = 0;
         let mut f = MockTransactionFactory::default();
+        // 构建TxPool
         let mut pool = TxPool::new(MockOrdering::default(), Default::default());
         let tx = MockTransaction::eip1559().inc_price().inc_limit();
         let tx = f.validated(tx);
         pool.add_transaction(tx.clone(), on_chain_balance, on_chain_nonce).unwrap();
+        // 重复加入
         match pool.add_transaction(tx, on_chain_balance, on_chain_nonce).unwrap_err().kind {
             PoolErrorKind::AlreadyImported => {}
             _ => unreachable!(),

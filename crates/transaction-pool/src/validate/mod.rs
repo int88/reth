@@ -254,17 +254,21 @@ where
 }
 
 /// A valid transaction in the pool.
+/// pool中一个合法的tx
 ///
 /// This is used as the internal representation of a transaction inside the pool.
+/// 这用于内部表示，对于pool中的一个tx
 ///
 /// For EIP-4844 blob transactions this will _not_ contain the blob sidecar which is stored
 /// separately in the [`BlobStore`](crate::blobstore::BlobStore).
+/// 对于EIP-4844 blob txs，这不会包含blob sidecar，它会单独存储在[`BlobStore`]
 pub struct ValidPoolTransaction<T: PoolTransaction> {
     /// The transaction
     pub transaction: T,
     /// The identifier for this transaction.
     pub transaction_id: TransactionId,
     /// Whether it is allowed to propagate the transaction.
+    /// 是否允许传播tx
     pub propagate: bool,
     /// Timestamp when this was added to the pool.
     pub timestamp: Instant,

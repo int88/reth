@@ -673,14 +673,18 @@ pub enum TransactionOrigin {
     #[default]
     Local,
     /// Transaction has been received externally.
+    /// 从外部收到的tx
     ///
     /// This is usually considered an "untrusted" source, for example received from another in the
     /// network.
+    /// 这通常被认为是"untrusted" source，例如从network中的another收到
     External,
     /// Transaction is originated locally and is intended to remain private.
+    /// 从本地获取的tx并且保持private
     ///
     /// This type of transaction should not be propagated to the network. It's meant for
     /// private usage within the local node only.
+    /// 这个类型的tx不应该传播到network，这意味着只是local node使用
     Private,
 }
 

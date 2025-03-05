@@ -16,6 +16,7 @@ pub type TestPool =
     Pool<MockTransactionValidator<MockTransaction>, MockOrdering, InMemoryBlobStore>;
 
 /// Structure encapsulating a [`TestPool`] used for testing
+/// 封装一个[`TestPool`]的结构体用于测试
 #[derive(Debug, Clone)]
 pub struct TestPoolBuilder(TestPool);
 

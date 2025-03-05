@@ -211,6 +211,7 @@ pub type EthTransactionPool<Client, S> = Pool<
 >;
 
 /// A shareable, generic, customizable `TransactionPool` implementation.
+/// 一个共享的，通用的，自定义的`TransactionPool`实现
 #[derive(Debug)]
 pub struct Pool<V, T: TransactionOrdering, S> {
     /// Arc'ed instance of the pool internals
@@ -253,6 +254,7 @@ where
     }
 
     /// Validates the given transaction
+    /// 校验给定的tx
     async fn validate(
         &self,
         origin: TransactionOrigin,

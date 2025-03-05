@@ -42,6 +42,7 @@ pub type MockTxPool = TxPool<MockOrdering>;
 
 /// A validated transaction in the transaction pool, using [`MockTransaction`] as the transaction
 /// type.
+/// tx pool中一个合法的tx，使用[`MockTransaction`]作为tx类型
 ///
 /// This type is an alias for [`ValidPoolTransaction<MockTransaction>`].
 pub type MockValidTx = ValidPoolTransaction<MockTransaction>;
@@ -307,6 +308,7 @@ impl MockTransaction {
     }
 
     /// Returns a new EIP1559 transaction with random address and hash and empty values
+    /// 返回一个新的EIP1559 tx，有着随机的地址，hash已经空的values
     pub fn eip1559() -> Self {
         Self::Eip1559 {
             chain_id: 1,
@@ -1198,6 +1200,7 @@ impl proptest::arbitrary::Arbitrary for MockTransaction {
 }
 
 /// A factory for creating and managing various types of mock transactions.
+/// 一个factory用于创建并且管理各种类型的mock txs
 #[derive(Debug, Default)]
 pub struct MockTransactionFactory {
     pub(crate) ids: SenderIdentifiers,
@@ -1213,6 +1216,7 @@ impl MockTransactionFactory {
     }
 
     /// Validates a [`MockTransaction`] and returns a [`MockValidTx`].
+    /// 校验一个[`MockTransaction`]并且返回一个[`MockValidTx`]
     pub fn validated(&mut self, transaction: MockTransaction) -> MockValidTx {
         self.validated_with_origin(TransactionOrigin::External, transaction)
     }
@@ -1223,6 +1227,7 @@ impl MockTransactionFactory {
     }
 
     /// Converts the transaction into a validated transaction with a specified origin.
+    /// 转换一个tx到一个合法的tx，有着特定的origin
     pub fn validated_with_origin(
         &mut self,
         origin: TransactionOrigin,
@@ -1243,6 +1248,7 @@ impl MockTransactionFactory {
     }
 
     /// Creates a validated EIP-1559 [`MockTransaction`].
+    /// 创建一个合法的EIP-1559 [`MockTransaction`]
     pub fn create_eip1559(&mut self) -> MockValidTx {
         self.validated(MockTransaction::eip1559())
     }
@@ -1254,6 +1260,7 @@ impl MockTransactionFactory {
 }
 
 /// `MockOrdering` is just a `CoinbaseTipOrdering` with `MockTransaction`
+/// `MockOrdering`只是一个`CoinbaseTipOrdering`，对于`MockTransaction`
 pub type MockOrdering = CoinbaseTipOrdering<MockTransaction>;
 
 /// A ratio of each of the configured transaction types. The percentages sum up to 100, this is

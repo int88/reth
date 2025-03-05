@@ -4,9 +4,11 @@ use rustc_hash::FxHashMap;
 use std::collections::HashMap;
 
 /// An internal mapping of addresses.
+/// 地址的一个内部映射
 ///
 /// This assigns a _unique_ [`SenderId`] for a new [`Address`].
 /// It has capacity for 2^64 unique addresses.
+/// 对于一个新的[`Address`]赋值一个唯一的[`SenderId`]
 #[derive(Debug, Default)]
 pub struct SenderIdentifiers {
     /// The identifier to use next.
