@@ -21,6 +21,7 @@ use tokio::sync::mpsc::{
 const TX_POOL_EVENT_CHANNEL_SIZE: usize = 1024;
 
 /// A Stream that receives [`TransactionEvent`] only for the transaction with the given hash.
+/// 一个Stream，接收[`TransactionEvent`]，只对于给定hash的tx
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled"]
 pub struct TransactionEvents {
@@ -47,6 +48,7 @@ impl Stream for TransactionEvents {
 }
 
 /// A Stream that receives [`FullTransactionEvent`] for _all_ transaction.
+/// 一个Stream，接收[`FullTransactionEvent`]，对于所有的txs
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled"]
 pub struct AllTransactionsEvents<T: PoolTransaction> {
@@ -69,14 +71,18 @@ impl<T: PoolTransaction> Stream for AllTransactionsEvents<T> {
 }
 
 /// A type that broadcasts [`TransactionEvent`] to installed listeners.
+/// 一个类型广播[`TransactionEvent`]到安装的listeners
 ///
 /// This is essentially a multi-producer, multi-consumer channel where each event is broadcast to
 /// all active receivers.
+/// 这是multi-producer和multi-consumer的channel，每个event被广播到所有的active receivers
 #[derive(Debug)]
 pub(crate) struct PoolEventBroadcast<T: PoolTransaction> {
     /// All listeners for all transaction events.
+    /// 所有Listenrs，对于所有的tx event
     all_events_broadcaster: AllPoolEventsBroadcaster<T>,
     /// All listeners for events for a certain transaction hash.
+    /// 所有的listeners，对于特定tx hash的events
     broadcasters_by_hash: HashMap<TxHash, PoolEventBroadcaster>,
 }
 
@@ -111,6 +117,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
     }
 
     /// Create a new subscription for the given transaction hash.
+    /// 创建一个新的订阅，对于给定的tx hash
     pub(crate) fn subscribe(&mut self, tx_hash: TxHash) -> TransactionEvents {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
@@ -119,6 +126,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
                 entry.get_mut().senders.push(tx);
             }
             Entry::Vacant(entry) => {
+                // 添加PoolEventBroadcaster
                 entry.insert(PoolEventBroadcaster { senders: vec![tx] });
             }
         };
@@ -126,6 +134,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
     }
 
     /// Create a new subscription for all transactions.
+    /// 创建一个新的订阅，对于所有的txs
     pub(crate) fn subscribe_all(&mut self) -> AllTransactionsEvents<T> {
         let (tx, rx) = tokio::sync::mpsc::channel(TX_POOL_EVENT_CHANNEL_SIZE);
         self.all_events_broadcaster.senders.push(tx);
@@ -183,6 +192,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
 }
 
 /// All Sender half(s) of the event channels for all transactions.
+/// 所有的Sender部分，对于所有txs的event channels
 ///
 /// This mimics [`tokio::sync::broadcast`] but uses separate channels.
 #[derive(Debug)]
@@ -208,8 +218,10 @@ impl<T: PoolTransaction> AllPoolEventsBroadcaster<T> {
 }
 
 /// All Sender half(s) of the event channels for a specific transaction.
+/// event channels的Sender部分，对于一个特定的tx
 ///
 /// This mimics [`tokio::sync::broadcast`] but uses separate channels and is unbounded.
+/// 这模仿tokio的broadcast，但是使用单独的channels并且是unbounded
 #[derive(Default, Debug)]
 struct PoolEventBroadcaster {
     /// Corresponding sender half(s) for event listener channel

@@ -27,9 +27,12 @@ use std::{collections::HashSet, marker::PhantomData, sync::Arc};
 use tokio::sync::{mpsc, mpsc::Receiver};
 
 /// A [`TransactionPool`] implementation that does nothing.
+/// 一个[`TransactionPool`]什么都不做
 ///
 /// All transactions are rejected and no events are emitted.
+/// 所有的txs都被拒绝并且没有事件发出
 /// This type will never hold any transactions and is only useful for wiring components together.
+/// 这个类型不会维护任何的txs并且只用于串联components
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive]
 pub struct NoopTransactionPool;

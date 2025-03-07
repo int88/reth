@@ -602,6 +602,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Adds the transaction into the pool.
+    /// 添加tx到Pool
     ///
     /// This pool consists of four sub-pools: `Queued`, `Pending`, `BaseFee`, and `Blob`.
     ///
@@ -637,6 +638,7 @@ impl<T: TransactionOrdering> TxPool<T> {
         }
 
         // Update sender info with balance and nonce
+        // 更新sender info的balance以及nonce
         self.sender_info
             .entry(tx.sender_id())
             .or_default()
@@ -653,6 +655,7 @@ impl<T: TransactionOrdering> TxPool<T> {
                 let replaced = replaced_tx.map(|(tx, _)| tx);
 
                 // This transaction was moved to the pending pool.
+                // 这个tx可以被移动到Pending pool
                 let res = if move_to.is_pending() {
                     AddedTransaction::Pending(AddedPendingTransaction {
                         transaction,
@@ -671,6 +674,7 @@ impl<T: TransactionOrdering> TxPool<T> {
             }
             Err(err) => {
                 // Update invalid transactions metric
+                // 更新非法的tx metrci
                 self.metrics.invalid_transactions.increment(1);
                 match err {
                     InsertErr::Underpriced { existing: _, transaction } => Err(PoolError::new(
@@ -1609,15 +1613,21 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Inserts a new _valid_ transaction into the pool.
+    /// 插入一个新的_valid_ tx到Pool中
     ///
     /// If the transaction already exists, it will be replaced if not underpriced.
+    /// 如果tx已经存在了，他会被替换，如果不是underpriced
     /// Returns info to which sub-pool the transaction should be moved.
+    /// 返回信息，关于哪个sub-pool，tx应该被移动到
     /// Also returns a set of pool updates triggered by this insert, that need to be handled by the
     /// caller.
+    /// 同时返回这次插入触发的一系列pool updates，它应该被caller处理
     ///
     /// These can include:
     ///      - closing nonce gaps of descendant transactions
+    ///      - 关闭nonce gap，对于后续的txs
     ///      - enough balance updates
+    ///      - 足够的balance的更新
     ///
     /// Note: For EIP-4844 blob transactions additional constraints are enforced:
     ///      - new blob transactions must not have any nonce gaps
@@ -1878,6 +1888,7 @@ impl Default for PendingFees {
 }
 
 /// Result type for inserting a transaction
+/// 对于插入一个tx的结果类型
 pub(crate) type InsertResult<T> = Result<InsertOk<T>, InsertErr<T>>;
 
 /// Err variant of `InsertResult`

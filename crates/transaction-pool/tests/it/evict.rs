@@ -16,8 +16,10 @@ use reth_transaction_pool::{
 async fn only_blobs_eviction() {
     // This test checks that blob transactions can be inserted into the pool, and at each step the
     // blob pool can be truncated to the correct size
+    // 这个测试检查blob txs可以被插入到Pool，并且在每个步骤，blob pool可以被截断到合适的size
 
     // set the pool limits to something small
+    // 设置pool limits到small
     let pool_config = PoolConfig {
         pending_limit: SubPoolLimit { max_txs: 10, max_size: 1000 },
         queued_limit: SubPoolLimit { max_txs: 10, max_size: 1000 },
@@ -231,8 +233,10 @@ async fn mixed_eviction() {
 #[tokio::test(flavor = "multi_thread")]
 async fn nonce_gaps_eviction() {
     // This test checks that many transaction types can be inserted into the pool.
+    // 这个测试检查许多tx类型可以被插入到pool
     //
     // This test also inserts nonce gaps into the non-blob transactions.
+    // 这个测试也插入nonce gaps到non-blob txs
     let pool_config = PoolConfig {
         pending_limit: SubPoolLimit { max_txs: 20, max_size: 2000 },
         queued_limit: SubPoolLimit { max_txs: 20, max_size: 2000 },

@@ -82,9 +82,11 @@ impl<T: PoolTransaction> TransactionValidationOutcome<T> {
 
 /// A wrapper type for a transaction that is valid and has an optional extracted EIP-4844 blob
 /// transaction sidecar.
+/// 对于一个tx的wrapper类型，合法并且有可选的extraced EIP-4844 blob tx sidear
 ///
 /// If this is provided, then the sidecar will be temporarily stored in the blob store until the
 /// transaction is finalized.
+/// 如果提供的话，sidecar会临时存储在blob store，直到tx被finalized
 ///
 /// Note: Since blob transactions can be re-injected without their sidecar (after reorg), the
 /// validator can omit the sidecar if it is still in the blob store and return a

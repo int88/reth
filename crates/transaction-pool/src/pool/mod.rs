@@ -257,6 +257,7 @@ where
 
     /// Adds a new transaction listener to the pool that gets notified about every new _pending_
     /// transaction inserted into the pool
+    /// 添加一个新的tx listener到pool，获取通知，关于每个新的pending tx，插入到Pool
     pub fn add_pending_listener(&self, kind: TransactionListenerKind) -> mpsc::Receiver<TxHash> {
         let (sender, rx) = mpsc::channel(self.config.pending_tx_listener_buffer_size);
         let listener = PendingTransactionHashListener { sender, kind };
@@ -265,6 +266,7 @@ where
     }
 
     /// Adds a new transaction listener to the pool that gets notified about every new transaction.
+    /// 添加一个新的tx listener到Pool，获取关于每个新的tx的通知
     pub fn add_new_transaction_listener(
         &self,
         kind: TransactionListenerKind,
@@ -292,6 +294,7 @@ where
     }
 
     /// Adds a listener for all transaction events.
+    /// 添加一个listener，对于所有tx events
     pub fn add_all_transactions_event_listener(&self) -> AllTransactionsEvents<T::Transaction> {
         self.event_listener.write().subscribe_all()
     }
@@ -469,6 +472,7 @@ where
                 let transaction_id = TransactionId::new(sender_id, transaction.nonce());
 
                 // split the valid transaction and the blob sidecar if it has any
+                // 区分valid tx和blob sidecar，如果有的话
                 let (transaction, maybe_sidecar) = match transaction {
                     ValidTransaction::Valid(tx) => (tx, None),
                     ValidTransaction::ValidWithSidecar { transaction, sidecar } => {
@@ -488,6 +492,7 @@ where
                     origin,
                 };
 
+                // 真正添加到Pool
                 let added = pool.add_transaction(tx, balance, state_nonce)?;
                 let hash = *added.hash();
 
@@ -506,11 +511,13 @@ where
                 }
 
                 // Notify about new pending transactions
+                // 通知关于新的pending txs
                 if let Some(pending) = added.as_pending() {
                     self.on_new_pending_transaction(pending);
                 }
 
                 // Notify tx event listeners
+                // 通知所有的tx event listeners
                 self.notify_event_listeners(&added);
 
                 if let Some(discarded) = added.discarded_transactions() {
@@ -518,6 +525,7 @@ where
                 }
 
                 // Notify listeners for _all_ transactions
+                // 通知Listeners，对于_all_ txs
                 self.on_new_transaction(added.into_new_transaction_event());
 
                 Ok(hash)
@@ -536,6 +544,7 @@ where
     }
 
     /// Adds a transaction and returns the event stream.
+    /// 添加一个tx并且返回event stream
     pub fn add_transaction_and_subscribe(
         &self,
         origin: TransactionOrigin,
@@ -1000,10 +1009,12 @@ impl<V, T: TransactionOrdering, S> fmt::Debug for PoolInner<V, T, S> {
 }
 
 /// An active listener for new pending transactions.
+/// 一个active listener，对于新的Pending txs
 #[derive(Debug)]
 struct PendingTransactionHashListener {
     sender: mpsc::Sender<TxHash>,
     /// Whether to include transactions that should not be propagated over the network.
+    /// 是否包含txs，不应该通过network传播
     kind: TransactionListenerKind,
 }
 
@@ -1034,10 +1045,12 @@ impl PendingTransactionHashListener {
 }
 
 /// An active listener for new pending transactions.
+/// 一个active listener，对于新的pending txs
 #[derive(Debug)]
 struct TransactionListener<T: PoolTransaction> {
     sender: mpsc::Sender<NewTransactionEvent<T>>,
     /// Whether to include transactions that should not be propagated over the network.
+    /// 是否包含txs，不应该通过network传播
     kind: TransactionListenerKind,
 }
 
@@ -1164,12 +1177,15 @@ where
 }
 
 /// Represents a transaction that was added into the pool and its state
+/// 代表一个tx已经被加入到pool以及它们的状态
 #[derive(Debug, Clone)]
 pub enum AddedTransaction<T: PoolTransaction> {
     /// Transaction was successfully added and moved to the pending pool.
+    /// tx被成功加入并且移动到Pending pool
     Pending(AddedPendingTransaction<T>),
     /// Transaction was successfully added but not yet ready for processing and moved to a
     /// parked pool instead.
+    /// tx被成功加入但是没有准备好被处理并且移动到了parked pool
     Parked {
         /// Inserted transaction.
         transaction: Arc<ValidPoolTransaction<T>>,

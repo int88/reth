@@ -6,6 +6,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 /// An event that happened to a transaction and contains its full body where possible.
+/// 一个event发生在一个tx并且包含它的full body，如果可能的话
 #[derive(Debug)]
 pub enum FullTransactionEvent<T: PoolTransaction> {
     /// Transaction has been added to the pending pool.
@@ -55,24 +56,30 @@ impl<T: PoolTransaction> Clone for FullTransactionEvent<T> {
 }
 
 /// Various events that describe status changes of a transaction.
+/// 各种事件，描述一个tx的status changes
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum TransactionEvent {
     /// Transaction has been added to the pending pool.
+    /// tx被添加进了pending pool
     Pending,
     /// Transaction has been added to the queued pool.
     Queued,
     /// Transaction has been included in the block belonging to this hash.
     Mined(B256),
     /// Transaction has been replaced by the transaction belonging to the hash.
+    /// tx已经被属于这个hash的tx替换
     ///
     /// E.g. same (sender + nonce) pair
     Replaced(TxHash),
     /// Transaction was dropped due to configured limits.
+    /// tx因为给定的limits被丢弃
     Discarded,
     /// Transaction became invalid indefinitely.
+    /// tx变得永远非法了
     Invalid,
     /// Transaction was propagated to peers.
+    /// tx被传播给了Peers
     Propagated(Arc<Vec<PropagateKind>>),
 }
 

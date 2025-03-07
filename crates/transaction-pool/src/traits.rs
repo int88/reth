@@ -130,9 +130,11 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns a new Stream that yields transactions hashes for new __pending__ transactions
     /// inserted into the pool that are allowed to be propagated.
+    /// 返回一个新的stream，产生tx hashes，对于新的pending txs，插入到pool并且允许传播
     ///
     /// Note: This is intended for networking and will __only__ yield transactions that are allowed
     /// to be propagated over the network, see also [TransactionListenerKind].
+    /// 注意：这只是用于networking并且会只允许产生txs，允许通过network传播
     ///
     /// Consumer: RPC/P2P
     fn pending_transactions_listener(&self) -> Receiver<TxHash> {
@@ -533,13 +535,16 @@ pub trait TransactionPoolExt: TransactionPool {
 }
 
 /// Determines what kind of new transactions should be emitted by a stream of transactions.
+/// 决定一个txs的stream应该发射何种txs
 ///
 /// This gives control whether to include transactions that are allowed to be propagated.
+/// 这控制是否包含允许传播的txs
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionListenerKind {
     /// Any new pending transactions
     All,
     /// Only transactions that are allowed to be propagated.
+    /// 只有能够被传播的txs
     ///
     /// See also [`ValidPoolTransaction`]
     PropagateOnly,
@@ -638,11 +643,14 @@ impl From<PropagateKind> for PeerId {
 }
 
 /// Represents a new transaction
+/// 代表一个新的tx
 #[derive(Debug)]
 pub struct NewTransactionEvent<T: PoolTransaction> {
     /// The pool which the transaction was moved to.
+    /// tx移动到的Pool
     pub subpool: SubPool,
     /// Actual transaction
+    /// 真正的tx
     pub transaction: Arc<ValidPoolTransaction<T>>,
 }
 
@@ -828,9 +836,11 @@ pub trait BestTransactions: Iterator + Send {
     }
 
     /// Skip all blob transactions.
+    /// 跳过所有的blob txs
     ///
     /// There's only limited blob space available in a block, once exhausted, EIP-4844 transactions
     /// can no longer be included.
+    /// 在一个block里只有有限的blob space，一旦用尽，EIP-4844 txs就不能被包含
     ///
     /// If called then the iterator will no longer yield blob transactions.
     ///
@@ -855,6 +865,7 @@ pub trait BestTransactions: Iterator + Send {
 
     /// Creates an iterator which uses a closure to determine whether a transaction should be
     /// returned by the iterator.
+    /// 创建一个iterator，使用一个closure来决定是否一个tx应该被iterator返回
     ///
     /// All items the closure returns false for are marked as invalid via [`Self::mark_invalid`] and
     /// descendant transactions will be skipped.
