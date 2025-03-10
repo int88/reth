@@ -29,9 +29,11 @@ pub const DEFAULT_PRICE_BUMP: u128 = 10;
 pub const REPLACE_BLOB_PRICE_BUMP: u128 = 100;
 
 /// Default maximum new transactions for broadcasting.
+/// 默认最大的，新的txs用于广播
 pub const MAX_NEW_PENDING_TXS_NOTIFICATIONS: usize = 200;
 
 /// Configuration options for the Transaction pool.
+/// 对于tx pool的配置选项
 #[derive(Debug, Clone)]
 pub struct PoolConfig {
     /// Max number of transaction in the pending sub-pool
@@ -54,12 +56,16 @@ pub struct PoolConfig {
     /// [`TransactionOrigin::Local`](TransactionOrigin).
     pub local_transactions_config: LocalTransactionConfig,
     /// Bound on number of pending transactions from `reth_network::TransactionsManager` to buffer.
+    /// 来自`TransactionManager`的缓存的pending txs
     pub pending_tx_listener_buffer_size: usize,
     /// Bound on number of new transactions from `reth_network::TransactionsManager` to buffer.
+    /// 来自`TransactionManager`的缓存的新的tx
     pub new_tx_listener_buffer_size: usize,
     /// How many new pending transactions to buffer and send iterators in progress.
+    /// 多少新的pending txs缓存并且发送iterators
     pub max_new_pending_txs_notifications: usize,
     /// Maximum lifetime for transactions in the pool
+    /// pool中的最大的lifetime
     pub max_queued_lifetime: Duration,
 }
 

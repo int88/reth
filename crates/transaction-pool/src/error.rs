@@ -152,6 +152,8 @@ impl PoolError {
             PoolErrorKind::ExistingConflictingTransactionType(_, _) => {
                 // this is not a protocol error but an implementation error since the pool enforces
                 // exclusivity (blob vs normal tx) for all senders
+                // 这不是一个protocol error，但是一个实现的error，因为pool执行互斥（blob vs
+                // 正常的tx），对于所有的senders
                 false
             }
         }

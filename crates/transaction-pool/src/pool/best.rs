@@ -73,6 +73,7 @@ impl<T: TransactionOrdering> Iterator for BestTransactionsWithFees<T> {
 
 /// An iterator that returns transactions that can be executed on the current state (*best*
 /// transactions).
+/// 一个iterator，返回txs，可以在当前的state执行（最好的txs）
 ///
 /// The [`PendingPool`](crate::pool::pending::PendingPool) contains transactions that *could* all
 /// be executed on the current state, but only yields transactions that are ready to be executed

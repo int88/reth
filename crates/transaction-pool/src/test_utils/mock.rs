@@ -218,8 +218,10 @@ pub enum MockTransaction {
         /// The transaction input data.
         input: Bytes,
         /// The sidecar information for the transaction.
+        /// 这个tx的sidecar信息
         sidecar: BlobTransactionSidecar,
         /// The blob versioned hashes for the transaction.
+        /// 这个tx的blob versioned hashes
         blob_versioned_hashes: Vec<B256>,
         /// The size of the transaction, returned in the implementation of [`PoolTransaction`].
         size: usize,
@@ -348,6 +350,7 @@ impl MockTransaction {
     }
 
     /// Returns a new EIP4844 transaction with random address and hash and empty values
+    /// 返回一个新的EIP4844 tx，有着随机的地址，hash以及空的values
     pub fn eip4844() -> Self {
         Self::Eip4844 {
             chain_id: 1,

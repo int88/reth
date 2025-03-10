@@ -84,15 +84,18 @@ async fn only_blobs_eviction() {
 
         for _ in 0..*sender_amt {
             // use a random sender, create the tx set
+            // 使用一个随机的sender，创建tx set
             let sender = Address::random();
             let set = distribution.tx_set(sender, nonce_range.clone(), &mut rand::thread_rng());
 
             let set = set.into_vec();
 
             // ensure that the first nonce is 0
+            // 确保第一个nonce为0
             assert_eq!(set[0].nonce(), 0);
 
             // and finally insert it into the pool
+            // 最终插入到pool
             let results = pool.add_transactions(TransactionOrigin::External, set).await;
             for (i, result) in results.iter().enumerate() {
                 match result {
@@ -123,6 +126,7 @@ async fn only_blobs_eviction() {
             }
 
             // after every insert, ensure that it's under the pool limits
+            // 在每次插入之后，确保低于pool limits
             assert!(!pool.is_exceeded());
         }
     }
@@ -133,6 +137,8 @@ async fn mixed_eviction() {
     // This test checks that many transaction types can be inserted into the pool. The fees need
     // to be set so that the transactions will actually pass validation. Transactions here do not
     // have nonce gaps.
+    // 这个测试检查许多类型的tx类型被插入到pool，fees需要被设置，这样txs会真正通过validation，
+    // 这里的txs没有nonce gap
     let pool_config = PoolConfig {
         pending_limit: SubPoolLimit { max_txs: 20, max_size: 2000 },
         queued_limit: SubPoolLimit { max_txs: 20, max_size: 2000 },

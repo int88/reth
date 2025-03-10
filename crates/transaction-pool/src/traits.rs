@@ -45,8 +45,10 @@ pub type PoolConsensusTx<P> = <<P as TransactionPool>::Transaction as PoolTransa
 pub type PoolPooledTx<P> = <<P as TransactionPool>::Transaction as PoolTransaction>::Pooled;
 
 /// General purpose abstraction of a transaction-pool.
+/// 对于一个tx-pool的通用抽象
 ///
 /// This is intended to be used by API-consumers such as RPC that need inject new incoming,
+/// 这被API-consumers使用，例如RPC，需要注入新的incoming unverified tx
 /// unverified transactions. And by block production that needs to get transactions to execute in a
 /// new block.
 ///
@@ -55,6 +57,7 @@ pub type PoolPooledTx<P> = <<P as TransactionPool>::Transaction as PoolTransacti
 #[auto_impl::auto_impl(&, Arc)]
 pub trait TransactionPool: Send + Sync + Clone {
     /// The transaction type of the pool
+    /// pool的tx类型
     type Transaction: EthPoolTransaction;
 
     /// Returns stats about the pool and all sub-pools.
@@ -1073,11 +1076,14 @@ pub trait PoolTransaction:
 
 /// Super trait for transactions that can be converted to and from Eth transactions intended for the
 /// ethereum style pool.
+/// Super trait，用于txs，可以被to以及from Eth txs，用于eth类型的Pool
 ///
 /// This extends the [`PoolTransaction`] trait with additional methods that are specific to the
 /// Ethereum pool.
+/// 这扩展[`PoolTransaction`]，有额外的方法，针对于eth pool
 pub trait EthPoolTransaction: PoolTransaction {
     /// Extracts the blob sidecar from the transaction.
+    /// 从tx抽取blob sidecar
     fn take_blob(&mut self) -> EthBlobTransactionSidecar;
 
     /// A specialization for the EIP-4844 transaction type.

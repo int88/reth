@@ -37,6 +37,7 @@ use tokio::{
 use tracing::{debug, error, info, trace, warn};
 
 /// Maximum amount of time non-executable transaction are queued.
+/// non-executable txs最多排队三小时
 pub const MAX_QUEUED_TRANSACTION_LIFETIME: Duration = Duration::from_secs(3 * 60 * 60);
 
 /// Additional settings for maintaining the transaction pool

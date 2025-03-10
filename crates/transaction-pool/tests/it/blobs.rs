@@ -13,6 +13,7 @@ async fn blobs_exclusive() {
     let blob_tx = mock_tx_factory.create_eip4844();
 
     let hash = txpool
+        // 添加tx
         .add_transaction(TransactionOrigin::External, blob_tx.transaction.clone())
         .await
         .unwrap();
