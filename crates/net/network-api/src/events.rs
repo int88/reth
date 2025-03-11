@@ -201,8 +201,10 @@ pub enum PeerRequest<N: NetworkPrimitives = EthNetworkPrimitives> {
         response: oneshot::Sender<RequestResult<BlockBodies<N::BlockBody>>>,
     },
     /// Requests pooled transactions from the peer.
+    /// 从Peer请求pooled txs
     ///
     /// The response should be sent through the channel.
+    /// reponse应该通过channel发送
     GetPooledTransactions {
         /// The request for pooled transactions.
         request: GetPooledTransactions,

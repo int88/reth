@@ -42,6 +42,7 @@ async fn test_large_tx_req() {
     net.for_each_mut(|peer| peer.install_request_handler());
 
     // insert generated txs into responding peer's pool
+    // 插入生成的txs到对应peer的Pool中
     let pool1 = testing_pool();
     pool1.add_external_transactions(txs).await;
 
@@ -69,6 +70,7 @@ async fn test_large_tx_req() {
     let (send, receive) = oneshot::channel();
     handle0.send_request(
         *handle1.peer_id(),
+        // 发送GetPooledTransactions
         PeerRequest::GetPooledTransactions {
             request: GetPooledTransactions(txs_hashes.clone()),
             response: send,

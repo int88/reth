@@ -82,6 +82,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Imports all _external_ transactions
+    /// 导入所有外部的txs
     ///
     /// Consumer: Utility
     fn add_external_transactions(
@@ -1113,9 +1114,11 @@ pub trait EthPoolTransaction: PoolTransaction {
 }
 
 /// The default [`PoolTransaction`] for the [Pool](crate::Pool) for Ethereum.
+/// 默认的[`PoolTransaction`]对于eth的[Pool](crate::Pool)
 ///
 /// This type is essentially a wrapper around [`Recovered`] with additional
 /// fields derived from the transaction that are frequently used by the pools for ordering.
+/// 这个类型是[`Recovered`]的一个wrapper，有着额外的字段，从tx衍生而来，频繁地在pool中用于排序
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EthPooledTransaction<T = TransactionSigned> {
     /// `EcRecovered` transaction, the consensus format.
@@ -1129,6 +1132,7 @@ pub struct EthPooledTransaction<T = TransactionSigned> {
 
     /// This is the RLP length of the transaction, computed when the transaction is added to the
     /// pool.
+    /// tx的RLP长度，在添加到pool时计算
     pub encoded_length: usize,
 
     /// The blob side car for this transaction
@@ -1137,9 +1141,11 @@ pub struct EthPooledTransaction<T = TransactionSigned> {
 
 impl<T: SignedTransaction> EthPooledTransaction<T> {
     /// Create new instance of [Self].
+    /// 创建[Self]的新实例
     ///
     /// Caution: In case of blob transactions, this does marks the blob sidecar as
     /// [`EthBlobTransactionSidecar::Missing`]
+    /// 注意：万一是blob txs，这会将blob sidecar标记为[`EthBlobTransactionSidecar::Missing`]
     pub fn new(transaction: Recovered<T>, encoded_length: usize) -> Self {
         let mut blob_sidecar = EthBlobTransactionSidecar::None;
 
@@ -1368,13 +1374,16 @@ impl EthPoolTransaction for EthPooledTransaction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EthBlobTransactionSidecar {
     /// This transaction does not have a blob sidecar
+    /// tx没有blob sidecar
     None,
     /// This transaction has a blob sidecar (EIP-4844) but it is missing
+    /// 这个tx有一个blob sidecar，但是缺失
     ///
     /// It was either extracted after being inserted into the pool or re-injected after reorg
     /// without the blob sidecar
     Missing,
     /// The eip-4844 transaction was pulled from the network and still has its blob sidecar
+    /// eip-4844 tx被从network中拉取并且依然有它的blob sidecar
     Present(BlobTransactionSidecar),
 }
 
@@ -1445,11 +1454,14 @@ pub struct BlockInfo {
 }
 
 /// The limit to enforce for [`TransactionPool::get_pooled_transaction_elements`].
+/// 执行[`TransactionPool::get_pooled_transaction_elements`]的limit
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum GetPooledTransactionLimit {
     /// No limit, return all transactions.
+    /// 没有limit，返回所有的txs
     None,
     /// Enforce a size limit on the returned transactions, for example 2MB
+    /// 执行一个size limit，对于返回的txs，例如2MB
     ResponseSizeSoftLimit(usize),
 }
 
@@ -1562,6 +1574,7 @@ mod tests {
     #[test]
     fn test_eth_pooled_transaction_new_legacy() {
         // Create a legacy transaction with specific parameters
+        // 创建一个legacy tx，有着特定的参数
         let tx = Transaction::Legacy(TxLegacy {
             gas_price: 10,
             gas_limit: 1000,
@@ -1574,6 +1587,7 @@ mod tests {
         let pooled_tx = EthPooledTransaction::new(transaction.clone(), 200);
 
         // Check that the pooled transaction is created correctly
+        // 检查pooled tx被正确创建
         assert_eq!(pooled_tx.transaction, transaction);
         assert_eq!(pooled_tx.encoded_length, 200);
         assert_eq!(pooled_tx.blob_sidecar, EthBlobTransactionSidecar::None);
@@ -1641,6 +1655,7 @@ mod tests {
         // Check that the pooled transaction is created correctly
         assert_eq!(pooled_tx.transaction, transaction);
         assert_eq!(pooled_tx.encoded_length, 300);
+        // blob缺失
         assert_eq!(pooled_tx.blob_sidecar, EthBlobTransactionSidecar::Missing);
         let expected_cost =
             U256::from(100) + U256::from(10 * 1000) + U256::from(5 * DATA_GAS_PER_BLOB);

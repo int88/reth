@@ -88,6 +88,7 @@ impl Deref for TestPoolBuilder {
 }
 
 /// Returns a new [Pool] with default field values used for testing purposes
+/// 返回一个新的[Pool]，有着默认的字段用于测试
 pub fn testing_pool() -> TestPool {
     TestPoolBuilder::default().into()
 }

@@ -1,4 +1,5 @@
 //! The internal transaction pool implementation.
+//! tx pool的内部实现
 
 use crate::{
     config::{LocalTransactionConfig, TXPOOL_MAX_ACCOUNT_SLOTS_PER_SENDER},
@@ -1170,6 +1171,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns the internal transaction with additional metadata
+    /// 返回内部的tx，有着额外的metadata
     pub(crate) fn get(&self, id: &TransactionId) -> Option<&PoolInternalTransaction<T>> {
         self.txs.get(id)
     }
@@ -1665,10 +1667,12 @@ impl<T: PoolTransaction> AllTransactions<T> {
         let mut updates = Vec::new();
 
         // Current tx does not exceed block gas limit after ensure_valid check
+        // 当前的tx没有超过block gas limit，在ensure_valid检查之后
         state.insert(TxState::NOT_TOO_MUCH_GAS);
 
         // identifier of the ancestor transaction, will be None if the transaction is the next tx of
         // the sender
+        // ancestor tx的id，会为None，如果tx是sender的下一个tx
         let ancestor = TransactionId::ancestor(
             transaction.transaction.nonce(),
             on_chain_nonce,
@@ -1677,10 +1681,12 @@ impl<T: PoolTransaction> AllTransactions<T> {
 
         // before attempting to insert a blob transaction, we need to ensure that additional
         // constraints are met that only apply to blob transactions
+        // 在试着插入一个blob tx，我们需要确保额外的限制被满足，只应用到blob txs
         if transaction.is_eip4844() {
             state.insert(TxState::BLOB_TRANSACTION);
 
             transaction =
+                // 确认是合法的blob tx
                 self.ensure_valid_blob_transaction(transaction, on_chain_balance, ancestor)?;
             let blob_fee_cap = transaction.transaction.max_fee_per_blob_gas().unwrap_or_default();
             if blob_fee_cap >= self.pending_fees.blob_fee {
@@ -1688,18 +1694,21 @@ impl<T: PoolTransaction> AllTransactions<T> {
             }
         } else {
             // Non-EIP4844 transaction always satisfy the blob fee cap condition
+            // Non-EIP4844 tx总是满足blob fee cap的条件
             state.insert(TxState::ENOUGH_BLOB_FEE_CAP_BLOCK);
         }
 
         let transaction = Arc::new(transaction);
 
         // If there's no ancestor tx then this is the next transaction.
+        // 如果没有ancestor tx，那么这就是下一个tx
         if ancestor.is_none() {
             state.insert(TxState::NO_NONCE_GAPS);
             state.insert(TxState::NO_PARKED_ANCESTORS);
         }
 
         // Check dynamic fee
+        // 检查dynamic fee
         let fee_cap = transaction.max_fee_per_gas();
 
         if fee_cap < self.minimal_protocol_basefee as u128 {
@@ -1720,6 +1729,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         };
 
         // try to insert the transaction
+        // 试着插入tx
         match self.txs.entry(*transaction.id()) {
             Entry::Vacant(entry) => {
                 // Insert the transaction in both maps
@@ -1817,6 +1827,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         }
 
         // If this wasn't a replacement transaction we need to update the counter.
+        // 如果没有replacement tx，我们需要更新counter
         if replaced_tx.is_none() {
             self.tx_inc(inserted_tx_id.sender);
         }
@@ -1924,18 +1935,24 @@ pub(crate) enum InsertErr<T: PoolTransaction> {
 }
 
 /// Transaction was successfully inserted into the pool
+/// tx被成功插入到Pool
 #[derive(Debug)]
 pub(crate) struct InsertOk<T: PoolTransaction> {
     /// Ref to the inserted transaction.
+    /// 被插入的tx的引用
     transaction: Arc<ValidPoolTransaction<T>>,
     /// Where to move the transaction to.
+    /// 是否移动tx
     move_to: SubPool,
     /// Current state of the inserted tx.
+    /// 插入的tx的当前状态
     #[allow(dead_code)]
     state: TxState,
     /// The transaction that was replaced by this.
+    /// 被这个tx替换的tx
     replaced_tx: Option<(Arc<ValidPoolTransaction<T>>, SubPool)>,
     /// Additional updates to transactions affected by this change.
+    /// 额外的更新，被这次变更影响
     updates: Vec<PoolUpdate>,
 }
 
@@ -2411,6 +2428,7 @@ mod tests {
         assert!(inserted.state.intersects(expected_state));
 
         // insert the same tx again
+        // 再次插入同样的tx
         let res = pool.insert_tx(valid_tx, on_chain_balance, on_chain_nonce);
         res.unwrap_err();
         assert_eq!(pool.len(), 1);

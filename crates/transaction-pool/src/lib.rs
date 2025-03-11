@@ -42,10 +42,14 @@
 //! ### State Changes
 //!
 //! Once a new block is mined, the pool needs to be updated with a changeset in order to:
+//! 一旦一个新的block被挖出，pool需要被更新，按照一个changeset的顺序
 //!
 //!   - remove mined transactions
+//!   - 移除mined txs
 //!   - update using account changes: balance changes
+//!   - 使用account changes更新：balance changes
 //!   - base fee updates
+//!   - base fee的更新
 //!
 //! ## Implementation details
 //!
@@ -53,18 +57,26 @@
 //! inserting, querying specific transactions by hash or retrieving the best transactions.
 //! In addition, it enables the registration of event listeners that are notified of state changes.
 //! Events are communicated via channels.
+//! `TransactionPool`
+//! trait暴露所有pool在外部可用的功能，例如，插入，查询特定的txs，通过hash，或者获取best
+//! txs，另外，它可以注册event listeners，接收stage changes的通知，Events通过channels交互
 //!
 //! ### Architecture
 //!
 //! The final `TransactionPool` is made up of two layers:
+//! 最终`TransactionPool`有两层组成：
 //!
 //! The lowest layer is the actual pool implementations that manages (validated) transactions:
 //! [`TxPool`](crate::pool::txpool::TxPool). This is contained in a higher level pool type that
 //! guards the low level pool and handles additional listeners or metrics: [`PoolInner`].
+//! 最底层的真正的pool的实现，管理（校验了的）txs：[`TxPool`]，这包含一个更高层的pool类型，
+//! 管理底层的pool，处理额外的listeners，或者metrcis
 //!
 //! The transaction pool will be used by separate consumers (RPC, P2P), to make sharing easier, the
 //! [`Pool`] type is just an `Arc` wrapper around `PoolInner`. This is the usable type that provides
 //! the `TransactionPool` interface.
+//! 这个tx pool会被不同的consumers使用，让共享更简单，[`Pool`]类型只是一个`Arc`
+//! wrapper，封装`PoolInner`，这是有用的类型，对于提供`TransactinPool`接口
 //!
 //!
 //! ## Blob Transactions
@@ -72,6 +84,7 @@
 //! Blob transaction can be quite large hence they are stored in a separate blobstore. The pool is
 //! responsible for inserting blob data for new transactions into the blobstore.
 //! See also [`ValidTransaction`](validate::ValidTransaction)
+//! Blob tx会很大，因此要存放在单独的blobstore，pool负责插入blob data，对于新的加入到blobstore的txs
 //!
 //!
 //! ## Examples
@@ -242,8 +255,10 @@ where
     }
 
     /// Returns future that validates all transactions in the given iterator.
+    /// 返回future，校验iterator中所有的txs
     ///
     /// This returns the validated transactions in the iterator's order.
+    /// 这返回validated txs，按照iterator的顺序
     async fn validate_all(
         &self,
         origin: TransactionOrigin,
@@ -278,6 +293,7 @@ where
     }
 
     /// Returns whether or not the pool is over its configured size and transaction count limits.
+    /// 返回是否Pool超过了配置的size并且tx的count limits
     pub fn is_exceeded(&self) -> bool {
         self.pool.is_exceeded()
     }
@@ -333,6 +349,7 @@ where
 }
 
 /// implements the `TransactionPool` interface for various transaction pool API consumers.
+/// 实现`TransactionPool`接口，对于各种tx pool的API consumers
 impl<V, T, S> TransactionPool for Pool<V, T, S>
 where
     V: TransactionValidator,
@@ -377,8 +394,10 @@ where
         if transactions.is_empty() {
             return Vec::new()
         }
+        // 校验所有的txs
         let validated = self.validate_all(origin, transactions).await;
 
+        // 添加txs
         self.pool.add_transactions(origin, validated.into_iter().map(|(_, tx)| tx))
     }
 

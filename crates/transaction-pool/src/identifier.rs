@@ -50,6 +50,7 @@ impl SenderIdentifiers {
 }
 
 /// A _unique_ identifier for a sender of an address.
+/// 一个唯一的标识符，对于一个地址的sender
 ///
 /// This is the identifier of an internal `address` mapping that is valid in the context of this
 /// program.
@@ -75,6 +76,7 @@ impl From<u64> for SenderId {
 }
 
 /// A unique identifier of a transaction of a Sender.
+/// 一个唯一的id，对于一个Sender的一个tx
 ///
 /// This serves as an identifier for dependencies of a transaction:
 /// A transaction with a nonce higher than the current state nonce depends on `tx.nonce - 1`.
@@ -83,6 +85,7 @@ pub struct TransactionId {
     /// Sender of this transaction
     pub sender: SenderId,
     /// Nonce of this transaction
+    /// 这个tx的nonce
     pub nonce: u64,
 }
 

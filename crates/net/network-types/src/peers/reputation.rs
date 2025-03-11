@@ -1,9 +1,12 @@
 //! Peer reputation management
+//! Peer reputation的管理
 
 /// The default reputation of a peer
+/// 一个peer默认的reputation
 pub const DEFAULT_REPUTATION: Reputation = 0;
 
 /// The minimal unit we're measuring reputation
+/// 我们衡量reputation的最小单位
 const REPUTATION_UNIT: i32 = -1024;
 
 /// The reputation value below which new connection from/to peers are rejected.
@@ -49,6 +52,7 @@ pub const fn is_banned_reputation(reputation: i32) -> bool {
 }
 
 /// The type that tracks the reputation score.
+/// 追踪reputation score的类型
 pub type Reputation = i32;
 
 /// Various kinds of reputation changes.
@@ -61,6 +65,7 @@ pub enum ReputationChangeKind {
     /// Note: this will we only used in pre-merge, pow consensus, since after no more block announcements are sent via devp2p: [EIP-3675](https://eips.ethereum.org/EIPS/eip-3675#devp2p)
     BadBlock,
     /// Peer sent a bad transaction message. E.g. Transactions which weren't recoverable.
+    /// Peer发送了一个bad tx message，例如，txs不能被恢复
     BadTransactions,
     /// Peer sent a bad announcement message, e.g. invalid transaction type for the configured
     /// network.

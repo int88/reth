@@ -280,6 +280,7 @@ async fn nonce_gaps_eviction() {
         let pending_blob_fee = block_info.pending_blob_fee.unwrap();
 
         // Make sure transactions are not immediately rejected
+        // 确保txs不会被立即拒绝
         let min_gas_price = block_info.pending_basefee as u128 + 1;
         let min_priority_fee = 1u128;
         let min_max_fee = block_info.pending_basefee as u128 + 10;
@@ -315,24 +316,29 @@ async fn nonce_gaps_eviction() {
             set.with_nonce_gaps(gap_pct, gap_range.clone(), &mut rand::thread_rng());
             let set = set.into_inner().into_vec();
 
+            // 添加txs
             let results = pool.add_transactions(TransactionOrigin::External, set).await;
             for (i, result) in results.iter().enumerate() {
                 match result {
                     Ok(_) => {
                         // Transaction inserted successfully
+                        // tx被成功插入
                     }
                     Err(e) => {
                         match e.kind {
                             PoolErrorKind::DiscardedOnInsert => {
                                 // Transaction discarded on insert
+                                // tx在插入的时候被丢弃
                                 println!("✅ Discarded tx on insert, like we should have");
                             }
                             PoolErrorKind::SpammerExceededCapacity(addr) => {
                                 // ensure the address is the same as the sender
+                                // 确保地址和sender一致
                                 assert_eq!(addr, sender);
 
                                 // ensure that this is only returned when the sender is over the
                                 // pool limit per account
+                                // 确保只有sender超过每个account的pool limit的时候才返回
                                 assert!(i + 1 >= pool_config.max_account_slots, "Spammer exceeded capacity, but it shouldn't have. Max accounts slots: {}, current txs by sender: {}", pool_config.max_account_slots, i + 1);
                             }
                             _ => panic!("Failed to insert tx into pool with unexpected error: {e}"),

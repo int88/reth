@@ -534,6 +534,7 @@ impl MockTransaction {
     }
 
     /// Returns a clone with an increased nonce
+    /// 返回一个clone，有一个增加的nonce
     pub fn next(&self) -> Self {
         self.clone().with_hash(B256::random()).with_nonce(self.get_nonce() + 1)
     }
@@ -1316,6 +1317,7 @@ impl MockTransactionRatio {
 }
 
 /// The range of each type of fee, for the different transaction types
+/// 每个类型的fee的范围，对于不同的tx类型
 #[derive(Debug, Clone)]
 pub struct MockFeeRange {
     /// The range of `gas_price` or legacy and access list transactions
@@ -1323,8 +1325,10 @@ pub struct MockFeeRange {
     /// The range of priority fees for EIP-1559 and EIP-4844 transactions
     pub priority_fee: Uniform<u128>,
     /// The range of max fees for EIP-1559 and EIP-4844 transactions
+    /// max fees的范围
     pub max_fee: Uniform<u128>,
     /// The range of max fees per blob gas for EIP-4844 transactions
+    /// 每个blob gas的max fees的范围
     pub max_fee_blob: Uniform<u128>,
 }
 
@@ -1377,15 +1381,20 @@ impl MockFeeRange {
 }
 
 /// A configured distribution that can generate transactions
+/// 一个配置的distribution，可以产生txs
 #[derive(Debug, Clone)]
 pub struct MockTransactionDistribution {
     /// ratio of each transaction type to generate
+    /// 每种类型的tx产生的比率
     transaction_ratio: MockTransactionRatio,
     /// generates the gas limit
+    /// 生成的gas limit
     gas_limit_range: Uniform<u64>,
     /// generates the transaction's fake size
+    /// 生成tx的fake size
     size_range: Uniform<usize>,
     /// generates fees for the given transaction types
+    /// 为给定的tx类型产生fees
     fee_ranges: MockFeeRange,
 }
 

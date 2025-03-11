@@ -73,6 +73,7 @@ async fn test_4844_tx_gossip_penalization() {
     let mut gen = TransactionGenerator::new(thread_rng());
 
     // peer 0 will be penalized for sending txs[0] over gossip
+    // peer 0会被处罚，由于发送txs[0]，通过gossip
     let txs = vec![gen.gen_eip4844_pooled(), gen.gen_eip1559_pooled()];
 
     for tx in &txs {
@@ -89,12 +90,15 @@ async fn test_4844_tx_gossip_penalization() {
         peer1.peer_handle().peer_by_id(*peer0.peer_id()).await.unwrap().reputation();
 
     // sends txs directly to peer1
+    // 直接发送txs到Peer1
     network_handle.send_transactions(*peer1.peer_id(), signed_txs);
 
     let received = peer1_tx_listener.recv().await.unwrap();
 
     let peer0_reputation_after =
+        // 获取之后的reputation
         peer1.peer_handle().peer_by_id(*peer0.peer_id()).await.unwrap().reputation();
+    // reputation发生了变化
     assert_ne!(peer0_reputation_before, peer0_reputation_after);
     assert_eq!(received, *txs[1].transaction().tx_hash());
 

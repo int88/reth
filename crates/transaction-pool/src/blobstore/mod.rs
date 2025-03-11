@@ -20,9 +20,11 @@ mod noop;
 mod tracker;
 
 /// A blob store that can be used to store blob data of EIP4844 transactions.
+/// 一个blob store可以用于存储EIP4844的tx的blob data
 ///
 /// This type is responsible for keeping track of blob data until it is no longer needed (after
 /// finalization).
+/// 这个类型负责追踪blob data，直到它不再需要
 ///
 /// Note: this is Clone because it is expected to be wrapped in an Arc.
 pub trait BlobStore: fmt::Debug + Send + Sync + 'static {

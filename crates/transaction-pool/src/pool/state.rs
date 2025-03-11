@@ -1,5 +1,6 @@
 bitflags::bitflags! {
     /// Marker to represents the current state of a transaction in the pool and from which the corresponding sub-pool is derived, depending on what bits are set.
+    /// 标记代表当前pool中一个tx的状态，从这衍生出对应的sub-pool，取决于哪个bits被设置
     ///
     /// This mirrors [erigon's ephemeral state field](https://github.com/ledgerwatch/erigon/wiki/Transaction-Pool-Design#ordering-function).
     ///

@@ -28,6 +28,7 @@ pub trait NetworkPrimitives:
     type BroadcastedTransaction: SignedTransaction + 'static;
 
     /// The transaction type which peers return in `PooledTransactions` messages.
+    /// tx类型，peers在`PooledTransactions` messages中返回
     type PooledTransaction: SignedTransaction + TryFrom<Self::BroadcastedTransaction> + 'static;
 
     /// The transaction type which peers return in `GetReceipts` messages.

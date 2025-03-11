@@ -246,9 +246,11 @@ pub struct TransactionsManager<Pool, N: NetworkPrimitives = EthNetworkPrimitives
     /// Transaction fetcher to handle inflight and missing transaction requests.
     transaction_fetcher: TransactionFetcher<N>,
     /// All currently pending transactions grouped by peers.
+    /// 当前所有的Pending txns，由peers进行分类
     ///
     /// This way we can track incoming transactions and prevent multiple pool imports for the same
     /// transaction
+    /// 这样我们可以追踪incoming txs并且防止多个Pool导入同一个tx
     transactions_by_peers: HashMap<TxHash, HashSet<PeerId>>,
     /// Transactions that are currently imported into the `Pool`.
     ///
@@ -265,6 +267,7 @@ pub struct TransactionsManager<Pool, N: NetworkPrimitives = EthNetworkPrimitives
     /// Stats on pending pool imports that help the node self-monitor.
     pending_pool_imports_info: PendingPoolImportsInfo,
     /// Bad imports.
+    /// Bad imports
     bad_imports: LruCache<TxHash>,
     /// All the connected peers.
     peers: HashMap<PeerId, PeerMetadata<N>>,
@@ -374,12 +377,14 @@ impl<Pool: TransactionPool, N: NetworkPrimitives> TransactionsManager<Pool, N> {
     }
 
     /// Clear the transaction
+    /// 清理tx
     fn on_good_import(&mut self, hash: TxHash) {
         self.transactions_by_peers.remove(&hash);
     }
 
     /// Penalize the peers that intentionally sent the bad transaction, and cache it to avoid
     /// fetching or importing it again.
+    /// 惩罚peers，故意发送bad tx，并且缓存它来避免再次fetching或者importing
     ///
     /// Errors that count as bad transactions are:
     ///
@@ -394,6 +399,7 @@ impl<Pool: TransactionPool, N: NetworkPrimitives> TransactionsManager<Pool, N> {
     /// - tx type not supported
     ///
     /// (and additionally for blobs txns...)
+    /// (对于blob txns还有额外的情况...)
     ///
     /// - no blobs
     /// - too many blobs
@@ -416,6 +422,7 @@ impl<Pool: TransactionPool, N: NetworkPrimitives> TransactionsManager<Pool, N> {
             }
         }
         self.metrics.bad_imports.increment(1);
+        // 插入bad imports
         self.bad_imports.insert(err.hash);
     }
 
@@ -477,6 +484,7 @@ where
     N: NetworkPrimitives,
 {
     /// Processes a batch import results.
+    /// 处理batch import的结果
     fn on_batch_import_result(&mut self, batch_results: Vec<PoolResult<TxHash>>) {
         for res in batch_results {
             match res {
@@ -635,6 +643,7 @@ where
 
         // only send request for hashes to idle peer, otherwise buffer hashes storing peer as
         // fallback
+        // 只发送对于Hahes的请求到idle peer，否则缓存hashes，存储Peer作为fallback
         if !self.transaction_fetcher.is_idle(&peer_id) {
             // load message version before announcement data is destructed in packing
             let msg_version = valid_announcement_data.msg_version();
@@ -677,6 +686,7 @@ where
         );
 
         // request the missing transactions
+        // 请求缺失的txs
         //
         // get handle to peer's session again, at this point we know it exists
         let Some(peer) = self.peers.get_mut(&peer_id) else { return };
@@ -871,6 +881,7 @@ where
     }
 
     /// Propagate the transactions to all connected peers either as full objects or hashes.
+    /// 传播txs到所有连接的peers，以full objects或者hashes的形式
     ///
     /// The message for new pooled hashes depends on the negotiated version of the stream.
     /// See [`NewPooledTransactionHashes`]
@@ -1188,9 +1199,12 @@ where
             .remove_hashes_from_transaction_fetcher(transactions.iter().map(|tx| *tx.tx_hash()));
 
         // track that the peer knows these transaction, but only if this is a new broadcast.
+        // 追踪peer已经知道了这些tx，但是只有这是一个新的广播
         // If we received the transactions as the response to our `GetPooledTransactions``
         // requests (based on received `NewPooledTransactionHashes`) then we already
         // recorded the hashes as seen by this peer in `Self::on_new_pooled_transaction_hashes`.
+        // 如果我们接收到txs，作为`GetPooledTransactions`的response，
+        // 那么我们已经把这些hashes标记为被这个peer看到
         let mut num_already_seen_by_peer = 0;
         for tx in &transactions {
             if source.is_broadcast() && !peer.seen_transactions.insert(*tx.tx_hash()) {
@@ -1199,24 +1213,29 @@ where
         }
 
         // 1. filter out txns already inserted into pool
+        // 1. 过滤已经被插入到pool中的tx
         let txns_count_pre_pool_filter = transactions.len();
         self.pool.retain_unknown(&mut transactions);
         if txns_count_pre_pool_filter > transactions.len() {
             let already_known_txns_count = txns_count_pre_pool_filter - transactions.len();
             self.metrics
+                // 存在已经插入Pool的txs的情况
                 .occurrences_transactions_already_in_pool
                 .increment(already_known_txns_count as u64);
         }
 
         // tracks the quality of the given transactions
+        // 追踪给定的txs的质量
         let mut has_bad_transactions = false;
 
         // 2. filter out transactions that are invalid or already pending import
+        // 2. 过滤txs是非法的或者已经pending import
         if let Some(peer) = self.peers.get_mut(&peer_id) {
             // pre-size to avoid reallocations
             let mut new_txs = Vec::with_capacity(transactions.len());
             for tx in transactions {
                 // recover transaction
+                // 恢复tx
                 let tx = match tx.try_into_recovered() {
                     Ok(tx) => tx,
                     Err(badtx) => {
@@ -1234,6 +1253,7 @@ where
                 match self.transactions_by_peers.entry(*tx.tx_hash()) {
                     Entry::Occupied(mut entry) => {
                         // transaction was already inserted
+                        // tx已经被插入了
                         entry.get_mut().insert(peer_id);
                     }
                     Entry::Vacant(entry) => {
@@ -1247,6 +1267,7 @@ where
                             has_bad_transactions = true;
                         } else {
                             // this is a new transaction that should be imported into the pool
+                            // 这是一个新的tx，应该被导入到Pool
 
                             let pool_transaction = Pool::Transaction::from_pooled(tx);
                             new_txs.push(pool_transaction);
@@ -1294,12 +1315,14 @@ where
                 self.metrics
                     .occurrences_of_transaction_already_seen_by_peer
                     .increment(num_already_seen_by_peer);
+                // peer发送了已经看到过的txs
                 trace!(target: "net::tx", num_txs=%num_already_seen_by_peer, ?peer_id, client=?peer.client_version, "Peer sent already seen transactions");
             }
         }
 
         if has_bad_transactions {
             // peer sent us invalid transactions
+            // peer给我们发送了非法的txs
             self.report_peer_bad_transactions(peer_id)
         }
 
@@ -1532,6 +1555,7 @@ impl<T: SignedTransaction> PropagateTransaction<T> {
     }
 
     /// Create a new instance from a pooled transaction
+    /// 创建一个新的instance，从一个pooled tx
     fn pool_tx<P>(tx: Arc<ValidPoolTransaction<P>>) -> Self
     where
         P: PoolTransaction<Consensus = T>,
@@ -1549,6 +1573,7 @@ impl<T: SignedTransaction> PropagateTransaction<T> {
 
 /// Helper type to construct the appropriate message to send to the peer based on whether the peer
 /// should receive them in full or as pooled
+/// Helper类型用于构建合适的messages发往peer，基于peer接收full或者是pooled tx
 #[derive(Debug, Clone)]
 enum PropagateTransactionsBuilder<T> {
     Pooled(PooledTransactionsHashesBuilder),
@@ -1594,6 +1619,7 @@ impl<T: SignedTransaction> PropagateTransactionsBuilder<T> {
     }
 
     /// Appends a transaction to the list.
+    /// 扩展一个tx到list
     fn push(&mut self, transaction: &PropagateTransaction<T>) {
         match self {
             Self::Pooled(builder) => builder.push(transaction),
@@ -2035,6 +2061,7 @@ mod tests {
         // random tx: <https://etherscan.io/getRawTx?tx=0x9448608d36e721ef403c53b00546068a6474d6cbab6816c3926de449898e7bce>
         let input = hex!("02f871018302a90f808504890aef60826b6c94ddf4c5025d1a5742cf12f74eec246d4432c295e487e09c3bbcc12b2b80c080a0f21a4eacd0bf8fea9c5105c543be5a1d8c796516875710fafafdf16d16d8ee23a001280915021bb446d1973501a67f93d2b38894a514b976e7b46dc2fe54598d76");
         let signed_tx = TransactionSigned::decode(&mut &input[..]).unwrap();
+        // 收到IncomingTransactions
         transactions.on_network_tx_event(NetworkTransactionEvent::IncomingTransactions {
             peer_id: *handle1.peer_id(),
             msg: Transactions(vec![signed_tx.clone()]),
@@ -2164,6 +2191,7 @@ mod tests {
                 NetworkEvent::ActivePeerSession { .. } |
                 NetworkEvent::Peer(PeerEvent::SessionEstablished(_)) => {
                     // to insert a new peer in transactions peerset
+                    // 插入一个新的peer，到txs peerset
                     transactions.on_network_event(ev);
                 }
                 NetworkEvent::Peer(PeerEvent::PeerAdded(_peer_id)) => {}

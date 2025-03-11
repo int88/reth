@@ -51,6 +51,7 @@ macro_rules! impl_from_signed {
 }
 
 /// A raw transaction.
+/// 一个裸的tx
 ///
 /// Transaction types were introduced in [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, derive_more::From, Serialize, Deserialize)]
@@ -61,37 +62,50 @@ pub enum Transaction {
     ///
     /// Traditional Ethereum transactions, containing parameters `nonce`, `gasPrice`, `gasLimit`,
     /// `to`, `value`, `data`, `v`, `r`, and `s`.
+    /// 传统的eth txs，包含参数为`nonce`，`gasPrice`，`gasLimit`，`to`等
     ///
     /// These transactions do not utilize access lists nor do they incorporate EIP-1559 fee market
     /// changes.
+    /// 这些txs不利用access lists，也不和EIP-1559的fee market changes合作
     Legacy(TxLegacy),
     /// Transaction with an [`AccessList`] ([EIP-2930](https://eips.ethereum.org/EIPS/eip-2930)), type `0x1`.
     ///
     /// The `accessList` specifies an array of addresses and storage keys that the transaction
     /// plans to access, enabling gas savings on cross-contract calls by pre-declaring the accessed
     /// contract and storage slots.
+    /// `accessList`指定一系列的addresses以及storage keys，tx准备访问，使能gas
+    /// saveings，在cross-contract calls
     Eip2930(TxEip2930),
     /// A transaction with a priority fee ([EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)), type `0x2`.
     ///
     /// Unlike traditional transactions, EIP-1559 transactions use an in-protocol, dynamically
     /// changing base fee per gas, adjusted at each block to manage network congestion.
+    /// 不同于传统的txs，EIP-1559 tx使用了in-protocol，动态变化的base
+    /// fee，对于每个gas，每个block都会改变，来管理network congestion
     ///
     /// - `maxPriorityFeePerGas`, specifying the maximum fee above the base fee the sender is
     ///   willing to pay
+    /// - `maxPriorityFeePerGas`，指定了最大的fee，在base fee之上，sender愿意支付
     /// - `maxFeePerGas`, setting the maximum total fee the sender is willing to pay.
+    /// - `maxFeePerGas`指定了sender愿意支付的最大的total fee
     ///
     /// The base fee is burned, while the priority fee is paid to the miner who includes the
     /// transaction, incentivizing miners to include transactions with higher priority fees per
     /// gas.
+    /// base fee被销毁，同时Priority
+    /// fee被付给miner，他们会包含txs，驱动miners包含每个gas有着更高的fees的txs
     Eip1559(TxEip1559),
     /// Shard Blob Transactions ([EIP-4844](https://eips.ethereum.org/EIPS/eip-4844)), type `0x3`.
     ///
     /// Shard Blob Transactions introduce a new transaction type called a blob-carrying transaction
     /// to reduce gas costs. These transactions are similar to regular Ethereum transactions but
     /// include additional data called a blob.
+    /// Shared Blob txs引入一种新的tx类型，叫blob-carring tx来减少gas costs，这些txs和普通的eth
+    /// txs类似，但是引入额外的数据，叫做blob
     ///
     /// Blobs are larger (~125 kB) and cheaper than the current calldata, providing an immutable
     /// and read-only memory for storing transaction data.
+    /// blob比当前的calldata更大，更便宜，提供一个不可变并且只读的memory，对于存储tx data
     ///
     /// EIP-4844, also known as proto-danksharding, implements the framework and logic of
     /// danksharding, introducing new transaction formats and verification rules.
@@ -101,6 +115,7 @@ pub enum Transaction {
     /// EOA Set Code Transactions give the ability to temporarily set contract code for an
     /// EOA for a single transaction. This allows for temporarily adding smart contract
     /// functionality to the EOA.
+    /// 这允许临时添加smart contract功能到EOA
     Eip7702(TxEip7702),
 }
 
@@ -366,6 +381,7 @@ impl TransactionSigned {
     }
 
     /// Creates a new signed transaction from the given transaction and signature without the hash.
+    /// 创建一个新的signed tx，从给定的tx以及signature，没有hash
     ///
     /// Note: this only calculates the hash on the first [`TransactionSigned::hash`] call.
     pub fn new_unhashed(transaction: Transaction, signature: Signature) -> Self {
