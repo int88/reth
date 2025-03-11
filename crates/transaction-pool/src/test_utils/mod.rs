@@ -12,6 +12,7 @@ pub use mock::*;
 mod pool;
 
 /// A [Pool] used for testing
+/// 一个[Pool]用于测试
 pub type TestPool =
     Pool<MockTransactionValidator<MockTransaction>, MockOrdering, InMemoryBlobStore>;
 

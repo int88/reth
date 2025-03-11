@@ -108,6 +108,7 @@ macro_rules! make_setters_getters {
 }
 
 /// A Bare transaction type used for testing.
+/// 一个裸的tx类型用于测试
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MockTransaction {
     /// Legacy transaction type.
