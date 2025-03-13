@@ -143,19 +143,27 @@ impl TaskSpawner for TokioTaskExecutor {
 /// Many reth components require to spawn tasks for long-running jobs. For example `discovery`
 /// spawns tasks to handle egress and ingress of udp traffic or `network` that spawns session tasks
 /// that handle the traffic to and from a peer.
+/// 许多reth组件需要生成tasks用于long-running
+/// jobs，例如`discovery`生成tasks来处理egress和ingress，对于udp流量，或者`network`生成session
+/// tasks，处理来自以及发往peer的流量
 ///
 /// To unify how tasks are created, the [`TaskManager`] provides access to the configured Tokio
 /// runtime. A [`TaskManager`] stores the [`tokio::runtime::Handle`] it is associated with. In this
 /// way it is possible to configure on which runtime a task is executed.
+/// 为了统一tasks如何创建，[`TaskManager`]提供了对于配置Tokio
+/// runtime的访问。一个[`TaskManager`]存储了它关联的[`tokio::runtime::Handle`]，
+/// 这样就能配置一个task在哪个runtime运行
 ///
 /// The main purpose of this type is to be able to monitor if a critical task panicked, for
 /// diagnostic purposes, since tokio task essentially fail silently. Therefore, this type is a
 /// Stream that yields the name of panicked task, See [`TaskExecutor::spawn_critical`]. In order to
 /// execute Tasks use the [`TaskExecutor`] type [`TaskManager::executor`].
+/// 这个类型的主要目的是能够监听一个critical task是否panicked，用于调试，因为tokio task通常默默fail
 #[derive(Debug)]
 #[must_use = "TaskManager must be polled to monitor critical tasks"]
 pub struct TaskManager {
     /// Handle to the tokio runtime this task manager is associated with.
+    /// tokio runtime的handle，这个task manager关联
     ///
     /// See [`Handle`] docs.
     handle: Handle,
@@ -202,6 +210,7 @@ impl TaskManager {
 
     /// Returns a new [`TaskExecutor`] that can spawn new tasks onto the tokio runtime this type is
     /// connected to.
+    /// 返回一个新的[`TaskExecutor`]，可以生成新的tasks到这个类型关联到的tokio runtime
     pub fn executor(&self) -> TaskExecutor {
         TaskExecutor {
             handle: self.handle.clone(),
@@ -285,6 +294,7 @@ impl PanickedTaskError {
 }
 
 /// A type that can spawn new tokio tasks
+/// 一个类型可以生成新的tokio tasks
 #[derive(Debug, Clone)]
 pub struct TaskExecutor {
     /// Handle to the tokio runtime this task manager is associated with.
@@ -479,9 +489,12 @@ impl TaskExecutor {
     }
 
     /// This spawns a critical task onto the runtime.
+    /// 这生成一个critical task到runtime
     ///
     /// If this task panics, the [`TaskManager`] is notified.
+    /// 如果这个task panics，[`TaskManager`]会被通知
     /// The [`TaskManager`] will wait until the given future has completed before shutting down.
+    /// 这个[`TaskManager`]会等待，直到给定的future已经完成了，在关闭之前
     ///
     /// # Example
     ///

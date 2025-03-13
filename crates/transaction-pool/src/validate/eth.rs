@@ -545,6 +545,7 @@ where
 }
 
 /// A builder for [`TransactionValidationTaskExecutor`]
+/// 一个builder，对于[`TransactionValidationTaskExecutor`]
 #[derive(Debug)]
 pub struct EthTransactionValidatorBuilder<Client> {
     client: Client,

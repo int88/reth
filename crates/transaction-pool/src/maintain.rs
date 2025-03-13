@@ -1,4 +1,5 @@
 //! Support for maintaining the state of the transaction pool
+//! 支持对于tx pool状态的维护
 
 use crate::{
     blobstore::{BlobStoreCanonTracker, BlobStoreUpdates},
@@ -592,7 +593,9 @@ where
 
 /// Loads transactions from a file, decodes them from the RLP format, and inserts them
 /// into the transaction pool on node boot up.
+/// 从一个文件加载txs，用RLP格式解码，插入到tx pool，在node启动的时候
 /// The file is removed after the transactions have been successfully processed.
+/// file被移除，在tx已经被成功处理之后
 async fn load_and_reinsert_transactions<P>(
     pool: P,
     file_path: &Path,
@@ -611,6 +614,7 @@ where
         return Ok(())
     }
 
+    // 解码为pool tx
     let txs_signed: Vec<<P::Transaction as PoolTransaction>::Consensus> =
         alloy_rlp::Decodable::decode(&mut data.as_slice())?;
 
@@ -619,6 +623,7 @@ where
         .filter_map(|tx| tx.try_clone_into_recovered().ok())
         .filter_map(|tx| {
             // Filter out errors
+            // 过滤额错误
             <P::Transaction as PoolTransaction>::try_from_consensus(tx).ok()
         })
         .collect();
@@ -626,6 +631,7 @@ where
     let outcome = pool.add_transactions(crate::TransactionOrigin::Local, pool_transactions).await;
 
     info!(target: "txpool", txs_file =?file_path, num_txs=%outcome.len(), "Successfully reinserted local transactions from file");
+    // 移除文件
     reth_fs_util::remove_file(file_path)?;
     Ok(())
 }
@@ -647,7 +653,9 @@ where
 
     let num_txs = local_transactions.len();
     let mut buf = Vec::new();
+    // 对txs进行编码
     alloy_rlp::encode_list(&local_transactions, &mut buf);
+    // 保存当前的local txs
     info!(target: "txpool", txs_file =?file_path, num_txs=%num_txs, "Saving current local transactions");
     let parent_dir = file_path.parent().map(std::fs::create_dir_all).transpose();
 
@@ -665,18 +673,23 @@ where
 #[derive(thiserror::Error, Debug)]
 pub enum TransactionsBackupError {
     /// Error during RLP decoding of transactions
+    /// 对txs进行RLP decoding的时候有错误
     #[error("failed to apply transactions backup. Encountered RLP decode error: {0}")]
     Decode(#[from] alloy_rlp::Error),
     /// Error during file upload
+    /// 文件上传的时候有错误
     #[error("failed to apply transactions backup. Encountered file error: {0}")]
     FsPath(#[from] FsPathError),
     /// Error adding transactions to the transaction pool
+    /// 添加txs到Pool的时候有错误
     #[error("failed to insert transactions to the transactions pool. Encountered pool error: {0}")]
     Pool(#[from] PoolError),
 }
 
 /// Task which manages saving local transactions to the persistent file in case of shutdown.
+/// Task用于管理保存local txs到持久化文件，万一shutdown
 /// Reloads the transactions from the file on the boot up and inserts them into the pool.
+/// 重新加载txs，在bootup的时候并且插入到Pool
 pub async fn backup_local_transactions_task<P>(
     shutdown: reth_tasks::shutdown::GracefulShutdown,
     pool: P,
@@ -696,6 +709,7 @@ pub async fn backup_local_transactions_task<P>(
     let graceful_guard = shutdown.await;
 
     // write transactions to disk
+    // 写txs到磁盘
     save_local_txs_backup(pool, &transactions_path);
 
     drop(graceful_guard)
@@ -740,6 +754,7 @@ mod tests {
         let blob_store = InMemoryBlobStore::default();
         let validator = EthTransactionValidatorBuilder::new(provider).build(blob_store.clone());
 
+        // 构建一个pool
         let txpool = Pool::new(
             validator.clone(),
             CoinbaseTipOrdering::default(),
@@ -768,6 +783,7 @@ mod tests {
 
         let txs: Vec<TransactionSigned> =
             alloy_rlp::Decodable::decode(&mut data.as_slice()).unwrap();
+        // 恢复txs
         assert_eq!(txs.len(), 1);
 
         temp_dir.close().unwrap();

@@ -185,6 +185,7 @@ where
     S: BlobStore,
 {
     /// Create a new transaction pool instance.
+    /// 创建一个新的tx pool实例
     pub fn new(validator: V, ordering: T, blob_store: S, config: PoolConfig) -> Self {
         Self {
             identifiers: Default::default(),
@@ -334,9 +335,11 @@ where
     }
 
     /// Converts the internally tracked transaction to the pooled format.
+    /// 转换内部追踪的tx到Pooled格式
     ///
     /// If the transaction is an EIP-4844 transaction, the blob sidecar is fetched from the blob
     /// store and attached to the transaction.
+    /// 如果tx是一个EIP-4844的tx，blob sidecar从blob store获取并且关联到tx
     fn to_pooled_transaction(
         &self,
         transaction: Arc<ValidPoolTransaction<T::Transaction>>,
@@ -622,6 +625,7 @@ where
     }
 
     /// Notify all listeners about a new pending transaction.
+    /// 通知所有listeners，关于一个新的pending tx
     fn on_new_pending_transaction(&self, pending: &AddedPendingTransaction<T::Transaction>) {
         let propagate_allowed = pending.is_propagate_allowed();
 
@@ -639,12 +643,14 @@ where
     }
 
     /// Notify all listeners about a newly inserted pending transaction.
+    /// 通知所有listeners，关于一个新插入的pending tx
     fn on_new_transaction(&self, event: NewTransactionEvent<T::Transaction>) {
         let mut transaction_listeners = self.transaction_listener.lock();
         transaction_listeners.retain_mut(|listener| {
             if listener.kind.is_propagate_only() && !event.transaction.propagate {
                 // only emit this hash to listeners that are only allowed to receive propagate only
                 // transactions, such as network
+                // 只发射这个hash给Listeners，只允许接收propagate only的txs，例如network
                 return !listener.sender.is_closed()
             }
 
@@ -680,6 +686,7 @@ where
     }
 
     /// Notifies transaction listeners about changes once a block was processed.
+    /// 通知tx listeners，关于变更，一旦一个block被处理
     fn notify_on_new_state(&self, outcome: OnNewCanonicalStateOutcome<T::Transaction>) {
         trace!(target: "txpool", promoted=outcome.promoted.len(), discarded= outcome.discarded.len() ,"notifying listeners on state change");
 

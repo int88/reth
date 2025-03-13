@@ -419,6 +419,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Option<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns all transactions that where submitted with the given [TransactionOrigin]
+    /// 返回所有的txs，作为给定的[TransactionOrigin]提交
     fn get_transactions_by_origin(
         &self,
         origin: TransactionOrigin,
@@ -431,6 +432,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns all transactions that where submitted as [TransactionOrigin::Local]
+    /// 返回所有的txs，作为[TransactionOrigin::Local]提交
     fn get_local_transactions(&self) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>> {
         self.get_transactions_by_origin(TransactionOrigin::Local)
     }
@@ -546,6 +548,7 @@ pub trait TransactionPoolExt: TransactionPool {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TransactionListenerKind {
     /// Any new pending transactions
+    /// 任何新的Pending txs
     All,
     /// Only transactions that are allowed to be propagated.
     /// 只有能够被传播的txs
@@ -1208,6 +1211,7 @@ impl PoolTransaction for EthPooledTransaction {
             }
             tx => {
                 // no blob sidecar
+                // 没有blob的sidecar
                 let tx = Recovered::new_unchecked(tx.into(), signer);
                 Self::new(tx, encoded_length)
             }

@@ -1,7 +1,9 @@
 //! A transaction pool implementation that does nothing.
+//! 一个tx pool的实现，但是什么都不做
 //!
 //! This is useful for wiring components together that don't require an actual pool but still need
 //! to be generic over it.
+//! 这对于联系组件，但是不需要真正的pool，但是依然需要一个通用的pool，很有用
 
 use crate::{
     blobstore::BlobStoreError,

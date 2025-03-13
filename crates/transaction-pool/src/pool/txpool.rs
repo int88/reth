@@ -134,6 +134,7 @@ pub struct TxPool<T: TransactionOrdering> {
 
 impl<T: TransactionOrdering> TxPool<T> {
     /// Create a new graph pool instance.
+    /// 创建一个新的graph pool实例
     pub fn new(ordering: T, config: PoolConfig) -> Self {
         Self {
             sender_info: Default::default(),
@@ -1112,12 +1113,15 @@ impl<T: TransactionOrdering> fmt::Debug for TxPool<T> {
 /// actions都衍生自这个set，从这个etype返回的Updates必须apply到subpools
 pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// Minimum base fee required by the protocol.
+    /// 协议要求的最小base fee
     ///
     /// Transactions with a lower base fee will never be included by the chain
+    /// 有着更低base fee的txs不会被包含在chain中
     minimal_protocol_basefee: u64,
     /// The max gas limit of the block
     block_gas_limit: u64,
     /// Max number of executable transaction slots guaranteed per account
+    /// 每个account保证的最大的，可执行的slots
     max_account_slots: usize,
     /// _All_ transactions identified by their hash.
     by_hash: HashMap<TxHash, Arc<ValidPoolTransaction<T>>>,
@@ -1141,6 +1145,7 @@ pub(crate) struct AllTransactions<T: PoolTransaction> {
 
 impl<T: PoolTransaction> AllTransactions<T> {
     /// Create a new instance
+    /// 创建一个新的实例
     fn new(config: &PoolConfig) -> Self {
         Self {
             max_account_slots: config.max_account_slots,
