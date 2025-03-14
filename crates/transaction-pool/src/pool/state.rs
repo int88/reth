@@ -16,6 +16,7 @@ bitflags::bitflags! {
         /// Set to `1` if all ancestor transactions are pending.
         const NO_PARKED_ANCESTORS = 0b10000000;
         /// Set to `1` of the transaction is either the next transaction of the sender (on chain nonce == tx.nonce) or all prior transactions are also present in the pool.
+        /// sender的下一个tx和之前所有的txs都在pool中了
         const NO_NONCE_GAPS = 0b01000000;
         /// Bit derived from the sender's balance.
         ///
@@ -25,6 +26,7 @@ bitflags::bitflags! {
         /// Bit set to true if the transaction has a lower gas limit than the block's gas limit.
         const NOT_TOO_MUCH_GAS = 0b00010000;
         /// Covers the Dynamic fee requirement.
+        /// 覆盖动态的fee要求
         ///
         /// Set to 1 if `maxFeePerGas` of the transaction meets the requirement of the pending block.
         const ENOUGH_FEE_CAP_BLOCK = 0b00001000;
@@ -81,6 +83,7 @@ pub enum SubPool {
     Queued = 0,
     /// The base-fee sub-pool contains transactions that are not ready to be included in the next
     /// block because they don't meet the base fee requirement.
+    /// 因为没有达到base fee的要求
     BaseFee,
     /// The blob sub-pool contains all blob transactions that are __not__ pending.
     Blob,

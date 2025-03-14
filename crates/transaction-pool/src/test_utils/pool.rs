@@ -1,4 +1,5 @@
 //! Test helpers for mocking an entire pool.
+//! Test helpers用于模拟整个Pool
 
 #![allow(dead_code)]
 
@@ -58,12 +59,15 @@ impl<T: TransactionOrdering> DerefMut for MockPool<T> {
 }
 
 /// Simulates transaction execution.
+/// 模拟tx的执行
 pub(crate) struct MockTransactionSimulator<R: Rng> {
     /// The pending base fee
     base_fee: u128,
     /// Generator for transactions
+    /// tx的生成器
     tx_generator: MockTransactionDistribution,
     /// represents the on chain balance of a sender.
+    /// 代表一个sender的on chain balance
     balances: HashMap<Address, U256>,
     /// represents the on chain nonce of a sender.
     nonces: HashMap<Address, u64>,
@@ -72,6 +76,7 @@ pub(crate) struct MockTransactionSimulator<R: Rng> {
     /// What scenarios to execute.
     scenarios: Vec<ScenarioType>,
     /// All previous scenarios executed by a sender.
+    /// 所有之前的scenarios，由一个sender执行
     executed: HashMap<Address, ExecutedScenarios>,
     /// "Validates" generated transactions.
     validator: MockTransactionFactory,
@@ -81,6 +86,7 @@ pub(crate) struct MockTransactionSimulator<R: Rng> {
 
 impl<R: Rng> MockTransactionSimulator<R> {
     /// Returns a new mock instance
+    /// 返回一个新的mock instance
     pub(crate) fn new(mut rng: R, config: MockSimulatorConfig) -> Self {
         let senders = config.addresses(&mut rng);
         Self {
@@ -109,6 +115,7 @@ impl<R: Rng> MockTransactionSimulator<R> {
     }
 
     /// Executes the next scenario and applies it to the pool
+    /// 执行下一个场景并且应用到Pool
     pub(crate) fn next(&mut self, pool: &mut MockPool) {
         let sender = self.rng_address();
         let scenario = self.rng_scenario();
@@ -148,14 +155,19 @@ impl<R: Rng> MockTransactionSimulator<R> {
 }
 
 /// How to configure a new mock transaction stream
+/// 如何配置一个新的mock tx stream
 pub(crate) struct MockSimulatorConfig {
     /// How many senders to generate.
+    /// 生成多少个senders
     pub(crate) num_senders: usize,
     /// Scenarios to test
+    /// 测试的场景
     pub(crate) scenarios: Vec<ScenarioType>,
     /// The start base fee
+    /// 开始的base fee
     pub(crate) base_fee: u128,
     /// generator for transactions
+    /// txs的generator
     pub(crate) tx_generator: MockTransactionDistribution,
 }
 

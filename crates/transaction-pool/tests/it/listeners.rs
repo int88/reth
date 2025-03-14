@@ -42,6 +42,7 @@ async fn txpool_listener_all() {
     assert_matches!(
         // 获取pending event
         all_tx_events.next().await,
+        // Pending Event
         Some(FullTransactionEvent::Pending(hash)) if hash == *transaction.transaction.get_hash()
     );
 }

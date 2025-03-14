@@ -10,17 +10,21 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug)]
 pub enum FullTransactionEvent<T: PoolTransaction> {
     /// Transaction has been added to the pending pool.
+    /// Tx已经被添加到了pending pool
     Pending(TxHash),
     /// Transaction has been added to the queued pool.
     Queued(TxHash),
     /// Transaction has been included in the block belonging to this hash.
+    /// tx已经被包含进了属于这个hash的block
     Mined {
         /// The hash of the mined transaction.
         tx_hash: TxHash,
         /// The hash of the mined block that contains the transaction.
+        /// mined block的hash，包含这个tx
         block_hash: B256,
     },
     /// Transaction has been replaced by the transaction belonging to the hash.
+    /// tx已经被替换，通过属于这个hash的tx
     ///
     /// E.g. same (sender + nonce) pair
     Replaced {
@@ -30,10 +34,13 @@ pub enum FullTransactionEvent<T: PoolTransaction> {
         replaced_by: TxHash,
     },
     /// Transaction was dropped due to configured limits.
+    /// tx被丢弃，因为配置的limits
     Discarded(TxHash),
     /// Transaction became invalid indefinitely.
+    /// tx变得永远非法
     Invalid(TxHash),
     /// Transaction was propagated to peers.
+    /// tx被传播到其他的peers
     Propagated(Arc<Vec<PropagateKind>>),
 }
 

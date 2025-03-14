@@ -288,6 +288,7 @@ where
 
     /// If the pool contains the transaction, this adds a new listener that gets notified about
     /// transaction events.
+    /// 如果pool包含tx，这会添加一个listener，获取关于它的事件
     pub fn add_transaction_event_listener(&self, tx_hash: TxHash) -> Option<TransactionEvents> {
         self.get_pool_data()
             .contains(&tx_hash)
@@ -957,6 +958,7 @@ where
     }
 
     /// Returns whether or not the pool is over its configured size and transaction count limits.
+    /// 返回是否Pool超过了配置的size以及tx count limits
     pub fn is_exceeded(&self) -> bool {
         self.pool.read().is_exceeded()
     }
@@ -1197,8 +1199,10 @@ pub enum AddedTransaction<T: PoolTransaction> {
         /// Inserted transaction.
         transaction: Arc<ValidPoolTransaction<T>>,
         /// Replaced transaction.
+        /// 被替换的tx
         replaced: Option<Arc<ValidPoolTransaction<T>>>,
         /// The subpool it was moved to.
+        /// 被移动到的subpool
         subpool: SubPool,
     },
 }
@@ -1254,6 +1258,7 @@ impl<T: PoolTransaction> AddedTransaction<T> {
     }
 
     /// Returns the subpool this transaction was added to
+    /// 返回这个tx所属的subpool
     #[cfg(test)]
     pub(crate) const fn subpool(&self) -> SubPool {
         match self {
@@ -1328,14 +1333,17 @@ mod tests {
     #[test]
     fn test_discard_blobs_on_blob_tx_eviction() {
         // Define the maximum limit for blobs in the sub-pool.
+        // 定义max limit，对于sub-pool中的blobs
         let blob_limit = SubPoolLimit::new(1000, usize::MAX);
 
         // Create a test pool with default configuration and the specified blob limit.
+        // 创建一个test pool，有着默认的配置以及指定的blob limit
         let test_pool = &TestPoolBuilder::default()
             .with_config(PoolConfig { blob_limit, ..Default::default() })
             .pool;
 
         // Set the block info for the pool, including a pending blob fee.
+        // 设置Pool的block info，包括一个Pending blob fee
         test_pool
             .set_block_info(BlockInfo { pending_blob_fee: Some(10_000_000), ..Default::default() });
 
@@ -1350,6 +1358,7 @@ mod tests {
             serde_json::from_str(&json_content).expect("Failed to deserialize JSON");
 
         // Extract blob data from JSON and convert it to Blob.
+        // 从JSON抽取出blob data并且转换为Blob
         let blobs: Vec<Blob> = vec![Blob::from_hex(
             // Extract the "data" field from the JSON and parse it as a string.
             json_value.get("data").unwrap().as_str().expect("Data is not a valid string"),
@@ -1363,6 +1372,7 @@ mod tests {
         let blob_store = InMemoryBlobStore::default();
 
         // Loop to add transactions to the pool and test blob eviction.
+        // 循环将txs加入到Pool并且测试blob eviction
         for n in 0..blob_limit.max_txs + 10 {
             // Create a mock transaction with the generated blob sidecar.
             let mut tx = MockTransaction::eip4844_with_sidecar(sidecar.clone());
@@ -1371,11 +1381,13 @@ mod tests {
             tx.set_size(1844674407370951);
 
             // Insert the sidecar into the blob store if the current index is within the blob limit.
+            // 插入sidecar到blob store，如果当前的index在blob limit内
             if n < blob_limit.max_txs {
                 blob_store.insert(*tx.get_hash(), sidecar.clone()).unwrap();
             }
 
             // Add the transaction to the pool with external origin and valid outcome.
+            // 添加tx到Pool，有着external origin和合法的输出
             test_pool.add_transactions(
                 TransactionOrigin::External,
                 [TransactionValidationOutcome::Valid {
@@ -1391,12 +1403,14 @@ mod tests {
         }
 
         // Assert that the size of the pool's blob component is equal to the maximum blob limit.
+        // 校验pool的blob component等于最大的blob limit
         assert_eq!(test_pool.size().blob, blob_limit.max_txs);
 
         // Assert that the size of the pool's blob_size component matches the expected value.
         assert_eq!(test_pool.size().blob_size, 1844674407370951000);
 
         // Assert that the pool's blob store matches the expected blob store.
+        // 校验pool的blob store匹配期望的blob store
         assert_eq!(*test_pool.blob_store(), blob_store);
     }
 }

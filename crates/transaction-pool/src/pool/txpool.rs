@@ -150,6 +150,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Retrieves the highest nonce for a specific sender from the transaction pool.
+    /// 获取一个特定的sender最高的nonce，从tx pool中
     pub fn get_highest_nonce_by_sender(&self, sender: SenderId) -> Option<u64> {
         self.all().txs_iter(sender).last().map(|(_, tx)| tx.transaction.nonce())
     }
@@ -164,9 +165,11 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns the transaction with the highest nonce that is executable given the on chain nonce.
+    /// 返回tx，有着最高的能执行的nonce，在给定的chain nonce
     ///
     /// If the pool already tracks a higher nonce for the given sender, then this nonce is used
     /// instead.
+    /// 如果pool已经追踪一个更高的nonce，对于给定的sender，那么这个nonce会被使用
     ///
     /// Note: The next pending pooled transaction must have the on chain nonce.
     pub(crate) fn get_highest_consecutive_transaction_by_sender(
@@ -276,6 +279,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     ///
     /// Depending on the change in direction of the basefee, this will promote or demote
     /// transactions from the basefee pool.
+    /// 取决于basefee改变的方向，这会promote或者demote txs，从basefee pool
     fn update_basefee(&mut self, mut pending_basefee: u64) -> Ordering {
         std::mem::swap(&mut self.all_transactions.pending_fees.base_fee, &mut pending_basefee);
         match self.all_transactions.pending_fees.base_fee.cmp(&pending_basefee) {
@@ -285,6 +289,7 @@ impl<T: TransactionOrdering> TxPool<T> {
             }
             Ordering::Greater => {
                 // increased base fee: recheck pending pool and remove all that are no longer valid
+                // 增加base fee: 重新检查pending pool并且移除所有的不再合法的
                 let removed =
                     self.pending_pool.update_base_fee(self.all_transactions.pending_fees.base_fee);
                 for tx in removed {
@@ -295,6 +300,7 @@ impl<T: TransactionOrdering> TxPool<T> {
                         tx.subpool = tx.state.into();
                         tx.subpool
                     };
+                    // 插入到对应的subpool
                     self.add_transaction_to_subpool(to, tx);
                 }
 
@@ -302,6 +308,7 @@ impl<T: TransactionOrdering> TxPool<T> {
             }
             Ordering::Less => {
                 // decreased base fee: recheck basefee pool and promote all that are now valid
+                // 降低base fee: 重新检查basefee pool并且promote所有现在合法的txs
                 let removed =
                     self.basefee_pool.enforce_basefee(self.all_transactions.pending_fees.base_fee);
                 for tx in removed {
@@ -479,6 +486,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns `true` if the pool is over its configured limits.
+    /// 返回`true`，如果Pool超过了配置的limits
     #[inline]
     pub(crate) fn is_exceeded(&self) -> bool {
         self.config.is_exceeded(self.size())
@@ -969,11 +977,14 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Ensures that the transactions in the sub-pools are within the given bounds.
+    /// 确保sub-pools中的txs在给定的范围
     ///
     /// If the current size exceeds the given bounds, the worst transactions are evicted from the
     /// pool and returned.
+    /// 如果当前的size超过了给定的bounds，最差的txs会从pool汇总移除并且返回
     ///
     /// This returns all transactions that were removed from the entire pool.
+    /// 它会返回所有从pool中移除的txs
     pub(crate) fn discard_worst(&mut self) -> Vec<Arc<ValidPoolTransaction<T::Transaction>>> {
         let mut removed = Vec::new();
 
@@ -1128,6 +1139,7 @@ pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// _All_ transaction in the pool sorted by their sender and nonce pair.
     txs: BTreeMap<TransactionId, PoolInternalTransaction<T>>,
     /// Tracks the number of transactions by sender that are currently in the pool.
+    /// 追踪当前在pool中的txs的数目，基于sender
     tx_counter: FxHashMap<SenderId, usize>,
     /// The current block number the pool keeps track of.
     last_seen_block_number: u64,
@@ -1862,8 +1874,10 @@ impl<T: PoolTransaction> AllTransactions<T> {
 #[cfg(test)]
 impl<T: PoolTransaction> AllTransactions<T> {
     /// This function retrieves the number of transactions stored in the pool for a specific sender.
+    /// 这个函数取回存储在pool中的txs的数目，对于一个特定的sender
     ///
     /// If there are no transactions for the given sender, it returns zero by default.
+    /// 如果对于给定的sender没有txs，默认返回0
     pub(crate) fn tx_count(&self, sender: SenderId) -> usize {
         self.tx_counter.get(&sender).copied().unwrap_or_default()
     }
@@ -1926,10 +1940,13 @@ pub(crate) enum InsertErr<T: PoolTransaction> {
     /// See also [`MIN_PROTOCOL_BASE_FEE`]
     FeeCapBelowMinimumProtocolFeeCap { transaction: Arc<ValidPoolTransaction<T>>, fee_cap: u128 },
     /// Sender currently exceeds the configured limit for max account slots.
+    /// Sender当前发送了超过max account slots的Limit
     ///
     /// The sender can be considered a spammer at this point.
+    /// 这时候sender可以被认为是一个spammer
     ExceededSenderTransactionsCapacity { transaction: Arc<ValidPoolTransaction<T>> },
     /// Transaction gas limit exceeds block's gas limit
+    /// tx的gas limit超过了block的gas limit
     TxGasLimitMoreThanAvailableBlockGas {
         transaction: Arc<ValidPoolTransaction<T>>,
         block_gas_limit: u64,
@@ -1971,6 +1988,7 @@ pub(crate) struct PoolInternalTransaction<T: PoolTransaction> {
     pub(crate) subpool: SubPool,
     /// Keeps track of the current state of the transaction and therefore in which subpool it
     /// should reside
+    /// 追踪tx的当前状态以及它应该所处的subpool
     pub(crate) state: TxState,
     /// The total cost all transactions before this transaction.
     ///
@@ -1988,11 +2006,14 @@ impl<T: PoolTransaction> PoolInternalTransaction<T> {
 }
 
 /// Tracks the result after updating the pool
+/// 追踪结果在更新pool之后
 #[derive(Debug)]
 pub(crate) struct UpdateOutcome<T: PoolTransaction> {
     /// transactions promoted to the pending pool
+    /// txs被提升到pending pool
     pub(crate) promoted: Vec<Arc<ValidPoolTransaction<T>>>,
     /// transaction that failed and were discarded
+    /// tx失败了并且被移除
     pub(crate) discarded: Vec<Arc<ValidPoolTransaction<T>>>,
 }
 
@@ -2488,6 +2509,7 @@ mod tests {
         assert_eq!(replaced.0.hash(), first.hash());
 
         // ensure replaced tx is fully removed
+        // 确保replaced tx已经被完全移除
         assert!(!pool.contains(first.hash()));
         assert!(pool.contains(replacement.hash()));
         assert_eq!(pool.len(), 1);
@@ -2508,8 +2530,10 @@ mod tests {
             pool.add_transaction(replacement.clone(), on_chain_balance, on_chain_nonce).unwrap();
 
         // // ensure replaced tx removed
+        // 确保replaced tx被移除
         assert!(!pool.contains(first_added.hash()));
         // but the replacement is still there
+        // 但是replacement依然在
         assert!(pool.subpool_contains(replacement_added.subpool(), replacement_added.id()));
 
         assert!(pool.contains(replacement.hash()));
@@ -2528,6 +2552,7 @@ mod tests {
         let first = f.validated(tx.clone());
         let _res = pool.insert_tx(first, on_chain_balance, on_chain_nonce);
         let mut replacement = f.validated(tx.rng_hash());
+        // 将price - 1
         replacement.transaction = replacement.transaction.decr_price();
         let err = pool.insert_tx(replacement, on_chain_balance, on_chain_nonce).unwrap_err();
         assert!(matches!(err, InsertErr::Underpriced { .. }));
@@ -2580,9 +2605,11 @@ mod tests {
         let on_chain_nonce = 0;
         let mut f = MockTransactionFactory::default();
         let mut pool = AllTransactions::default();
+        // 先插入eip 1559
         let tx = MockTransaction::eip1559().inc_price().inc_limit();
         let first = f.validated(tx.clone());
         pool.insert_tx(first, on_chain_balance, on_chain_nonce).unwrap();
+        // 再插入eip 4844
         let tx = MockTransaction::eip4844().set_sender(tx.sender()).inc_price_by(100).inc_limit();
         let blob = f.validated(tx);
         let err = pool.insert_tx(blob, on_chain_balance, on_chain_nonce).unwrap_err();
@@ -2595,9 +2622,11 @@ mod tests {
         let on_chain_nonce = 0;
         let mut f = MockTransactionFactory::default();
         let mut pool = AllTransactions::default();
+        // 4844类型
         let tx = MockTransaction::eip4844().inc_price().inc_limit();
         let first = f.validated(tx.clone());
         pool.insert_tx(first, on_chain_balance, on_chain_nonce).unwrap();
+        // 换成1559类型
         let tx = MockTransaction::eip1559().set_sender(tx.sender()).inc_price_by(100).inc_limit();
         let tx = f.validated(tx);
         let err = pool.insert_tx(tx, on_chain_balance, on_chain_nonce).unwrap_err();
@@ -2618,6 +2647,7 @@ mod tests {
         let first_in_pool = pool.get(first.id()).unwrap();
 
         // has nonce gap
+        // 没有nonce gap
         assert!(!first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
 
         let prev = f.validated(tx.prev());
@@ -2648,7 +2678,9 @@ mod tests {
 
         let first_in_pool = pool.get(first.id()).unwrap();
         // has nonce gap
+        // 存在nonce gap
         assert!(!first_in_pool.state.contains(TxState::NO_NONCE_GAPS));
+        // 在Queued对了中
         assert_eq!(SubPool::Queued, first_in_pool.subpool);
 
         let prev = f.validated(tx.prev());
@@ -2752,6 +2784,7 @@ mod tests {
             pool.tx_count(f.ids.sender_id(tx.get_sender()).unwrap())
         );
 
+        // 允许本地的spamming
         pool.insert_tx(
             f.validated_with_origin(TransactionOrigin::Local, tx.next()),
             on_chain_balance,
@@ -2799,6 +2832,7 @@ mod tests {
         let id = *validated.id();
         pool.add_transaction(validated, U256::from(1_000), 0).unwrap();
 
+        // 此时pending pool中有一个tx
         assert_eq!(pool.pending_pool.len(), 1);
 
         pool.update_basefee((tx.max_fee_per_gas() + 1) as u64);
@@ -2850,17 +2884,20 @@ mod tests {
         pool.add_transaction(tx1_validated, U256::from(1_000), 0).unwrap();
 
         // Ensure that the calculated next nonce for the sender matches the expected value.
+        // 确认计算的next nonce，对于sender匹配期望的值
         assert_eq!(
             pool.get_highest_nonce_by_sender(f.ids.sender_id(&tx.sender()).unwrap()),
             Some(1)
         );
 
         // Retrieve the highest transaction by sender.
+        // 通过sender获取最高的tx
         let highest_tx = pool
             .get_highest_transaction_by_sender(f.ids.sender_id(&tx.sender()).unwrap())
             .expect("Failed to retrieve highest transaction");
 
         // Validate that the retrieved highest transaction matches the expected transaction.
+        // 校验获取的highest tx匹配期望的tx
         assert_eq!(highest_tx.as_ref().transaction, tx1);
     }
 
@@ -2871,6 +2908,7 @@ mod tests {
         let mut f = MockTransactionFactory::default();
 
         // Create transactions with nonces 0, 1, 2, 4, 5.
+        // 创建txs有着nonces 0,1,2,4,5
         let sender = Address::random();
         let txs: Vec<_> = vec![0, 1, 2, 4, 5, 8, 9];
         for nonce in txs {
@@ -2883,6 +2921,7 @@ mod tests {
         }
 
         // Get last consecutive transaction
+        // 获取最后一个连续的tx
         let sender_id = f.ids.sender_id(&sender).unwrap();
         let next_tx =
             pool.get_highest_consecutive_transaction_by_sender(sender_id.into_transaction_id(0));
@@ -3019,6 +3058,7 @@ mod tests {
             TxPool::new(MockOrdering::default(), PoolConfig { queued_limit, ..Default::default() });
 
         // insert a bunch of transactions into the queued pool
+        // 插入一系列的txs到queued pool
         for _ in 0..queued_limit.max_txs {
             let tx = MockTransaction::eip1559().inc_price_by(10).inc_nonce();
             let validated = f.validated(tx.clone());

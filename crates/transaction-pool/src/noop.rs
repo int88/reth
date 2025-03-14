@@ -358,6 +358,7 @@ impl<T: EthPoolTransaction> TransactionValidator for MockTransactionValidator<T>
 impl<T> MockTransactionValidator<T> {
     /// Creates a new [`MockTransactionValidator`] that does not allow local transactions to be
     /// propagated.
+    /// 创建一个新的[`MockTransactionValidator`]，不允许local txs传播
     pub fn no_propagate_local() -> Self {
         Self { propagate_local: false, _marker: Default::default() }
     }

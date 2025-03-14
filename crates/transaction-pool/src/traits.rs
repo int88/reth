@@ -125,8 +125,10 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> impl Future<Output = Vec<PoolResult<TxHash>>> + Send;
 
     /// Returns a new transaction change event stream for the given transaction.
+    /// 返回一个新的tx change event stream，对于给定的tx
     ///
     /// Returns `None` if the transaction is not in the pool.
+    /// 返回`None`，如果tx不在pool
     fn transaction_event_listener(&self, tx_hash: TxHash) -> Option<TransactionEvents>;
 
     /// Returns a new transaction change event stream for _all_ transactions in the pool.
@@ -147,15 +149,19 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns a new [Receiver] that yields transactions hashes for new __pending__ transactions
     /// inserted into the pending pool depending on the given [TransactionListenerKind] argument.
+    /// 返回一个新的[Receiver]，产生tx hashes，对于新的__pending__ txs，插入到pending
+    /// pool，取决于给定的[TransactionListenerKind]参数
     fn pending_transactions_listener_for(&self, kind: TransactionListenerKind) -> Receiver<TxHash>;
 
     /// Returns a new stream that yields new valid transactions added to the pool.
+    /// 返回一个新的stream，只产生新的，添加到pool的tx
     fn new_transactions_listener(&self) -> Receiver<NewTransactionEvent<Self::Transaction>> {
         self.new_transactions_listener_for(TransactionListenerKind::PropagateOnly)
     }
 
     /// Returns a new [Receiver] that yields blob "sidecars" (blobs w/ assoc. kzg
     /// commitments/proofs) for eip-4844 transactions inserted into the pool
+    /// 返回一个新的[Receiver]产生blob "sidecars"，对于插入pool的eip-4844 txs
     fn blob_transaction_sidecars_listener(&self) -> Receiver<NewBlobSidecar>;
 
     /// Returns a new stream that yields new valid transactions added to the pool
@@ -166,6 +172,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Receiver<NewTransactionEvent<Self::Transaction>>;
 
     /// Returns a new Stream that yields new transactions added to the pending sub-pool.
+    /// 返回一个新的Stream，产生新的txs，添加到pending sub-pool
     ///
     /// This is a convenience wrapper around [Self::new_transactions_listener] that filters for
     /// [SubPool::Pending](crate::SubPool).
@@ -179,9 +186,11 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Returns a new Stream that yields new transactions added to the basefee sub-pool.
+    /// 返回一个新的Stream，产生新的txs，添加到basefee sub-pool
     ///
     /// This is a convenience wrapper around [Self::new_transactions_listener] that filters for
     /// [SubPool::BaseFee](crate::SubPool).
+    /// 对于[Self::new_transactions_listener]的简单封装
     fn new_basefee_pool_transactions_listener(
         &self,
     ) -> NewSubpoolTransactionStream<Self::Transaction> {
@@ -197,6 +206,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Returns the _hashes_ of all transactions in the pool.
+    /// 返回pool中所有的tx hashes
     ///
     /// Note: This returns a `Vec` but should guarantee that all hashes are unique.
     ///
@@ -263,6 +273,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Option<Recovered<<Self::Transaction as PoolTransaction>::Pooled>>;
 
     /// Returns an iterator that yields transactions that are ready for block production.
+    /// 返回一个iterator，产生txs，准备好生成block
     ///
     /// Consumer: Block production
     fn best_transactions(
@@ -271,6 +282,7 @@ pub trait TransactionPool: Send + Sync + Clone {
 
     /// Returns an iterator that yields transactions that are ready for block production with the
     /// given base fee and optional blob fee attributes.
+    /// 返回一个iterator，产生txs，准备好生成block，有着给定的base fee以及可选的fee attributes
     ///
     /// Consumer: Block production
     fn best_transactions_with_attributes(
@@ -279,12 +291,15 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Box<dyn BestTransactions<Item = Arc<ValidPoolTransaction<Self::Transaction>>>>;
 
     /// Returns all transactions that can be included in the next block.
+    /// 返回所有的txs，准备好被包含在下一个block
     ///
     /// This is primarily used for the `txpool_` RPC namespace:
     /// <https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool> which distinguishes
     /// between `pending` and `queued` transactions, where `pending` are transactions ready for
     /// inclusion in the next block and `queued` are transactions that are ready for inclusion in
     /// future blocks.
+    /// 这主要用于`txpool_` RPC namespace，区分`pending`和`queued`
+    /// txs，`pending`是txs准备好被加入到下一个block，而`queued`是txs准备好被包含在未来的blocks
     ///
     /// Consumer: RPC
     fn pending_transactions(&self) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
@@ -1437,6 +1452,7 @@ impl PoolSize {
 }
 
 /// Represents the current status of the pool.
+/// 代表pool的当前状态
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct BlockInfo {
     /// Hash for the currently tracked block.
@@ -1446,11 +1462,13 @@ pub struct BlockInfo {
     /// Current block gas limit for the latest block.
     pub block_gas_limit: u64,
     /// Currently enforced base fee: the threshold for the basefee sub-pool.
+    /// 当前执行的base fee，base sub-pool的threshold
     ///
     /// Note: this is the derived base fee of the _next_ block that builds on the block the pool is
     /// currently tracking.
     pub pending_basefee: u64,
     /// Currently enforced blob fee: the threshold for eip-4844 blob transactions.
+    /// 当前执行的blob fee: 对于eip-4844的blob txs
     ///
     /// Note: this is the derived blob fee of the _next_ block that builds on the block the pool is
     /// currently tracking

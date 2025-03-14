@@ -530,6 +530,7 @@ impl MockTransaction {
     }
 
     /// Returns a clone with a decreased nonce
+    /// 返回一个clone，但是有着decreased nonce
     pub fn prev(&self) -> Self {
         self.clone().with_hash(B256::random()).with_nonce(self.get_nonce() - 1)
     }
@@ -557,6 +558,7 @@ impl MockTransaction {
     }
 
     /// Returns a new transaction with a higher gas price +1
+    /// 返回一个新的tx，将gas price加一
     pub fn inc_price(&self) -> Self {
         self.inc_price_by(1)
     }
@@ -1270,6 +1272,7 @@ pub type MockOrdering = CoinbaseTipOrdering<MockTransaction>;
 
 /// A ratio of each of the configured transaction types. The percentages sum up to 100, this is
 /// enforced in [`MockTransactionRatio::new`] by an assert.
+/// 每个配置的tx类型的比例，加起来为100
 #[derive(Debug, Clone)]
 pub struct MockTransactionRatio {
     /// Percent of transactions that are legacy transactions
@@ -1401,6 +1404,7 @@ pub struct MockTransactionDistribution {
 
 impl MockTransactionDistribution {
     /// Creates a new generator distribution.
+    /// 创建一个新的generator distribution
     pub fn new(
         transaction_ratio: MockTransactionRatio,
         fee_ranges: MockFeeRange,

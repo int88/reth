@@ -101,11 +101,14 @@ impl Default for PoolConfig {
 }
 
 /// Size limits for a sub-pool.
+/// 对于一个sub-pool的size limits
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SubPoolLimit {
     /// Maximum amount of transaction in the pool.
+    /// pool中tx的最大数目
     pub max_txs: usize,
     /// Maximum combined size (in bytes) of transactions in the pool.
+    /// pool中tx最大的组合大小
     pub max_size: usize,
 }
 

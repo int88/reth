@@ -1,6 +1,8 @@
 //! Reth's transaction pool implementation.
+//! Reth的tx pool实现
 //!
 //! This crate provides a generic transaction pool implementation.
+//! 这个crate提供一个通用的tx pool实现
 //!
 //! ## Functionality
 //!

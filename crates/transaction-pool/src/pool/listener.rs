@@ -97,6 +97,7 @@ impl<T: PoolTransaction> Default for PoolEventBroadcast<T> {
 
 impl<T: PoolTransaction> PoolEventBroadcast<T> {
     /// Calls the broadcast callback with the `PoolEventBroadcaster` that belongs to the hash.
+    /// 调用广播的callback，用于属于这个hash的`PoolEventBroadcaster`
     fn broadcast_event(
         &mut self,
         hash: &TxHash,
@@ -104,6 +105,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
         pool_event: FullTransactionEvent<T>,
     ) {
         // Broadcast to all listeners for the transaction hash.
+        // 广播到所有的listeners，对于这个tx hash
         if let Entry::Occupied(mut sink) = self.broadcasters_by_hash.entry(*hash) {
             sink.get_mut().broadcast(event.clone());
 
@@ -113,6 +115,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
         }
 
         // Broadcast to all listeners for all transactions.
+        // 广播到所有的Listeners，对于所有的txs
         self.all_events_broadcaster.broadcast(pool_event);
     }
 
@@ -142,11 +145,13 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
     }
 
     /// Notify listeners about a transaction that was added to the pending queue.
+    /// 通知listeners，关于一个tx被加入到Pending queue
     pub(crate) fn pending(&mut self, tx: &TxHash, replaced: Option<Arc<ValidPoolTransaction<T>>>) {
         self.broadcast_event(tx, TransactionEvent::Pending, FullTransactionEvent::Pending(*tx));
 
         if let Some(replaced) = replaced {
             // notify listeners that this transaction was replaced
+            // 通知listeners，这个tx已经被替换了
             self.replaced(replaced, *tx);
         }
     }
