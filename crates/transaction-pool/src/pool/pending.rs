@@ -17,36 +17,50 @@ use tokio::sync::broadcast;
 
 /// A pool of validated and gapless transactions that are ready to be executed on the current state
 /// and are waiting to be included in a block.
+/// 一个pool的validated以及gapless txs，准备好在当前的state执行并且等待被包含进一个block
 ///
 /// This pool distinguishes between `independent` transactions and pending transactions. A
 /// transaction is `independent`, if it is in the pending pool, and it has the current on chain
 /// nonce of the sender. Meaning `independent` transactions can be executed right away, other
 /// pending transactions depend on at least one `independent` transaction.
+/// 这个pool区分`independent` txs以及pending txs，一个tx是`independent`，如果它在pending
+/// pool，并且它有sender的当前nonce，这意味着`independent` txs可以被立即执行，其他pending
+/// txs依赖至少一个`independent` tx
 ///
 /// Once an `independent` transaction was executed it *unlocks* the next nonce, if this transaction
 /// is also pending, then this will be moved to the `independent` queue.
+/// 一旦一个`independent`
+/// tx被执行，它解锁下一个nonce，如果这个tx是pending，那么它会被移动到`independent` queue
 #[derive(Debug, Clone)]
 pub struct PendingPool<T: TransactionOrdering> {
     /// How to order transactions.
+    /// 如何对txs进行排序
     ordering: T,
     /// Keeps track of transactions inserted in the pool.
+    /// 追踪插入Pool的txs
     ///
     /// This way we can determine when transactions were submitted to the pool.
+    /// 这样我们可以决定txs被插入到pool
     submission_id: u64,
     /// _All_ Transactions that are currently inside the pool grouped by their identifier.
+    /// 所有当前被插入到pool的txs，通过他们的id分类
     by_id: BTreeMap<TransactionId, PendingTransaction<T>>,
     /// The highest nonce transactions for each sender - like the `independent` set, but the
     /// highest instead of lowest nonce.
+    /// 每个sender的highest nonce txs，就像`independent` set，但是是最高的，而不是最低的
     highest_nonces: FxHashMap<SenderId, PendingTransaction<T>>,
     /// Independent transactions that can be included directly and don't require other
     /// transactions.
+    /// Independent txs可以被直接包含并且不需要其他的txs
     independent_transactions: FxHashMap<SenderId, PendingTransaction<T>>,
     /// Keeps track of the size of this pool.
+    /// 追踪这个Pool的大小
     ///
     /// See also [`reth_primitives_traits::InMemorySize::size`].
     size_of: SizeTracker,
     /// Used to broadcast new transactions that have been added to the `PendingPool` to existing
     /// `static_files` of this pool.
+    /// 用于广播新的txs，已经被添加到`PendingPool`到这个Pool的`static_files`
     new_transaction_notifier: broadcast::Sender<PendingTransaction<T>>,
 }
 
@@ -54,6 +68,7 @@ pub struct PendingPool<T: TransactionOrdering> {
 
 impl<T: TransactionOrdering> PendingPool<T> {
     /// Create a new pool instance.
+    /// 创建一个新的pool实例
     pub fn new(ordering: T) -> Self {
         let (new_transaction_notifier, _) = broadcast::channel(200);
         Self {
@@ -68,7 +83,9 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Clear all transactions from the pool without resetting other values.
+    /// 从Pool清理所有的txs，而不重置其他值
     /// Used for atomic reordering during basefee update.
+    /// 用于atomic reordering，在basefee更新的时候
     ///
     /// # Returns
     ///
@@ -159,6 +176,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     /// Updates the pool with the new blob fee. Removes
     /// from the subpool all transactions and their dependents that no longer satisfy the given
     /// blob fee (`tx.max_blob_fee < blob_fee`).
+    /// 更新Pool，用新的blob fee，移除subpool所有的txs以及他们的dependents，不再满足给定的blob fee
     ///
     /// Note: the transactions are not returned in a particular order.
     ///
@@ -201,28 +219,36 @@ impl<T: TransactionOrdering> PendingPool<T> {
     /// Updates the pool with the new base fee. Reorders transactions by new priorities. Removes
     /// from the subpool all transactions and their dependents that no longer satisfy the given
     /// base fee (`tx.fee < base_fee`).
+    /// 用新的base fee更新Pool，按照新的priorities对txs重新排序，
+    /// 从subpool移除所有的txs以及他们的dependents，不再满足给定的base fee
     ///
     /// Note: the transactions are not returned in a particular order.
+    /// 注意：不按照特定的顺序返回txs
     ///
     /// # Returns
     ///
     /// Removed transactions that no longer satisfy the base fee.
+    /// 移除不再满足base fee的txs
     pub(crate) fn update_base_fee(
         &mut self,
         base_fee: u64,
     ) -> Vec<Arc<ValidPoolTransaction<T::Transaction>>> {
         // Create a collection for removed transactions.
+        // 创建一个collection用于移除的txs
         let mut removed = Vec::new();
 
         // Drain and iterate over all transactions.
+        // 排干并且迭代所有的txs
         let mut transactions_iter = self.clear_transactions().into_iter().peekable();
         while let Some((id, mut tx)) = transactions_iter.next() {
             if tx.transaction.max_fee_per_gas() < base_fee as u128 {
                 // Add this tx to the removed collection since it no longer satisfies the base fee
                 // condition. Decrease the total pool size.
+                // 添加它到removed collection，因为它不再满足base fee的条件，减小total pool size
                 removed.push(Arc::clone(&tx.transaction));
 
                 // Remove all dependent transactions.
+                // 移除所有依赖的txs
                 'this: while let Some((next_id, next_tx)) = transactions_iter.peek() {
                     if next_id.sender != id.sender {
                         break 'this
@@ -232,6 +258,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
                 }
             } else {
                 // Re-insert the transaction with new priority.
+                // 用新的优先级重新插入tx
                 tx.priority = self.ordering.priority(&tx.transaction.transaction, base_fee);
 
                 self.size_of += tx.transaction.size();
@@ -245,6 +272,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
 
     /// Updates the independent transaction and highest nonces set, assuming the given transaction
     /// is being _added_ to the pool.
+    /// 更新independent tx以及highest nonce set，假设给定的tx正在被添加到pool
     fn update_independents_and_highest_nonces(&mut self, tx: &PendingTransaction<T>) {
         match self.highest_nonces.entry(tx.transaction.sender_id()) {
             Entry::Occupied(mut entry) => {
@@ -277,6 +305,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Adds a new transactions to the pending queue.
+    /// 添加一个新的txs到pending queue
     ///
     /// # Panics
     ///
@@ -299,11 +328,13 @@ impl<T: TransactionOrdering> PendingPool<T> {
 
         let submission_id = self.next_id();
         let priority = self.ordering.priority(&tx.transaction, base_fee);
+        // 构建PendingTransaction
         let tx = PendingTransaction { submission_id, transaction: tx, priority };
 
         self.update_independents_and_highest_nonces(&tx);
 
         // send the new transaction to any existing pendingpool static file iterators
+        // 发送新的tx到任何已经存在的pending pool static file iterator
         if self.new_transaction_notifier.receiver_count() > 0 {
             let _ = self.new_transaction_notifier.send(tx.clone());
         }
@@ -358,9 +389,12 @@ impl<T: TransactionOrdering> PendingPool<T> {
     /// If the `remove_locals` flag is unset, transactions will be removed per-sender until a
     /// local transaction is the highest nonce transaction for that sender. If all senders have a
     /// local highest-nonce transaction, the pool will not be truncated further.
+    /// 如果`remove_locals` fla没有设置，txs会被移除，对于每个sender，直到对于这个sender，一个local
+    /// tx是highest nonce，如果所有sender都有一个local highest-nonce tx，pool不会再被进一步截断
     ///
     /// Otherwise, if the `remove_locals` flag is set, transactions will be removed per-sender
     /// until the pool is under the given limits.
+    /// 否则，如果`remove_locals` flag被设置，txs会被移除，对于每个sender，直到pool在给定的limit之下
     ///
     /// Any removed transactions will be added to the `end_removed` vector.
     pub fn remove_to_limit(
@@ -456,14 +490,18 @@ impl<T: TransactionOrdering> PendingPool<T> {
 
     /// Truncates the pool to the given [`SubPoolLimit`], removing transactions until the subpool
     /// limits are met.
+    /// 截断pool到给定的[`SubPoolLimit`]，移除txs，直到到达subpool limits
     ///
     /// This attempts to remove transactions by roughly the same amount for each sender. For more
     /// information on this exact process see docs for
     /// [`remove_to_limit`](PendingPool::remove_to_limit).
+    /// 它试着每个sender都移除大致相等的txs
     ///
     /// This first truncates all of the non-local transactions in the pool. If the subpool is still
     /// not under the limit, this truncates the entire pool, including non-local transactions. The
     /// removed transactions are returned.
+    /// 首先截断所有non-local的txs，如果subpool依然没有处于limit以下，这会截断整个pool，
+    /// 包括non-local txs
     pub fn truncate_pool(
         &mut self,
         limit: SubPoolLimit,
@@ -475,6 +513,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
         }
 
         // first truncate only non-local transactions, returning if the pool end up under the limit
+        // 首先截断non-local txs，返回是否Pool在Limit之下
         self.remove_to_limit(&limit, false, &mut removed);
         if !self.exceeds(&limit) {
             return removed
@@ -482,6 +521,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
 
         // now repeat for local transactions, since local transactions must be removed now for the
         // pool to be under the limit
+        // 现在对于local txs再来一次，因为local txs必须被移除，为了pool在limit以下
         self.remove_to_limit(&limit, true, &mut removed);
 
         removed
@@ -554,13 +594,17 @@ impl<T: TransactionOrdering> PendingPool<T> {
 }
 
 /// A transaction that is ready to be included in a block.
+/// tx准备好被包含到一个block
 #[derive(Debug)]
 pub(crate) struct PendingTransaction<T: TransactionOrdering> {
     /// Identifier that tags when transaction was submitted in the pool.
+    /// Identifier标识tx已经被加入到pool
     pub(crate) submission_id: u64,
     /// Actual transaction.
+    /// 真正的tx
     pub(crate) transaction: Arc<ValidPoolTransaction<T::Transaction>>,
     /// The priority value assigned by the used `Ordering` function.
+    /// 使用`Ordering`函数，被赋予的优先级
     pub(crate) priority: Priority<T::PriorityValue>,
 }
 
@@ -654,10 +698,12 @@ mod tests {
         assert_eq!(pool.independent_transactions.len(), 1);
         assert_eq!(pool.highest_nonces.len(), 1);
 
+        // 将basefee更新为0
         let removed = pool.update_base_fee(0);
         assert!(removed.is_empty());
 
         // two dependent tx in the pool with decreasing fee
+        // pool中两个依赖的tx，有着降低的fee
 
         {
             let mut pool2 = pool.clone();
@@ -665,11 +711,13 @@ mod tests {
             assert_eq!(removed.len(), 1);
             assert_eq!(pool2.len(), 1);
             // descendant got popped
+            // descendant被弹出
             assert!(pool2.contains(root_tx.id()));
             assert!(!pool2.contains(descendant_tx.id()));
         }
 
         // remove root transaction via fee
+        // 通过vee移除root tx
         let removed = pool.update_base_fee((root_tx.max_fee_per_gas() + 1) as u64);
         assert_eq!(removed.len(), 2);
         assert!(pool.is_empty());
@@ -688,12 +736,14 @@ mod tests {
         pool.add_transaction(f.validated_arc(t2), 0);
 
         // First transaction should be evicted.
+        // 第一个tx应该被移除
         assert_eq!(
             pool.highest_nonces.values().min().map(|tx| *tx.transaction.hash()),
             Some(*t.hash())
         );
 
         // truncate pool with max size = 1, ensure it's the same transaction
+        // 将pool截断到max size为1，确保它是同样的tx
         let removed = pool.truncate_pool(SubPoolLimit { max_txs: 1, max_size: usize::MAX });
         assert_eq!(removed.len(), 1);
         assert_eq!(removed[0].hash(), t.hash());
@@ -904,6 +954,7 @@ mod tests {
         let mut pool = PendingPool::new(MockOrdering::default());
 
         // Add a transaction and check if it's in the pool
+        // 添加一个tx并且检查它是否在pool中
         let tx = f.validated_arc(MockTransaction::eip1559());
         pool.add_transaction(tx.clone(), 0);
         assert!(pool.contains(tx.id()));
@@ -922,17 +973,20 @@ mod tests {
         let mut pool = PendingPool::new(MockOrdering::default());
 
         // Add two transactions with different fees
+        // 添加两个txs，有着不同的fees
         let tx1 = f.validated_arc(MockTransaction::eip1559().inc_price());
         let tx2 = f.validated_arc(MockTransaction::eip1559().inc_price_by(20));
         pool.add_transaction(tx1.clone(), 0);
         pool.add_transaction(tx2.clone(), 0);
 
         // Ensure the transactions are in the correct order
+        // 确保txs有着正确的顺序
         let mut best = pool.best();
         assert_eq!(best.next().unwrap().hash(), tx2.hash());
         assert_eq!(best.next().unwrap().hash(), tx1.hash());
 
         // Update the base fee to a value higher than tx1's fee, causing it to be removed
+        // 更新base fee到一个值，高于tx1的fee，导致它被移除
         let removed = pool.update_base_fee((tx1.max_fee_per_gas() + 1) as u64);
         assert_eq!(removed.len(), 1);
         assert_eq!(removed[0].hash(), tx1.hash());
@@ -950,12 +1004,14 @@ mod tests {
         let mut pool = PendingPool::new(MockOrdering::default());
 
         // Add the same transaction twice and ensure it only appears once
+        // 添加同样的tx两次，确保它只会出现一次
         let tx = f.validated_arc(MockTransaction::eip1559());
         pool.add_transaction(tx.clone(), 0);
         assert!(pool.contains(tx.id()));
         assert_eq!(pool.len(), 1);
 
         // Attempt to add the same transaction again, which should be ignored
+        // 试着添加同样的tx，他应该被忽略
         pool.add_transaction(tx, 0);
     }
 
@@ -965,17 +1021,20 @@ mod tests {
         let mut pool = PendingPool::new(MockOrdering::default());
 
         // Add transactions with varying blob fees
+        // 添加txs，有着不同的blob fees
         let tx1 = f.validated_arc(MockTransaction::eip4844().set_blob_fee(50).clone());
         let tx2 = f.validated_arc(MockTransaction::eip4844().set_blob_fee(150).clone());
         pool.add_transaction(tx1.clone(), 0);
         pool.add_transaction(tx2.clone(), 0);
 
         // Update the blob fee to a value that causes tx1 to be removed
+        // 更新blob fee到一个值，导致txs被移除
         let removed = pool.update_blob_fee(100);
         assert_eq!(removed.len(), 1);
         assert_eq!(removed[0].hash(), tx1.hash());
 
         // Verify that only tx2 remains in the pool
+        // 校验只有tx2依然在pool中
         assert!(pool.contains(tx2.id()));
         assert!(!pool.contains(tx1.id()));
     }
@@ -995,11 +1054,13 @@ mod tests {
         // sender C (external) - 2 transactions
 
         // Create transaction chains for senders A, B, C
+        // 创建tx chains，对于senders A, B, C
         let a_txs = MockTransactionSet::sequential_transactions_by_sender(a, 11, TxType::Eip1559);
         let b_txs = MockTransactionSet::sequential_transactions_by_sender(b, 2, TxType::Eip1559);
         let c_txs = MockTransactionSet::sequential_transactions_by_sender(c, 2, TxType::Eip1559);
 
         // create local txs for sender A
+        // 对于sender A创建local txs
         for tx in a_txs.into_vec() {
             let final_tx = Arc::new(f.validated_with_origin(crate::TransactionOrigin::Local, tx));
 
@@ -1007,6 +1068,7 @@ mod tests {
         }
 
         // create external txs for senders B and C
+        // 创建external txs，对于senders B和C
         let remaining_txs = [b_txs.into_vec(), c_txs.into_vec()].concat();
         for tx in remaining_txs {
             let final_tx = f.validated_arc(tx);
@@ -1015,6 +1077,7 @@ mod tests {
         }
 
         // Sanity check, ensuring everything is consistent.
+        // 健康检查，确保所有都一致
         pool.assert_invariants();
 
         let pool_limit = SubPoolLimit { max_txs: 10, max_size: usize::MAX };

@@ -15,33 +15,43 @@ use std::{
 /// A pool of transactions that are currently parked and are waiting for external changes (e.g.
 /// basefee, ancestor transactions, balance) that eventually move the transaction into the pending
 /// pool.
+/// 一个pool的txs，当前处于暂停并且等待外部的改变（例如，basefee，ancestor
+/// txs，balance）最终移动他们到pending pool
 ///
 /// This pool is a bijection: at all times each set (`best`, `by_id`) contains the same
 /// transactions.
+/// 这个pool是双摄的：在所有时间，每个集合（`best`, `by_id`）包含同样的txs
 ///
 /// Note: This type is generic over [`ParkedPool`] which enforces that the underlying transaction
 /// type is [`ValidPoolTransaction`] wrapped in an [Arc].
 #[derive(Debug, Clone)]
 pub struct ParkedPool<T: ParkedOrd> {
     /// Keeps track of transactions inserted in the pool.
+    /// 追踪插入到Pool中的txs
     ///
     /// This way we can determine when transactions were submitted to the pool.
+    /// 这样我们可以决定什么时候txs被插入到Pool
     submission_id: u64,
     /// _All_ Transactions that are currently inside the pool grouped by their identifier.
     by_id: BTreeMap<TransactionId, ParkedPoolTransaction<T>>,
     /// All transactions sorted by their order function.
+    /// 按照order函数排序的所有txs
     ///
     /// The higher, the better.
+    /// 越高越好
     best: BTreeSet<ParkedPoolTransaction<T>>,
     /// Keeps track of last submission id for each sender.
+    /// 追踪每个sender的last submission
     ///
     /// This are sorted in reverse order, so the last (highest) submission id is first, and the
     /// lowest (oldest) is the last.
     last_sender_submission: BTreeSet<SubmissionSenderId>,
     /// Keeps track of the number of transactions in the pool by the sender and the last submission
     /// id.
+    /// 通过sender追踪pool中txs的数目以及最新的submission id
     sender_transaction_count: FxHashMap<SenderId, SenderTransactionCount>,
     /// Keeps track of the size of this pool.
+    /// 追踪pool的大小
     ///
     /// See also [`reth_primitives_traits::InMemorySize::size`].
     size_of: SizeTracker,
@@ -77,6 +87,7 @@ impl<T: ParkedOrd> ParkedPool<T> {
 
     /// Increments the count of transactions for the given sender and updates the tracked submission
     /// id.
+    /// 增加对于给定sender的tx的count并且更新追踪的submission id
     fn add_sender_count(&mut self, sender: SenderId, submission_id: u64) {
         match self.sender_transaction_count.entry(sender) {
             Entry::Occupied(mut entry) => {
@@ -94,12 +105,15 @@ impl<T: ParkedOrd> ParkedPool<T> {
             }
         }
         // insert a new entry
+        // 插入一个新的entry
         self.last_sender_submission.insert(SubmissionSenderId::new(sender, submission_id));
     }
 
     /// Decrements the count of transactions for the given sender.
+    /// 减小给定sender的txs的count
     ///
     /// If the count reaches zero, the sender is removed from the map.
+    /// 如果count到达了0，sender从map中移除
     ///
     /// Note: this does not update the tracked submission id for the sender, because we're only
     /// interested in the __last__ submission id when truncating the pool.
@@ -121,6 +135,7 @@ impl<T: ParkedOrd> ParkedPool<T> {
         };
 
         // all transactions for this sender have been removed
+        // 这个sender的所有txs都已经被移除
         assert!(
             self.last_sender_submission
                 .remove(&SubmissionSenderId::new(sender_id, removed_sender.last_submission_id)),
@@ -136,16 +151,19 @@ impl<T: ParkedOrd> ParkedPool<T> {
     }
 
     /// Removes the transaction from the pool
+    /// 从pool中移除tx
     pub(crate) fn remove_transaction(
         &mut self,
         id: &TransactionId,
     ) -> Option<Arc<ValidPoolTransaction<T::Transaction>>> {
         // remove from queues
+        // 从队列中移除
         let tx = self.by_id.remove(id)?;
         self.best.remove(&tx);
         self.remove_sender_count(tx.transaction.sender_id());
 
         // keep track of size
+        // 追踪size
         self.size_of -= tx.transaction.size();
 
         Some(tx.transaction.into())
@@ -270,8 +288,10 @@ impl<T: ParkedOrd> ParkedPool<T> {
 
 impl<T: PoolTransaction> ParkedPool<BasefeeOrd<T>> {
     /// Returns all transactions that satisfy the given basefee.
+    /// 返回所有的txs，满足给定的basefee
     ///
     /// Note: this does _not_ remove the transactions
+    /// 注意：这不移除txs
     #[allow(dead_code)]
     pub(crate) fn satisfy_base_fee_transactions(
         &self,
@@ -338,6 +358,7 @@ impl<T: ParkedOrd> Default for ParkedPool<T> {
 }
 
 /// Keeps track of the number of transactions and the latest submission id for each sender.
+/// 追踪每个sender的txs的数目以及最新的submission id
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct SenderTransactionCount {
     count: u64,
@@ -477,10 +498,13 @@ macro_rules! impl_ord_wrapper {
 }
 
 /// A new type wrapper for [`ValidPoolTransaction`]
+/// 对于[`ValidPoolTransaction`]的一个新的type wrapper
 ///
 /// This sorts transactions by their base fee.
+/// 通过basefee对txs进行排名
 ///
 /// Caution: This assumes all transaction in the `BaseFee` sub-pool have a fee value.
+/// 注意：这假设在`BaseFee` sub-pool中的所有tx都有一个fee value
 #[derive(Debug)]
 pub struct BasefeeOrd<T: PoolTransaction>(Arc<ValidPoolTransaction<T>>);
 
@@ -583,6 +607,7 @@ mod tests {
     #[test]
     fn truncate_parked_by_submission_id() {
         // this test ensures that we evict from the pending pool by sender
+        // 这个测试确保我们基于sender从pending pool中移除
         let mut f = MockTransactionFactory::default();
         let mut pool = ParkedPool::<BasefeeOrd<_>>::default();
 
@@ -592,6 +617,7 @@ mod tests {
         let d_sender = address!("000000000000000000000000000000000000000d");
 
         // create a chain of transactions by sender A, B, C
+        // 创建一个txs的chain，对于sender A, B, C
         let mut tx_set = MockTransactionSet::dependent(a_sender, 0, 4, TxType::Eip1559);
         let a = tx_set.clone().into_vec();
 
@@ -616,6 +642,7 @@ mod tests {
         // we expect the truncate operation to go through the senders with the most txs, removing
         // txs based on when they were submitted, removing the oldest txs first, until the pool is
         // not over the limit
+        // 首先移除最老的txs，直到pool没有超过Limit
         let expected_removed = vec![
             a[0].clone(),
             a[1].clone(),
@@ -663,9 +690,11 @@ mod tests {
 
         // create a chain of transactions by sender A
         // make sure they are all one over half the limit
+        // 创建sender A的一系列txs，确保他们超过limit的一半
         let a_sender = address!("000000000000000000000000000000000000000a");
 
         // 2 txs, that should put the pool over the size limit but not max txs
+        // 第二个txs，应该放入pool，超过size limt，但是不是最大的txs
         let a_txs = MockTransactionSet::dependent(a_sender, 0, 2, TxType::Eip1559)
             .into_iter()
             .map(|mut tx| {
@@ -762,15 +791,18 @@ mod tests {
         let submission_id = 1;
 
         // Add the sender count to the pool
+        // 添加sender count到pool
         pool.add_sender_count(sender, submission_id);
 
         // Assert that the sender transaction count is updated correctly
+        // 校验sender tx count被正确更新
         assert_eq!(pool.sender_transaction_count.len(), 2);
         let sender_info = pool.sender_transaction_count.get(&sender).unwrap();
         assert_eq!(sender_info.count, 1);
         assert_eq!(sender_info.last_submission_id, submission_id);
 
         // Assert that the last sender submission is updated correctly
+        // 校验最新的sender submission被正确更新
         assert_eq!(pool.last_sender_submission.len(), 2);
         let submission_info = pool.last_sender_submission.iter().next().unwrap();
         assert_eq!(submission_info.sender_id, sender);
@@ -829,6 +861,7 @@ mod tests {
         let sender2: SenderId = 22.into();
 
         // Add the sender counts to the pool
+        // 添加sender count到Pool
         pool.add_sender_count(sender1, 1);
         pool.add_sender_count(sender2, 2);
 
@@ -1036,6 +1069,7 @@ mod tests {
         pool.add_transaction(tx2.clone());
 
         // Check that only the second transaction satisfies the base fee requirement
+        // 检查只有第二个tx满足base fee的要求
         let satisfied = pool.satisfy_base_fee_transactions(150);
         assert_eq!(satisfied.len(), 1);
         assert_eq!(satisfied[0].id(), tx2.id())

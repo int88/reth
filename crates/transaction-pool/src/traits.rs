@@ -992,14 +992,21 @@ impl BestTransactionsAttributes {
 }
 
 /// Trait for transaction types used inside the pool.
+/// 在pool中使用的tx类型的trait
 ///
 /// This supports two transaction formats
+/// 它支持两种格式：
 /// - Consensus format: the form the transaction takes when it is included in a block.
+/// - Consensus格式：当它包含在一个block的时候的格式
 /// - Pooled format: the form the transaction takes when it is gossiping around the network.
+/// - Pooled格式：当它在network中传播的格式
 ///
 /// This distinction is necessary for the EIP-4844 blob transactions, which require an additional
 /// sidecar when they are gossiped around the network. It is expected that the `Consensus` format is
 /// a subset of the `Pooled` format.
+/// 对于EIP-4844 blob
+/// tx，这种区分是必须的，这需要一个额外的sidecar，当他们在network中传播，
+/// 它期望`Consensus`格式是`Pooled`格式的一个子集
 ///
 /// The assumption is that fallible conversion from `Consensus` to `Pooled` will encapsulate
 /// handling of all valid `Consensus` transactions that can't be pooled (e.g Deposit transactions or

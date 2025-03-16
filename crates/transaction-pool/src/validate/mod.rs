@@ -343,6 +343,7 @@ impl<T: PoolTransaction> ValidPoolTransaction<T> {
     }
 
     /// Returns the EIP-1559 Max base fee the caller is willing to pay.
+    /// 返回EIP-1599 Max base fee，caller愿意支付
     ///
     /// For legacy transactions this is `gas_price`.
     pub fn max_fee_per_gas(&self) -> u128 {

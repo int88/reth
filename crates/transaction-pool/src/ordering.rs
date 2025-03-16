@@ -20,20 +20,25 @@ impl<T: Ord + Clone> From<Option<T>> for Priority<T> {
 }
 
 /// Transaction ordering trait to determine the order of transactions.
+/// Transaction ordering trait来决定txs的顺序
 ///
 /// Decides how transactions should be ordered within the pool, depending on a `Priority` value.
+/// 决定txs如何在pool中排序，取决于`Priority` value
 ///
 /// The returned priority must reflect [total order](https://en.wikipedia.org/wiki/Total_order).
 pub trait TransactionOrdering: Send + Sync + 'static {
     /// Priority of a transaction.
+    /// 一个tx的Priority
     ///
     /// Higher is better.
     type PriorityValue: Ord + Clone + Default + fmt::Debug + Send + Sync;
 
     /// The transaction type to determine the priority of.
+    /// 决定tx类型的priority
     type Transaction: PoolTransaction;
 
     /// Returns the priority score for the given transaction.
+    /// 返回对于给定tx的Priority score
     fn priority(
         &self,
         transaction: &Self::Transaction,

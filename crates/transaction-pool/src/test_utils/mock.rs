@@ -569,6 +569,7 @@ impl MockTransaction {
     }
 
     /// Returns a new transaction with a lower gas price -1
+    /// 返回一个新的tx，有着更低的gas price
     pub fn decr_price(&self) -> Self {
         self.decr_price_by(1)
     }
@@ -1229,6 +1230,7 @@ impl MockTransactionFactory {
     }
 
     /// Validates a [`MockTransaction`] and returns a shared [`Arc<MockValidTx>`].
+    /// 校验一个[`MockTransaction`]并且返回一个共享的[`Arc<MockValidTx>`]
     pub fn validated_arc(&mut self, transaction: MockTransaction) -> Arc<MockValidTx> {
         Arc::new(self.validated(transaction))
     }
@@ -1572,11 +1574,14 @@ impl MockTransactionSet {
     }
 
     /// Creates a series of dependent transactions for a given sender and nonce.
+    /// 创建一系列依赖的txs，对于给定的sender和nonce
     ///
     /// This method generates a sequence of transactions starting from the provided nonce
     /// for the given sender.
+    /// 这个方法产生了一系列的txs，从提供的nonce开始，对于给定的sender
     ///
     /// The number of transactions created is determined by `tx_count`.
+    /// 创建的txs的数目取决于`tx_count`
     pub fn dependent(sender: Address, from_nonce: u64, tx_count: usize, tx_type: TxType) -> Self {
         let mut txs = Vec::with_capacity(tx_count);
         let mut curr_tx =
