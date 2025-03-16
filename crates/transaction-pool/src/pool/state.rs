@@ -86,6 +86,7 @@ pub enum SubPool {
     /// 因为没有达到base fee的要求
     BaseFee,
     /// The blob sub-pool contains all blob transactions that are __not__ pending.
+    /// blob sub-pool包含所有的blob txs，当前不是pending
     Blob,
     /// The pending sub-pool contains transactions that are ready to be included in the next block.
     Pending,

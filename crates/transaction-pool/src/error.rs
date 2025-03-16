@@ -201,6 +201,7 @@ pub enum Eip7702PoolTransactionError {
 }
 
 /// Represents errors that can happen when validating transactions for the pool
+/// 代表校验pool中的txs的错误
 ///
 /// See [`TransactionValidator`](crate::TransactionValidator).
 #[derive(Debug, thiserror::Error)]

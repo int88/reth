@@ -110,6 +110,7 @@ impl TransactionId {
     }
 
     /// Returns the [`TransactionId`] that directly follows this transaction: `self.nonce + 1`
+    /// 返回直接跟随这个tx的[`TransactionId`]：`self.nonce + 1`
     pub const fn descendant(&self) -> Self {
         Self::new(self.sender, self.next_nonce())
     }

@@ -98,34 +98,45 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Returns an iterator over all transactions that are _currently_ ready.
+    /// 返回一个iterator，遍历所有处于ready
     ///
     /// 1. The iterator _always_ returns transactions in order: it never returns a transaction with
     ///    an unsatisfied dependency and only returns them if dependency transaction were yielded
     ///    previously. In other words: the nonces of transactions with the same sender will _always_
     ///    increase by exactly 1.
+    /// 1. iterator总是按顺序返回txs：它从不返回不满足依赖的tx并且只返回他们，
+    ///    如果依赖的tx之前已经产生，换句话说，有着同样sender的txs的nonce总是正好增加1
     ///
     /// The order of transactions which satisfy (1.) is determined by their computed priority: a
     /// transaction with a higher priority is returned before a transaction with a lower priority.
+    /// txs返回的顺序总是满足：1.
+    /// 取决于他们计算的priority：一个tx有着更高的priority在有着更低的priority返回
     ///
     /// If two transactions have the same priority score, then the transactions which spent more
     /// time in pool (were added earlier) are returned first.
+    /// 如果两个txs有着同样的priority score，那么在Pool中呆了更长时间的会先返回
     ///
     /// NOTE: while this iterator returns transaction that pool considers valid at this point, they
     /// could potentially be become invalid at point of execution. Therefore, this iterator
     /// provides a way to mark transactions that the consumer of this iterator considers invalid. In
     /// which case the transaction's subgraph is also automatically marked invalid, See (1.).
     /// Invalid transactions are skipped.
+    /// 注意：尽管这个iterator返回在当时看起来合法的tx，他们可能在执行的时候变得非法，因此，
+    /// 这个iterator提供了一种方法来标记tx，当consumer认为它非法，这时候，
+    /// tx的subgraph也自动标记为非法
     pub fn best(&self) -> BestTransactions<T> {
         BestTransactions {
             all: self.by_id.clone(),
             independent: self.independent_transactions.values().cloned().collect(),
             invalid: Default::default(),
+            // 订阅new tx
             new_transaction_receiver: Some(self.new_transaction_notifier.subscribe()),
             skip_blobs: false,
         }
     }
 
     /// Same as `best` but only returns transactions that satisfy the given basefee and blobfee.
+    /// 和`best`相同，但是只返回满足给定base fee和blob fee的txs
     pub(crate) fn best_with_basefee_and_blobfee(
         &self,
         base_fee: u64,
@@ -310,6 +321,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     /// # Panics
     ///
     /// if the transaction is already included
+    /// 如果tx已经被包含了，则panic
     pub fn add_transaction(
         &mut self,
         tx: Arc<ValidPoolTransaction<T::Transaction>>,
@@ -550,6 +562,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
     }
 
     /// Returns `true` if the transaction with the given id is already included in this pool.
+    /// 返回`true`，如果给定id的tx已经包含在这个pool中
     pub(crate) fn contains(&self, id: &TransactionId) -> bool {
         self.by_id.contains_key(id)
     }
@@ -610,6 +623,7 @@ pub(crate) struct PendingTransaction<T: TransactionOrdering> {
 
 impl<T: TransactionOrdering> PendingTransaction<T> {
     /// The next transaction of the sender: `nonce + 1`
+    /// sender的下一个tx：`nonce + 1`
     pub(crate) fn unlocks(&self) -> TransactionId {
         self.transaction.transaction_id.descendant()
     }

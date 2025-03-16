@@ -826,6 +826,7 @@ pub type BestTransactionsFor<Pool> = Box<
 >;
 
 /// An `Iterator` that only returns transactions that are ready to be executed.
+/// 一个`Iterator`只返回准备好被执行的txs
 ///
 /// This makes no assumptions about the order of the transactions, but expects that _all_
 /// transactions are valid (no nonce gaps.) for the tracked state of the pool.

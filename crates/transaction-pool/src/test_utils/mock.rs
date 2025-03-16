@@ -407,6 +407,7 @@ impl MockTransaction {
     }
 
     /// Sets the max fee per blob gas for EIP-4844 transactions,
+    /// 对于EIP-4844 txs设置最大的fee，对于blob gas
     pub fn with_blob_fee(mut self, val: u128) -> Self {
         self.set_blob_fee(val);
         self

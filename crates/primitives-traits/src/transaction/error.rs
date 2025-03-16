@@ -40,6 +40,7 @@ pub enum InvalidTransactionError {
     #[error("EIP-7702 transactions are disabled")]
     Eip7702Disabled,
     /// Thrown if a transaction is not supported in the current network configuration.
+    /// 被抛弃，如果一个tx不再当前的Network配置中支持
     #[error("transaction type not supported")]
     TxTypeNotSupported,
     /// The calculated gas of the transaction exceeds `u64::MAX`.

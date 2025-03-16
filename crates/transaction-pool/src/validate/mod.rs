@@ -312,6 +312,7 @@ impl<T: PoolTransaction> ValidPoolTransaction<T> {
     }
 
     /// Returns the internal identifier for this transaction.
+    /// 返回这个tx的internal id
     pub(crate) const fn id(&self) -> &TransactionId {
         &self.transaction_id
     }
@@ -346,6 +347,7 @@ impl<T: PoolTransaction> ValidPoolTransaction<T> {
     /// 返回EIP-1599 Max base fee，caller愿意支付
     ///
     /// For legacy transactions this is `gas_price`.
+    /// 对于legacy txs，这是`gas_price`
     pub fn max_fee_per_gas(&self) -> u128 {
         self.transaction.max_fee_per_gas()
     }
