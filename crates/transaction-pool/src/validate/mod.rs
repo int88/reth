@@ -29,15 +29,19 @@ pub use constants::{
 use reth_primitives_traits::Block;
 
 /// A Result type returned after checking a transaction's validity.
+/// 在检查一个tx的合法性之后返回的结果类型
 #[derive(Debug)]
 pub enum TransactionValidationOutcome<T: PoolTransaction> {
     /// The transaction is considered _currently_ valid and can be inserted into the pool.
+    /// tx当前被认为是合法的并且可以插入到pool中
     Valid {
         /// Balance of the sender at the current point.
         balance: U256,
         /// Current nonce of the sender.
+        /// sender当前的nonce
         state_nonce: u64,
         /// The validated transaction.
+        /// 合法的tx
         ///
         /// See also [`ValidTransaction`].
         ///
@@ -49,8 +53,10 @@ pub enum TransactionValidationOutcome<T: PoolTransaction> {
     },
     /// The transaction is considered invalid indefinitely: It violates constraints that prevent
     /// this transaction from ever becoming valid.
+    /// tx被认为永远非法了，它违反了限制，让这个tx永远不会合法
     Invalid(T, InvalidPoolTransactionError),
     /// An error occurred while trying to validate the transaction
+    /// 在校验tx时发生的错误
     Error(TxHash, Box<dyn core::error::Error + Send + Sync>),
 }
 
@@ -96,6 +102,7 @@ pub enum ValidTransaction<T> {
     /// A valid transaction without a sidecar.
     Valid(T),
     /// A valid transaction for which a sidecar should be stored.
+    /// 一个合法的tx，sidecar应该被存储
     ///
     /// Caution: The [`TransactionValidator`] must ensure that this is only returned for EIP-4844
     /// transactions.

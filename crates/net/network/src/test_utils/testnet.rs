@@ -184,6 +184,7 @@ where
     Pool: TransactionPool,
 {
     /// Installs an eth pool on each peer
+    /// 为每个peer安装一个eth pool
     pub fn with_eth_pool(self) -> Testnet<C, EthTransactionPool<C, InMemoryBlobStore>> {
         self.map_pool(|peer| {
             let blob_store = InMemoryBlobStore::default();
@@ -460,6 +461,7 @@ where
     }
 
     /// Set a new transactions manager that's connected to the peer's network
+    /// 设置一个新的txs manager，连接到peer的network
     pub fn map_transactions_manager<P>(self, pool: P) -> Peer<C, P>
     where
         P: TransactionPool,

@@ -123,6 +123,7 @@ pub struct TxPool<T: TransactionOrdering> {
     /// fee或者blob fee改变他们的favor
     blob_pool: BlobTransactions<T::Transaction>,
     /// All transactions in the pool.
+    /// pool中的所有txs
     all_transactions: AllTransactions<T::Transaction>,
     /// Transaction pool metrics
     metrics: TxPoolMetrics,
@@ -615,10 +616,13 @@ impl<T: TransactionOrdering> TxPool<T> {
     /// 添加tx到Pool
     ///
     /// This pool consists of four sub-pools: `Queued`, `Pending`, `BaseFee`, and `Blob`.
+    /// pool包含四个sub-pools：`Queued`，`Pending`，`BaseFee`以及`Blob`
     ///
     /// The `Queued` pool contains transactions with gaps in its dependency tree: It requires
     /// additional transactions that are note yet present in the pool. And transactions that the
     /// sender can not afford with the current balance.
+    /// `Queued` pool包含txs，在dependeny
+    /// tree中有gaps：它需要额外的txs，但是在pool中不存在，或者txs当前sender还不能承受当前的balance
     ///
     /// The `Pending` pool contains all transactions that have no nonce gaps, and can be afforded by
     /// the sender. It only contains transactions that are ready to be included in the pending
@@ -626,17 +630,26 @@ impl<T: TransactionOrdering> TxPool<T> {
     /// necessarily independently. However, this pool never contains transactions with nonce gaps. A
     /// transaction is considered `ready` when it has the lowest nonce of all transactions from the
     /// same sender. Which is equals to the chain nonce of the sender in the pending pool.
+    /// `Pending` pool包含所有的txs，没有nonce gap，并且sender可以承受。它只包含能包含进pending
+    /// block的txs，pending
+    /// pool包含所有当前罗列的txs，但是不一定要是独立的，然而，这个pool不能包含有nonce gaps的txs
     ///
     /// The `BaseFee` pool contains transactions that currently can't satisfy the dynamic fee
     /// requirement. With EIP-1559, transactions can become executable or not without any changes to
     /// the sender's balance or nonce and instead their `feeCap` determines whether the
     /// transaction is _currently_ (on the current state) ready or needs to be parked until the
     /// `feeCap` satisfies the block's `baseFee`.
+    /// `BaseFee` pool包含txs当前不满足dynamic
+    /// fee的要求，对于EIP-1559，txs可以变为可执行，不要任何sender的balance或者Nonce的改变，
+    /// 而是他们的`freeCap`决定tx当前处于ready还是需要被parked直到`feeCap`满足block的`baseFee`
     ///
     /// The `Blob` pool contains _blob_ transactions that currently can't satisfy the dynamic fee
     /// requirement, or blob fee requirement. Transactions become executable only if the
     /// transaction `feeCap` is greater than the block's `baseFee` and the `maxBlobFee` is greater
     /// than the block's `blobFee`.
+    /// `Blob` pool包含blob txs，当前不满足dynamic fee要求或者blob
+    /// fee要求，tx变为可执行，
+    /// 只有tx的`feeCap`大于block的`baseFee`并且`maxBlobFee`大于block的`blobFee`
     pub(crate) fn add_transaction(
         &mut self,
         tx: ValidPoolTransaction<T::Transaction>,
@@ -657,8 +670,10 @@ impl<T: TransactionOrdering> TxPool<T> {
         match self.all_transactions.insert_tx(tx, on_chain_balance, on_chain_nonce) {
             Ok(InsertOk { transaction, move_to, replaced_tx, updates, .. }) => {
                 // replace the new tx and remove the replaced in the subpool(s)
+                // 替换新的tx并且移除replaced，从subpool
                 self.add_new_transaction(transaction.clone(), replaced_tx.clone(), move_to);
                 // Update inserted transactions metric
+                // 更新插入的txs的metric
                 self.metrics.inserted_transactions.increment(1);
                 let UpdateOutcome { promoted, discarded } = self.process_updates(updates);
 
@@ -1137,6 +1152,7 @@ pub(crate) struct AllTransactions<T: PoolTransaction> {
     /// _All_ transactions identified by their hash.
     by_hash: HashMap<TxHash, Arc<ValidPoolTransaction<T>>>,
     /// _All_ transaction in the pool sorted by their sender and nonce pair.
+    /// pool中所有的tx，按照sender和nonce对排序
     txs: BTreeMap<TransactionId, PoolInternalTransaction<T>>,
     /// Tracks the number of transactions by sender that are currently in the pool.
     /// 追踪当前在pool中的txs的数目，基于sender
@@ -1668,6 +1684,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     ///
     /// The replacement candidate must satisfy given price bump constraints: replacement candidate
     /// must not be underpriced
+    /// replacement candidate必须满足给定的price bump限制：replace
     pub(crate) fn insert_tx(
         &mut self,
         transaction: ValidPoolTransaction<T>,
@@ -1736,6 +1753,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         }
 
         // placeholder for the replaced transaction, if any
+        // 对于替换的tx的placeholder，如果有的话
         let mut replaced_tx = None;
 
         let pool_tx = PoolInternalTransaction {
@@ -1936,6 +1954,7 @@ pub(crate) enum InsertErr<T: PoolTransaction> {
     /// insertion.
     Overdraft { transaction: Arc<ValidPoolTransaction<T>> },
     /// The transactions feeCap is lower than the chain's minimum fee requirement.
+    /// tx的freeCap低于chain的minimum fee要求
     ///
     /// See also [`MIN_PROTOCOL_BASE_FEE`]
     FeeCapBelowMinimumProtocolFeeCap { transaction: Arc<ValidPoolTransaction<T>>, fee_cap: u128 },

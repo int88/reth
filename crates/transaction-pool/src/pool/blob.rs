@@ -10,24 +10,32 @@ use std::{
 };
 
 /// A set of validated blob transactions in the pool that are __not pending__.
+/// 一系列的校验后的blob txs，在Pool中，处于非pending状态
 ///
 /// The purpose of this pool is to keep track of blob transactions that are queued and to evict the
 /// worst blob transactions once the sub-pool is full.
+/// 这个pool的目的是追踪排队的blob txs并且驱逐最差的blob tx，一旦sub-pool满了之后
 ///
 /// This expects that certain constraints are met:
 ///   - blob transactions are always gap less
+/// 期望特定条件满足：
+///   - blob txs总是gap less
 pub(crate) struct BlobTransactions<T: PoolTransaction> {
     /// Keeps track of transactions inserted in the pool.
     ///
     /// This way we can determine when transactions were submitted to the pool.
     submission_id: u64,
     /// _All_ Transactions that are currently inside the pool grouped by their identifier.
+    /// 所有当前在pool中的txs，按照他们的id聚合
     by_id: BTreeMap<TransactionId, BlobTransaction<T>>,
     /// _All_ transactions sorted by blob priority.
+    /// 所有的txs，按照blob priority排序
     all: BTreeSet<BlobTransaction<T>>,
     /// Keeps track of the current fees, so transaction priority can be calculated on insertion.
+    /// 追踪当前的fees，因此tx priority可以在插入的时候计算
     pending_fees: PendingFees,
     /// Keeps track of the size of this pool.
+    /// 追踪Pool的size
     ///
     /// See also [`reth_primitives_traits::InMemorySize::size`].
     size_of: SizeTracker,
@@ -37,11 +45,14 @@ pub(crate) struct BlobTransactions<T: PoolTransaction> {
 
 impl<T: PoolTransaction> BlobTransactions<T> {
     /// Adds a new transactions to the pending queue.
+    /// 添加一个新的txs到pending queue
     ///
     /// # Panics
     ///
     ///   - If the transaction is not a blob tx.
+    ///   - 如果tx不是blob tx则panic
     ///   - If the transaction is already included.
+    ///   - 如果tx已经包含了，则panic
     pub(crate) fn add_transaction(&mut self, tx: Arc<ValidPoolTransaction<T>>) {
         assert!(tx.is_eip4844(), "transaction is not a blob tx");
         let id = *tx.id();
@@ -52,6 +63,7 @@ impl<T: PoolTransaction> BlobTransactions<T> {
         self.size_of += tx.size();
 
         // set transaction, which will also calculate priority based on current pending fees
+        // 设置tx，这也会计算priority，基于当前的pending fees
         let transaction = BlobTransaction::new(tx, submission_id, &self.pending_fees);
 
         self.by_id.insert(id, transaction.clone());
@@ -65,6 +77,7 @@ impl<T: PoolTransaction> BlobTransactions<T> {
     }
 
     /// Removes the transaction from the pool
+    /// 从Pool中移除tx
     pub(crate) fn remove_transaction(
         &mut self,
         id: &TransactionId,
@@ -75,6 +88,7 @@ impl<T: PoolTransaction> BlobTransactions<T> {
         self.all.remove(&tx);
 
         // keep track of size
+        // 追踪size
         self.size_of -= tx.transaction.size();
 
         Some(tx.transaction)
@@ -169,6 +183,7 @@ impl<T: PoolTransaction> BlobTransactions<T> {
     }
 
     /// Resorts the transactions in the pool based on the pool's current [`PendingFees`].
+    /// 重新对Pool中的txs排序，基于pool当前的[`PendingFees`]
     pub(crate) fn reprioritize(&mut self) {
         // mem::take to modify without allocating, then collect to rebuild the BTreeSet
         self.all = std::mem::take(&mut self.all)
@@ -233,6 +248,7 @@ impl<T: PoolTransaction> BlobTransactions<T> {
     }
 
     /// Returns `true` if the transaction with the given id is already included in this pool.
+    /// 返回`true`，如果给定id的tx已经在Pool中存在
     pub(crate) fn contains(&self, id: &TransactionId) -> bool {
         self.by_id.contains_key(id)
     }
@@ -262,17 +278,21 @@ impl<T: PoolTransaction> Default for BlobTransactions<T> {
 }
 
 /// A transaction that is ready to be included in a block.
+/// 一个tx准备好被包含进一个block
 #[derive(Debug)]
 struct BlobTransaction<T: PoolTransaction> {
     /// Actual blob transaction.
+    /// 真正的blob tx
     transaction: Arc<ValidPoolTransaction<T>>,
     /// The value that determines the order of this transaction.
+    /// 这个value决定这个tx的顺讯
     ord: BlobOrd,
 }
 
 impl<T: PoolTransaction> BlobTransaction<T> {
     /// Creates a new blob transaction, based on the pool transaction, submission id, and current
     /// pending fees.
+    /// 创建一个新的blob tx，基于pool tx，submission id以及当前的pending fees
     pub(crate) fn new(
         transaction: Arc<ValidPoolTransaction<T>>,
         submission_id: u64,
@@ -289,6 +309,7 @@ impl<T: PoolTransaction> BlobTransaction<T> {
     }
 
     /// Updates the priority for the transaction based on the current pending fees.
+    /// 更新tx的priority，基于当前的pending fees
     pub(crate) fn update_priority(&mut self, pending_fees: &PendingFees) {
         self.ord.priority = blob_tx_priority(
             pending_fees.blob_fee,
@@ -704,10 +725,12 @@ mod tests {
         assert_eq!(pool.size(), 0);
 
         // Attempt to remove a non-existent transaction
+        // 试着移除一个不存在的tx
         let non_existent_id = TransactionId::new(0.into(), 0);
         assert!(pool.remove_transaction(&non_existent_id).is_none());
 
         // Check contains method on empty pool
+        // 检查empty pool中的contains方法
         assert!(!pool.contains(&non_existent_id));
     }
 
@@ -741,6 +764,7 @@ mod tests {
     #[should_panic(expected = "transaction is not a blob tx")]
     fn test_add_non_blob_transaction() {
         // Ensure that adding a non-blob transaction causes a panic
+        // 确保添加一个non-blob tx应该导致一个panic
         let mut factory = MockTransactionFactory::default();
         let mut pool = BlobTransactions::default();
         let tx = factory.validated_arc(MockTransaction::eip1559()); // Not a blob transaction
@@ -751,6 +775,7 @@ mod tests {
     #[should_panic(expected = "transaction already included")]
     fn test_add_duplicate_blob_transaction() {
         // Ensure that adding a duplicate blob transaction causes a panic
+        // 确保添加一个重复的blob tx会导致一个panic
         let mut factory = MockTransactionFactory::default();
         let mut pool = BlobTransactions::default();
         let tx = factory.validated_arc(MockTransaction::eip4844());
@@ -761,6 +786,7 @@ mod tests {
     #[test]
     fn test_remove_transactions_until_limit() {
         // Test truncating the pool until it satisfies the given size limit
+        // 测试对pool进行截断，直到它满足给定的size limit
         let mut factory = MockTransactionFactory::default();
         let mut pool = BlobTransactions::default();
         let tx1 = factory.validated_arc(MockTransaction::eip4844().with_size(100));
@@ -773,10 +799,12 @@ mod tests {
         pool.add_transaction(tx3);
 
         // Set a size limit that requires truncation
+        // 设置一个size limit，需要截断
         let limit = SubPoolLimit { max_txs: 2, max_size: 300 };
         let removed = pool.truncate_pool(limit);
 
         // Check that only one transaction was removed to satisfy the limit
+        // 检查只有一个tx被移除从而满足limit
         assert_eq!(removed.len(), 1);
         assert_eq!(pool.len(), 2);
         assert!(pool.size() <= limit.max_size);

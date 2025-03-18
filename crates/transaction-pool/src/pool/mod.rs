@@ -501,10 +501,13 @@ where
                 let hash = *added.hash();
 
                 // transaction was successfully inserted into the pool
+                // tx被成功插入到Pool
                 if let Some(sidecar) = maybe_sidecar {
                     // notify blob sidecar listeners
+                    // 通知blob sidecar listener
                     self.on_new_blob_sidecar(&hash, &sidecar);
                     // store the sidecar in the blob store
+                    // 存储sidecar到blob store
                     self.insert_blob(hash, sidecar);
                 }
 
@@ -1103,15 +1106,20 @@ struct BlobTransactionSidecarListener {
 }
 
 /// Tracks an added transaction and all graph changes caused by adding it.
+/// 追踪一个被添加的tx以及所有的graph changes，由于添加它导致的
 #[derive(Debug, Clone)]
 pub struct AddedPendingTransaction<T: PoolTransaction> {
     /// Inserted transaction.
+    /// 插入的tx
     transaction: Arc<ValidPoolTransaction<T>>,
     /// Replaced transaction.
+    /// 替换的tx
     replaced: Option<Arc<ValidPoolTransaction<T>>>,
     /// transactions promoted to the pending queue
+    /// tx被提升到pending queue
     promoted: Vec<Arc<ValidPoolTransaction<T>>>,
     /// transactions that failed and became discarded
+    /// tx变为非法并且被丢弃的
     discarded: Vec<Arc<ValidPoolTransaction<T>>>,
 }
 
@@ -1225,6 +1233,7 @@ impl<T: PoolTransaction> AddedTransaction<T> {
     }
 
     /// Returns the discarded transactions if there were any
+    /// 返回被丢弃的txs，如果有的话
     pub(crate) fn discarded_transactions(&self) -> Option<&[Arc<ValidPoolTransaction<T>>]> {
         match self {
             Self::Pending(tx) => Some(&tx.discarded),
@@ -1246,6 +1255,7 @@ impl<T: PoolTransaction> AddedTransaction<T> {
     }
 
     /// Converts this type into the event type for listeners
+    /// 将这个类型转换为event类型，对于listener
     pub(crate) fn into_new_transaction_event(self) -> NewTransactionEvent<T> {
         match self {
             Self::Pending(tx) => {

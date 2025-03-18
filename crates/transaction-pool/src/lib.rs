@@ -242,7 +242,9 @@ where
     S: BlobStore,
 {
     /// Create a new transaction pool instance.
+    /// 创建一个新的tx pool的实例
     pub fn new(validator: V, ordering: T, blob_store: S, config: PoolConfig) -> Self {
+        // 构建pool inner
         Self { pool: Arc::new(PoolInner::new(validator, ordering, blob_store, config)) }
     }
 
@@ -314,6 +316,8 @@ where
 {
     /// Returns a new [`Pool`] that uses the default [`TransactionValidationTaskExecutor`] when
     /// validating [`EthPooledTransaction`]s and ords via [`CoinbaseTipOrdering`]
+    /// 返回一个新的[`Pool`]，使用默认的[`TransactionValidationTaskExecutor`]，
+    /// 当校验[`EthPooledTransaction`]以及通过[`CoinbaseTipOrdering`]排序
     ///
     /// # Example
     ///
