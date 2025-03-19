@@ -693,6 +693,7 @@ impl<T: TransactionOrdering> TxPool<T> {
                 };
 
                 // Update size metrics after adding and potentially moving transactions.
+                // 更新size metrics，在增加以及可能地移除了txs之后
                 self.update_size_metrics();
 
                 Ok(res)
@@ -1254,6 +1255,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Updates the size metrics
+    /// 更新size metrics
     pub(crate) fn update_size_metrics(&self) {
         self.metrics.all_transactions_by_hash.set(self.by_hash.len() as f64);
         self.metrics.all_transactions_by_id.set(self.txs.len() as f64);
@@ -1489,6 +1491,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns all mutable transactions that _follow_ after the given id but have the same sender.
+    /// 返回所有可变的txs，在给定id之后，但是有同样的sender
     ///
     /// NOTE: The range is _inclusive_: if the transaction that belongs to `id` it field be the
     /// first value.
@@ -1768,15 +1771,18 @@ impl<T: PoolTransaction> AllTransactions<T> {
         match self.txs.entry(*transaction.id()) {
             Entry::Vacant(entry) => {
                 // Insert the transaction in both maps
+                // 在maps都插入tx
                 self.by_hash.insert(*pool_tx.transaction.hash(), pool_tx.transaction.clone());
                 entry.insert(pool_tx);
             }
             Entry::Occupied(mut entry) => {
                 // Transaction with the same nonce already exists: replacement candidate
+                // tx有着同样nonce的已经存在，替换candidate
                 let existing_transaction = entry.get().transaction.as_ref();
                 let maybe_replacement = transaction.as_ref();
 
                 // Ensure the new transaction is not underpriced
+                // 确保新的tx没有underpriced
                 if existing_transaction.is_underpriced(maybe_replacement, &self.price_bumps) {
                     return Err(InsertErr::Underpriced {
                         transaction: pool_tx.transaction,
@@ -1789,48 +1795,61 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 self.by_hash.remove(replaced.transaction.hash());
                 self.by_hash.insert(new_hash, new_transaction);
                 // also remove the hash
+                // 也移除hash
                 replaced_tx = Some((replaced.transaction, replaced.subpool));
             }
         }
 
         // The next transaction of this sender
+        // 这个sender的next tx
         let on_chain_id = TransactionId::new(transaction.sender_id(), on_chain_nonce);
         {
             // Tracks the next nonce we expect if the transactions are gapless
+            // 追踪下一个nonce，如果tx是gapless
             let mut next_nonce = on_chain_id.nonce;
 
             // We need to find out if the next transaction of the sender is considered pending
+            // 我们需要找到sender的下一个tx，是否为Pending
             // The direct descendant has _no_ parked ancestors because the `on_chain_nonce` is
             // pending, so we can set this to `false`
+            // 直接的descendant没有parked
+            // ancestor，因为`on_chain_nonce`是pending，因此我们可以设置为`false`
             let mut has_parked_ancestor = false;
 
             // Traverse all future transactions of the sender starting with the on chain nonce, and
             // update existing transactions: `[on_chain_nonce,..]`
+            // 遍历sender的所有的future
             for (id, tx) in self.descendant_txs_mut(&on_chain_id) {
                 let current_pool = tx.subpool;
 
                 // If there's a nonce gap, we can shortcircuit
+                // 如果有nonce gap，我们可以短路
                 if next_nonce != id.nonce {
                     break
                 }
 
                 // close the nonce gap
+                // 关闭nonce gap
                 tx.state.insert(TxState::NO_NONCE_GAPS);
 
                 // set cumulative cost
+                // 设置累计的cost
                 tx.cumulative_cost = cumulative_cost;
 
                 // Update for next transaction
+                // 更新下一个tx
                 cumulative_cost = tx.next_cumulative_cost();
 
                 if cumulative_cost > on_chain_balance {
                     // sender lacks sufficient funds to pay for this transaction
+                    // sender缺乏足够的funds来支付这个tx
                     tx.state.remove(TxState::ENOUGH_BALANCE);
                 } else {
                     tx.state.insert(TxState::ENOUGH_BALANCE);
                 }
 
                 // Update ancestor condition.
+                // 更新ancestor的情况
                 if has_parked_ancestor {
                     tx.state.remove(TxState::NO_PARKED_ANCESTORS);
                 } else {
@@ -1839,13 +1858,16 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 has_parked_ancestor = !tx.state.is_pending();
 
                 // update the pool based on the state
+                // 更新pool基于state
                 tx.subpool = tx.state.into();
 
                 if inserted_tx_id.eq(id) {
                     // if it is the new transaction, track its updated state
+                    // 如果这是新的tx，追踪它的updated state
                     state = tx.state;
                 } else {
                     // check if anything changed
+                    // 检查是否有任何的改变
                     if current_pool != tx.subpool {
                         updates.push(PoolUpdate {
                             id: *id,
@@ -1857,6 +1879,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
                 }
 
                 // increment for next iteration
+                // 增加用于下次迭代
                 next_nonce = id.next_nonce();
             }
         }
@@ -1943,6 +1966,7 @@ pub(crate) type InsertResult<T> = Result<InsertOk<T>, InsertErr<T>>;
 #[derive(Debug)]
 pub(crate) enum InsertErr<T: PoolTransaction> {
     /// Attempted to replace existing transaction, but was underpriced
+    /// 试着移除已经存在的tx，但是underpriced
     Underpriced {
         transaction: Arc<ValidPoolTransaction<T>>,
         #[allow(dead_code)]

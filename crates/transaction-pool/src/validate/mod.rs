@@ -413,10 +413,13 @@ impl<T: PoolTransaction> ValidPoolTransaction<T> {
 
     /// Determines whether a candidate transaction (`maybe_replacement`) is underpriced compared to
     /// an existing transaction in the pool.
+    /// 决定是否一个candidate tx（`maybe_replacement`）是处于underpriced，和pool中已经存在的tx相比
     ///
     /// A transaction is considered underpriced if it doesn't meet the required fee bump threshold.
+    /// 一个tx被认为是underpriced，如果它不满足需要的fee bump threshold
     /// This applies to both standard gas fees and, for blob-carrying transactions (EIP-4844),
     /// the blob-specific fees.
+    /// 它同时应用于标准的gas fee以及blob-carring txs的blob特定的fees
     #[inline]
     pub(crate) fn is_underpriced(
         &self,

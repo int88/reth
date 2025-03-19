@@ -5,20 +5,27 @@ bitflags::bitflags! {
     /// This mirrors [erigon's ephemeral state field](https://github.com/ledgerwatch/erigon/wiki/Transaction-Pool-Design#ordering-function).
     ///
     /// The [SubPool] the transaction belongs to is derived from its state and determined by the following sequential checks:
+    /// 这个tx属于的[SubPool]属于它的state并且按照如下顺序决定
     ///
     /// - If it satisfies the [TxState::PENDING_POOL_BITS] it belongs in the pending sub-pool: [SubPool::Pending].
+    /// - 如果它满足[TxState::PENDING_POOL_BITS]，它属于pending sub-pool
     /// - If it is an EIP-4844 blob transaction it belongs in the blob sub-pool: [SubPool::Blob].
+    /// - 如果这是一个EIP-4844 blob tx，它属于blob sub-pool
     /// - If it satisfies the [TxState::BASE_FEE_POOL_BITS] it belongs in the base fee sub-pool: [SubPool::BaseFee].
+    /// - 如果它满足[TxState::BASE_FEE_POOL_BITS]，它属于base fee sub-pool
     ///
     /// Otherwise, it belongs in the queued sub-pool: [SubPool::Queued].
+    /// 否则，它属于queued subpool
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PartialOrd, Ord)]
     pub(crate) struct TxState: u8 {
         /// Set to `1` if all ancestor transactions are pending.
+        /// 设置为`1`如果所有的ancestor txs都是pending
         const NO_PARKED_ANCESTORS = 0b10000000;
         /// Set to `1` of the transaction is either the next transaction of the sender (on chain nonce == tx.nonce) or all prior transactions are also present in the pool.
         /// sender的下一个tx和之前所有的txs都在pool中了
         const NO_NONCE_GAPS = 0b01000000;
         /// Bit derived from the sender's balance.
+        /// 基于sender的balance衍生而来
         ///
         /// Set to `1` if the sender's balance can cover the maximum cost for this transaction (`feeCap * gasLimit + value`).
         /// This includes cumulative costs of prior transactions, which ensures that the sender has enough funds for all max cost of prior transactions.
