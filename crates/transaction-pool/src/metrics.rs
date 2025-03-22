@@ -63,6 +63,7 @@ pub struct TxPoolMetrics {
 }
 
 /// Transaction pool blobstore metrics
+/// txpool的blobstore的metrics
 #[derive(Metrics)]
 #[metrics(scope = "transaction_pool")]
 pub struct BlobStoreMetrics {
@@ -73,6 +74,7 @@ pub struct BlobStoreMetrics {
     /// The number of bytes the blobs in the blobstore take up
     pub(crate) blobstore_byte_size: Gauge,
     /// How many blobs are currently in the blobstore
+    /// 当前处在blobstore的blob数目
     pub(crate) blobstore_entries: Gauge,
 }
 
@@ -116,6 +118,7 @@ impl MaintainPoolMetrics {
 }
 
 /// All Transactions metrics
+/// 所有txs的metrics
 #[derive(Metrics)]
 #[metrics(scope = "transaction_pool")]
 pub struct AllTransactionsMetrics {
@@ -124,6 +127,7 @@ pub struct AllTransactionsMetrics {
     /// Number of all transactions by id in the pool
     pub(crate) all_transactions_by_id: Gauge,
     /// Number of all transactions by all senders in the pool
+    /// 所有senders的所有txs的数目
     pub(crate) all_transactions_by_all_senders: Gauge,
     /// Number of blob transactions nonce gaps.
     pub(crate) blob_transactions_nonce_gaps: Counter,

@@ -173,6 +173,7 @@ where
     /// Listener对于加入到pool的新的blob tx sidecars的监听
     blob_transaction_sidecar_listener: Mutex<Vec<BlobTransactionSidecarListener>>,
     /// Metrics for the blob store
+    /// 对于blob store的metrcis
     blob_store_metrics: BlobStoreMetrics,
 }
 
@@ -221,6 +222,7 @@ where
     }
 
     /// Returns the internal [`SenderId`] for this address
+    /// 返回这个地址的内部[`SenderId`]
     pub fn get_sender_id(&self, addr: Address) -> SenderId {
         self.identifiers.write().sender_id_or_create(addr)
     }
@@ -232,6 +234,7 @@ where
 
     /// Converts the changed accounts to a map of sender ids to sender info (internal identifier
     /// used for accounts)
+    /// 转换changed accounts到一个map of sender ids到sender info
     fn changed_senders(
         &self,
         accs: impl Iterator<Item = ChangedAccount>,
@@ -307,6 +310,7 @@ where
     }
 
     /// Returns hashes of _all_ transactions in the pool.
+    /// 返回pool中的所有txs的hashes
     pub fn pooled_transactions_hashes(&self) -> Vec<TxHash> {
         self.get_pool_data()
             .all()
@@ -322,6 +326,7 @@ where
     }
 
     /// Returns only the first `max` transactions in the pool.
+    /// 返回pool中前`max`个txs
     pub fn pooled_transactions_max(
         &self,
         max: usize,
@@ -407,6 +412,7 @@ where
     }
 
     /// Updates the entire pool after a new block was executed.
+    /// 更新整个pool，在一个新的block被执行之后
     pub fn on_canonical_state_change<B>(&self, update: CanonicalStateUpdate<'_, B>)
     where
         B: Block,
@@ -422,6 +428,7 @@ where
         let changed_senders = self.changed_senders(changed_accounts.into_iter());
 
         // update the pool
+        // 更新Pool
         let outcome = self.pool.write().on_canonical_state_change(
             block_info,
             mined_transactions,
@@ -430,9 +437,11 @@ where
         );
 
         // This will discard outdated transactions based on the account's nonce
+        // 这会丢弃过时的txs，基于account的nonce
         self.delete_discarded_blobs(outcome.discarded.iter());
 
         // notify listeners about updates
+        // 通知listeners，关于更新
         self.notify_on_new_state(outcome);
     }
 
@@ -814,10 +823,12 @@ where
     }
 
     /// Removes and returns all transactions by the specified sender from the pool.
+    /// 移除并且返回特定sender的所有txs，从pool中
     pub fn remove_transactions_by_sender(
         &self,
         sender: Address,
     ) -> Vec<Arc<ValidPoolTransaction<T::Transaction>>> {
+        // 获取sender id
         let sender_id = self.get_sender_id(sender);
         let removed = self.pool.write().remove_transactions_by_sender(sender_id);
 

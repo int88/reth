@@ -183,6 +183,7 @@ impl<T: PoolTransaction> PoolEventBroadcast<T> {
     }
 
     /// Notify listeners about a transaction that was discarded.
+    /// 通知listeners，关于一个tx已经被移除了
     pub(crate) fn discarded(&mut self, tx: &TxHash) {
         self.broadcast_event(tx, TransactionEvent::Discarded, FullTransactionEvent::Discarded(*tx));
     }

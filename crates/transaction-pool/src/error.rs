@@ -12,12 +12,14 @@ use reth_primitives::InvalidTransactionError;
 pub type PoolResult<T> = Result<T, PoolError>;
 
 /// A trait for additional errors that can be thrown by the transaction pool.
+/// 可以被tx pool抛出的额外的error的trait
 ///
 /// For example during validation
 /// [`TransactionValidator::validate_transaction`](crate::validate::TransactionValidator::validate_transaction)
 pub trait PoolTransactionError: core::error::Error + Send + Sync {
     /// Returns `true` if the error was caused by a transaction that is considered bad in the
     /// context of the transaction pool and warrants peer penalization.
+    /// 返回`error`，如果tx被认为是bad，在tx pool的上下文中并且对peer进行惩罚
     ///
     /// See [`PoolError::is_bad_transaction`].
     fn is_bad_transaction(&self) -> bool;

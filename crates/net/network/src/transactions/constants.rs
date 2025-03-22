@@ -2,6 +2,7 @@
 
 /// Soft limit for the number of hashes in a
 /// [`NewPooledTransactionHashes`](reth_eth_wire::NewPooledTransactionHashes) broadcast message.
+/// [`NewPooledTransactionHashes`]广播Message的soft limit的hashes的数目
 ///
 /// Spec'd at 4096 hashes.
 ///

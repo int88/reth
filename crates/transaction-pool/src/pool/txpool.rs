@@ -197,11 +197,13 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns access to the [`AllTransactions`] container.
+    /// 返回对于[`AllTransactions`] container的访问
     pub(crate) const fn all(&self) -> &AllTransactions<T::Transaction> {
         &self.all_transactions
     }
 
     /// Returns all senders in the pool
+    /// 返回pool中的所有senders
     pub(crate) fn unique_senders(&self) -> HashSet<Address> {
         self.all_transactions.txs.values().map(|tx| tx.transaction.sender()).collect()
     }
@@ -510,6 +512,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Returns all transactions sent from the given sender.
+    /// 返回给定sender的所有txs
     pub(crate) fn get_transactions_by_sender(
         &self,
         sender: SenderId,
@@ -573,6 +576,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Update sub-pools size metrics.
+    /// 更新sub-pools的size metrics
     pub(crate) fn update_size_metrics(&self) {
         let stats = self.size();
         self.metrics.pending_pool_transactions.set(stats.pending as f64);
@@ -832,6 +836,7 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Removes all transactions from the given sender.
+    /// 移除给定sender的所有txs
     pub(crate) fn remove_transactions_by_sender(
         &mut self,
         sender_id: SenderId,
@@ -839,6 +844,7 @@ impl<T: TransactionOrdering> TxPool<T> {
         let mut removed = Vec::new();
         let txs = self.get_transactions_by_sender(sender_id);
         for tx in txs {
+            // 移除tx
             if let Some(tx) = self.remove_transaction(tx.id()) {
                 removed.push(tx);
             }
@@ -848,8 +854,10 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Remove the transaction from the __entire__ pool.
+    /// 从整个pool移除tx
     ///
     /// This includes the total set of transaction and the subpool it currently resides in.
+    /// 这包含tx的完整集合以及它当前所处的subpool
     fn remove_transaction(
         &mut self,
         id: &TransactionId,
@@ -883,14 +891,17 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Removes the transaction from the given pool.
+    /// 从给定pool移除tx
     ///
     /// Caution: this only removes the tx from the sub-pool and not from the pool itself
+    /// 注意：这只从sub-pool移除tx而不会从pool自身
     fn remove_from_subpool(
         &mut self,
         pool: SubPool,
         tx: &TransactionId,
     ) -> Option<Arc<ValidPoolTransaction<T::Transaction>>> {
         let tx = match pool {
+            // 从对应的Pool移除tx
             SubPool::Queued => self.queued_pool.remove_transaction(tx),
             SubPool::Pending => self.pending_pool.remove_transaction(tx),
             SubPool::BaseFee => self.basefee_pool.remove_transaction(tx),
@@ -901,6 +912,9 @@ impl<T: TransactionOrdering> TxPool<T> {
             // We trace here instead of in subpool structs directly, because the `ParkedPool` type
             // is generic and it would not be possible to distinguish whether a transaction is
             // being removed from the `BaseFee` pool, or the `Queued` pool.
+            // 我们这里追踪而不是直接在subpool结构，
+            // 因为`ParkedPool`类型是通用的并且它不会区分一个tx正在从`BaseFee` pool或者`Queued`
+            // pool移除
             trace!(target: "txpool", hash=%tx.transaction.hash(), ?pool, "Removed transaction from a subpool");
         }
 
@@ -932,8 +946,10 @@ impl<T: TransactionOrdering> TxPool<T> {
     }
 
     /// Removes _only_ the descendants of the given transaction from the __entire__ pool.
+    /// 只移除descendants，对于给定的tx，从整个pool
     ///
     /// All removed transactions are added to the `removed` vec.
+    /// 所有被移除的txs被添加到`removed`
     fn remove_descendants(
         &mut self,
         tx: &TransactionId,
@@ -942,6 +958,7 @@ impl<T: TransactionOrdering> TxPool<T> {
         let mut id = *tx;
 
         // this will essentially pop _all_ descendant transactions one by one
+        // 这本质上会一个个弹出所有的descendant txs
         loop {
             let descendant =
                 self.all_transactions.descendant_txs_exclusive(&id).map(|(id, _)| *id).next();
@@ -1005,6 +1022,7 @@ impl<T: TransactionOrdering> TxPool<T> {
         let mut removed = Vec::new();
 
         // Helper macro that discards the worst transactions for the pools
+        // Helper macro用于从Pool中丢弃最差的txs
         macro_rules! discard_worst {
             ($this:ident, $removed:ident, [$($limit:ident => ($pool:ident, $metric:ident)),* $(,)*]) => {
                 $ (
@@ -1020,6 +1038,7 @@ impl<T: TransactionOrdering> TxPool<T> {
                         );
 
                         // 1. first remove the worst transaction from the subpool
+                        // 1. 首先从subpool中移除最差的tx
                         let removed_from_subpool = $this.$pool.truncate_pool($this.config.$limit.clone());
 
                         trace!(
@@ -1034,15 +1053,18 @@ impl<T: TransactionOrdering> TxPool<T> {
                         $this.metrics.$metric.increment(removed_from_subpool.len() as u64);
 
                         // 2. remove all transactions from the total set
+                        // 2. 从total set中移除所有的txs
                         for tx in removed_from_subpool {
                             $this.all_transactions.remove_transaction(tx.id());
 
                             let id = *tx.id();
 
                             // keep track of removed transaction
+                            // 追踪移除的tx
                             removed.push(tx);
 
                             // 3. remove all its descendants from the entire pool
+                            // 3. 移除所有的descendants
                             $this.remove_descendants(&id, &mut $removed);
                         }
                     }
@@ -1193,6 +1215,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns an iterator over all transactions in the pool
+    /// 返回一个iterator，遍历pool中的所有txs
     pub(crate) fn transactions_iter(
         &self,
     ) -> impl Iterator<Item = &Arc<ValidPoolTransaction<T>>> + '_ {
@@ -1218,6 +1241,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Decrements the transaction counter for the sender
+    /// 减小sender的tx count
     pub(crate) fn tx_decr(&mut self, sender: SenderId) {
         if let hash_map::Entry::Occupied(mut entry) = self.tx_counter.entry(sender) {
             let count = entry.get_mut();
@@ -1447,6 +1471,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
 
     /// Returns an iterator over all transactions for the given sender, starting with the lowest
     /// nonce
+    /// 返回对于给定sender的所有txs的iterator，从最小的nonce开始
     pub(crate) fn txs_iter(
         &self,
         sender: SenderId,
@@ -1470,12 +1495,14 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Returns all transactions that _follow_ after the given id and have the same sender.
+    /// 返回所有的txs，在给定的id之后，有同样的sender
     ///
     /// NOTE: The range is _exclusive_
     pub(crate) fn descendant_txs_exclusive<'a, 'b: 'a>(
         &'a self,
         id: &'b TransactionId,
     ) -> impl Iterator<Item = (&'a TransactionId, &'a PoolInternalTransaction<T>)> + 'a {
+        // 确保sender相等
         self.txs.range((Excluded(id), Unbounded)).take_while(|(other, _)| id.sender == other.sender)
     }
 
@@ -1516,10 +1543,13 @@ impl<T: PoolTransaction> AllTransactions<T> {
     }
 
     /// Removes a transaction from the set.
+    /// 从集合中移除一个tx
     ///
     /// This will _not_ trigger additional updates, because descendants without nonce gaps are
     /// already in the pending pool, and this transaction will be the first transaction of the
     /// sender in this pool.
+    /// 这不会触发额外的更新，因为没有nonce gaps的后代已经在pending
+    /// pool中，并且这个tx会是这个Pool中的第一个tx
     pub(crate) fn remove_transaction(
         &mut self,
         id: &TransactionId,
@@ -1527,6 +1557,7 @@ impl<T: PoolTransaction> AllTransactions<T> {
         let internal = self.txs.remove(id)?;
 
         // decrement the counter for the sender.
+        // 减小sender的counter
         self.tx_decr(internal.transaction.sender_id());
 
         let result =
@@ -2028,6 +2059,7 @@ pub(crate) struct PoolInternalTransaction<T: PoolTransaction> {
     /// The actual transaction object.
     pub(crate) transaction: Arc<ValidPoolTransaction<T>>,
     /// The `SubPool` that currently contains this transaction.
+    /// 当前包含
     pub(crate) subpool: SubPool,
     /// Keeps track of the current state of the transaction and therefore in which subpool it
     /// should reside
@@ -2067,11 +2099,14 @@ impl<T: PoolTransaction> Default for UpdateOutcome<T> {
 }
 
 /// Stores relevant context about a sender.
+/// 存储关于一个sender的上下文
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SenderInfo {
     /// current nonce of the sender.
+    /// sender当前的nonce
     pub(crate) state_nonce: u64,
     /// Balance of the sender at the current point.
+    /// 这个时间点的sender的balance
     pub(crate) balance: U256,
 }
 
@@ -2979,6 +3014,7 @@ mod tests {
         assert_eq!(next_tx.map(|tx| tx.nonce()), Some(5), "Expected nonce 5 for on-chain nonce 5");
 
         // update the tracked nonce
+        // 更新追踪的nonce
         let mut info = SenderInfo::default();
         info.update(8, U256::ZERO);
         pool.sender_info.insert(sender_id, info);

@@ -427,6 +427,7 @@ impl<T: TransactionOrdering> PendingPool<T> {
 
         // keeps track of unique senders from previous iterations, to understand how many unique
         // senders were removed in the last iteration
+        // 追踪上一轮迭代中唯一的senders，为了理解多少unique senders被移除，在上一轮迭代中
         let mut unique_senders = self.highest_nonces.len();
 
         // keeps track of which senders we've marked as local

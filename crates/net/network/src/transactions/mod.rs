@@ -1093,6 +1093,7 @@ where
         }
 
         // Get transactions to broadcast
+        // 获取txs进行广播
         let pooled_txs = self.pool.pooled_transactions_max(
             SOFT_LIMIT_COUNT_HASHES_IN_NEW_POOLED_TRANSACTIONS_BROADCAST_MESSAGE,
         );

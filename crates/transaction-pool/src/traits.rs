@@ -64,8 +64,10 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn pool_size(&self) -> PoolSize;
 
     /// Returns the block the pool is currently tracking.
+    /// 返回当前正在追踪的block
     ///
     /// This tracks the block that the pool has last seen.
+    /// 这追踪pool最近看到的block
     fn block_info(&self) -> BlockInfo;
 
     /// Imports an _external_ transaction.
@@ -93,6 +95,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     }
 
     /// Adds an _unvalidated_ transaction into the pool and subscribe to state changes.
+    /// 添加一个未被校验的tx进pool并且订阅state的改变
     ///
     /// This is the same as [`TransactionPool::add_transaction`] but returns an event stream for the
     /// given transaction.
@@ -231,6 +234,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn pooled_transactions(&self) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns only the first `max` transactions in the pool.
+    /// 返回pool中前`max`个txs
     ///
     /// Consumer: P2P
     fn pooled_transactions_max(
@@ -329,6 +333,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn all_transactions(&self) -> AllPoolTransactions<Self::Transaction>;
 
     /// Removes all transactions corresponding to the given hashes.
+    /// 移除给定hashes的所有txs
     ///
     /// Consumer: Utility
     fn remove_transactions(
@@ -339,6 +344,7 @@ pub trait TransactionPool: Send + Sync + Clone {
     /// Removes all transactions corresponding to the given hashes.
     ///
     /// Also removes all _dependent_ transactions.
+    /// 同时移除所有依赖的txs
     ///
     /// Consumer: Utility
     fn remove_transactions_and_descendants(
@@ -355,8 +361,10 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Retains only those hashes that are unknown to the pool.
+    /// 只保留对于pool未知的hashes
     /// In other words, removes all transactions from the given set that are currently present in
     /// the pool. Returns hashes already known to the pool.
+    /// 换句话说，移除所有的txs从给定的集合，当前存在于pool，返回pool已经知道的hashes
     ///
     /// Consumer: P2P
     fn retain_unknown<A>(&self, announcement: &mut A)
@@ -377,17 +385,20 @@ pub trait TransactionPool: Send + Sync + Clone {
     fn get_all(&self, txs: Vec<TxHash>) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Notify the pool about transactions that are propagated to peers.
+    /// 通知pool，关于txs已经被传播到peers
     ///
     /// Consumer: P2P
     fn on_propagated(&self, txs: PropagatedTransactions);
 
     /// Returns all transactions sent by a given user
+    /// 返回给定user发送的所有txs
     fn get_transactions_by_sender(
         &self,
         sender: Address,
     ) -> Vec<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns all pending transactions filtered by predicate
+    /// 通过predicate过滤所有的pending txs
     fn get_pending_transactions_with_predicate(
         &self,
         predicate: impl FnMut(&ValidPoolTransaction<Self::Transaction>) -> bool,
@@ -412,7 +423,9 @@ pub trait TransactionPool: Send + Sync + Clone {
     ) -> Option<Arc<ValidPoolTransaction<Self::Transaction>>>;
 
     /// Returns the transaction with the highest nonce that is executable given the on chain nonce.
+    /// 返回txs，有着最高的nonce，能够在给定的chain nonce执行
     /// In other words the highest non nonce gapped transaction.
+    /// 换句话说，最高的没有nonce gap的tx
     ///
     /// Note: The next pending pooled transaction must have the on chain nonce.
     ///
@@ -747,15 +760,20 @@ pub enum PoolUpdateKind {
 
 /// Represents changes after a new canonical block or range of canonical blocks was added to the
 /// chain.
+/// 代表变更，在一个新的canonical block或者一系列的canonical blocks被添加到chain之后
 ///
 /// It is expected that this is only used if the added blocks are canonical to the pool's last known
 /// block hash. In other words, the first added block of the range must be the child of the last
 /// known block hash.
+/// 期望这只被使用，如果添加的blocks是pool的last known block
+/// hash，换句话说，添加的block的第一个必须是最新知道的block hash的child
 ///
 /// This is used to update the pool state accordingly.
+/// 这用于相应地更新pool state
 #[derive(Clone, Debug)]
 pub struct CanonicalStateUpdate<'a, B: Block> {
     /// Hash of the tip block.
+    /// tip block的hash
     pub new_tip: &'a SealedBlock<B>,
     /// EIP-1559 Base fee of the _next_ (pending) block
     ///
@@ -766,10 +784,13 @@ pub struct CanonicalStateUpdate<'a, B: Block> {
     /// Only after Cancun
     pub pending_block_blob_fee: Option<u128>,
     /// A set of changed accounts across a range of blocks.
+    /// 一系列changed accounts，跨越一系列的blocks
     pub changed_accounts: Vec<ChangedAccount>,
     /// All mined transactions in the block range.
+    /// 在block range挖掘的所有txs
     pub mined_transactions: Vec<B256>,
     /// The kind of update to the canonical state.
+    /// 到canonical state的更新
     pub update_kind: PoolUpdateKind,
 }
 
