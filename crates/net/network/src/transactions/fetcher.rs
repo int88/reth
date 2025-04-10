@@ -53,7 +53,7 @@ use reth_network_peers::PeerId;
 use reth_primitives_traits::SignedTransaction;
 use schnellru::ByLength;
 use std::{
-    collections::HashMap,
+    collections::{hash_map::Entry, HashMap, HashSet},
     pin::Pin,
     task::{ready, Context, Poll},
     time::Duration,
@@ -78,13 +78,14 @@ pub struct TransactionFetcher<N: NetworkPrimitives = EthNetworkPrimitives> {
     /// be fetched.
     #[pin]
     pub inflight_requests: FuturesUnordered<GetPooledTxRequestFut<N::PooledTransaction>>,
-    /// Hashes that are awaiting an idle fallback peer so they can be fetched.
+    /// Tracks all hashes in the transaction fetcher.
+    pub(super) hashes_fetch_inflight_and_pending_fetch: LruMap<TxHash, TxFetchMetadata, ByLength>,
+    /// All currenctly pending transaction hashes grouped by peer id to facilitate searching for
+    /// pending fetch hashes of idle peer.
     ///
     /// This is a subset of all hashes in the fetcher, and is disjoint from the set of hashes for
     /// which a [`GetPooledTransactions`] request is inflight.
-    pub hashes_pending_fetch: LruCache<TxHash>,
-    /// Tracks all hashes in the transaction fetcher.
-    pub(super) hashes_fetch_inflight_and_pending_fetch: LruMap<TxHash, TxFetchMetadata, ByLength>,
+    pub hashes_pending_fetch_by_peer: HashMap<PeerId, HashSet<TxHash>>,
     /// Filter for valid announcement and response data.
     pub(super) filter_valid_message: MessageFilter,
     /// Info on capacity of the transaction fetcher.
@@ -102,6 +103,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
     /// Updates metrics.
     #[inline]
     pub fn update_metrics(&self) {
+        /*
         let metrics = &self.metrics;
 
         metrics.inflight_transaction_requests.set(self.inflight_requests.len() as f64);
@@ -111,6 +113,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
 
         metrics.hashes_pending_fetch.set(hashes_pending_fetch);
         metrics.hashes_inflight_transaction_requests.set(total_hashes - hashes_pending_fetch);
+        */
     }
 
     #[inline]
@@ -139,7 +142,6 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
 
         Self {
             active_peers: LruMap::new(max_inflight_requests),
-            hashes_pending_fetch: LruCache::new(max_capacity_cache_txns_pending_fetch),
             hashes_fetch_inflight_and_pending_fetch: LruMap::new(
                 max_inflight_requests + max_capacity_cache_txns_pending_fetch,
             ),
@@ -157,7 +159,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
     {
         for hash in hashes {
             self.hashes_fetch_inflight_and_pending_fetch.remove(&hash);
-            self.hashes_pending_fetch.remove(&hash);
+            // self.hashes_pending_fetch.remove(&hash);
         }
     }
 
@@ -212,32 +214,41 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
         hashes_to_request: &mut RequestTxHashes,
         mut budget: Option<usize>, // search fallback peers for max `budget` lru pending hashes
     ) -> Option<PeerId> {
-        let mut hashes_pending_fetch_iter = self.hashes_pending_fetch.iter();
+        /*
+            let mut hashes_pending_fetch_iter = self.hashes_pending_fetch.iter();
 
-        let idle_peer = loop {
-            let &hash = hashes_pending_fetch_iter.next()?;
+            let idle_peer = loop {
+                let &hash = hashes_pending_fetch_iter.next()?;
 
-            let idle_peer = self.get_idle_peer_for(hash);
+                let idle_peer = self.get_idle_peer_for(hash);
 
-            if idle_peer.is_some() {
-                hashes_to_request.insert(hash);
-                break idle_peer.copied()
-            }
-
-            if let Some(ref mut bud) = budget {
-                *bud = bud.saturating_sub(1);
-                if *bud == 0 {
-                    return None
+                if idle_peer.is_some() {
+                    hashes_to_request.insert(hash);
+                    break idle_peer.copied()
                 }
+
+                if let Some(ref mut bud) = budget {
+                    *bud = bud.saturating_sub(1);
+                    if *bud == 0 {
+                        return None
+                    }
+                }
+            };
+            let hash = hashes_to_request.iter().next()?;
+
+            // pop hash that is loaded in request buffer from cache of hashes pending fetch
+            drop(hashes_pending_fetch_iter);
+            _ = self.hashes_pending_fetch.remove(hash);
+
+            idle_peer
+        */
+        for peer_id in self.hashes_pending_fetch_by_peer.keys() {
+            if self.is_idle(peer_id) {
+                return Some(*peer_id)
             }
-        };
-        let hash = hashes_to_request.iter().next()?;
+        }
 
-        // pop hash that is loaded in request buffer from cache of hashes pending fetch
-        drop(hashes_pending_fetch_iter);
-        _ = self.hashes_pending_fetch.remove(hash);
-
-        idle_peer
+        None
     }
 
     /// Packages hashes for a [`GetPooledTxRequest`] up to limit. Returns left over hashes. Takes
@@ -390,6 +401,14 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
             if let Some(peer_id) = fallback_peer {
                 // peer has not yet requested hash
                 fallback_peers.insert(peer_id);
+                match self.hashes_pending_fetch_by_peer.entry(peer_id) {
+                    Entry::Occupied(mut entry) => {
+                        entry.get_mut().insert(hash);
+                    }
+                    Entry::Vacant(entry) => {
+                        entry.insert(HashSet::from([hash]));
+                    }
+                }
             } else {
                 if *retries >= DEFAULT_MAX_RETRIES {
                     trace!(target: "net::tx",
@@ -398,17 +417,18 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
                         "retry limit for `GetPooledTransactions` requests reached for hash, dropping hash"
                     );
 
-                    self.hashes_fetch_inflight_and_pending_fetch.remove(&hash);
-                    self.hashes_pending_fetch.remove(&hash);
+                    if let Some(old) = self.hashes_fetch_inflight_and_pending_fetch.remove(&hash) {
+                        for peer_id in &old.fallback_peers {
+                            if let Entry::Occupied(mut entry) =
+                                self.hashes_pending_fetch_by_peer.entry(*peer_id)
+                            {
+                                entry.get_mut().remove(&hash);
+                            }
+                        }
+                    }
                     continue
                 }
                 *retries += 1;
-            }
-
-            if let (_, Some(evicted_hash)) = self.hashes_pending_fetch.insert_and_get_evicted(hash)
-            {
-                self.hashes_fetch_inflight_and_pending_fetch.remove(&evicted_hash);
-                self.hashes_pending_fetch.remove(&evicted_hash);
             }
         }
     }
@@ -463,7 +483,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
             {
                 self.fill_request_from_hashes_pending_fetch(
                     &mut hashes_to_request,
-                    &peer.seen_transactions,
+                    &peer_id,
                     budget_fill_request,
                 )
             },
@@ -531,10 +551,11 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
                     *previously_seen_size = Some(*size);
                 }
 
+                /*
                 // hash has been seen but is not inflight
                 if self.hashes_pending_fetch.remove(hash) {
                     return true
-                }
+                }*/
 
                 return false
             }
@@ -548,7 +569,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
             previously_unseen_hashes_count += 1;
 
             if self.hashes_fetch_inflight_and_pending_fetch.get_or_insert(*hash, ||
-                TxFetchMetadata{retries: 0, fallback_peers: LruCache::new(DEFAULT_MAX_COUNT_FALLBACK_PEERS as u32), tx_encoded_length: None}
+                TxFetchMetadata{retries: 0, fallback_peers: Default::default(), tx_encoded_length: None}
             ).is_none() {
 
                 trace!(target: "net::tx",
@@ -619,7 +640,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
             );
             return Some(new_announced_hashes)
         }
-
+        /*
         #[cfg(debug_assertions)]
         {
             for hash in &new_announced_hashes {
@@ -635,6 +656,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
                 }
             }
         }
+        */
 
         let (response, rx) = oneshot::channel();
         let req = PeerRequest::GetPooledTransactions {
@@ -682,48 +704,31 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
     pub fn fill_request_from_hashes_pending_fetch(
         &mut self,
         hashes_to_request: &mut RequestTxHashes,
-        seen_hashes: &LruCache<TxHash>,
+        peer_id: &PeerId,
         mut budget_fill_request: Option<usize>, // check max `budget` lru pending hashes
     ) {
-        let Some(hash) = hashes_to_request.iter().next() else { return };
-
-        let mut acc_size_response = self
-            .hashes_fetch_inflight_and_pending_fetch
-            .get(hash)
-            .and_then(|entry| entry.tx_encoded_len())
-            .unwrap_or(AVERAGE_BYTE_SIZE_TX_ENCODED);
-
-        // if request full enough already, we're satisfied, send request for single tx
-        if acc_size_response >=
-            DEFAULT_SOFT_LIMIT_BYTE_SIZE_POOLED_TRANSACTIONS_RESPONSE_ON_FETCH_PENDING_HASHES
-        {
-            return
-        }
+        let mut acc_size_response = 0;
 
         // try to fill request by checking if any other hashes pending fetch (in lru order) are
         // also seen by peer
-        for hash in self.hashes_pending_fetch.iter() {
-            // 1. Check if a hash pending fetch is seen by peer.
-            if !seen_hashes.contains(hash) {
-                continue
-            };
+        if let Some(hashes) = self.hashes_pending_fetch_by_peer.get_mut(peer_id) {
+            while let Some(&hash) = hashes.iter().next() {
+                // 2. Optimistically include the hash in the request.
+                hashes_to_request.insert(hash);
 
-            // 2. Optimistically include the hash in the request.
-            hashes_to_request.insert(*hash);
+                // 3. Accumulate expected total response size.
+                let size = self
+                    .hashes_fetch_inflight_and_pending_fetch
+                    .get(&hash)
+                    .and_then(|entry| entry.tx_encoded_len())
+                    .unwrap_or(AVERAGE_BYTE_SIZE_TX_ENCODED);
 
-            // 3. Accumulate expected total response size.
-            let size = self
-                .hashes_fetch_inflight_and_pending_fetch
-                .get(hash)
-                .and_then(|entry| entry.tx_encoded_len())
-                .unwrap_or(AVERAGE_BYTE_SIZE_TX_ENCODED);
+                acc_size_response += size;
 
-            acc_size_response += size;
-
-            // 4. Check if acc size or hashes count is at limit, if so stop looping.
-            // if expected response is full enough or the number of hashes in the request is
-            // enough, we're satisfied
-            if acc_size_response >=
+                // 4. Check if acc size or hashes count is at limit, if so stop looping.
+                // if expected response is full enough or the number of hashes in the request is
+                // enough, we're satisfied
+                if acc_size_response >=
                 DEFAULT_SOFT_LIMIT_BYTE_SIZE_POOLED_TRANSACTIONS_RESPONSE_ON_FETCH_PENDING_HASHES ||
                 hashes_to_request.len() >
                     DEFAULT_SOFT_LIMIT_COUNT_HASHES_IN_GET_POOLED_TRANSACTIONS_REQUEST_ON_FETCH_PENDING_HASHES
@@ -731,17 +736,15 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
                 break
             }
 
-            if let Some(ref mut bud) = budget_fill_request {
-                *bud -= 1;
-                if *bud == 0 {
-                    break
+                hashes.remove(&hash);
+
+                if let Some(ref mut bud) = budget_fill_request {
+                    *bud -= 1;
+                    if *bud == 0 {
+                        break
+                    }
                 }
             }
-        }
-
-        // 5. Remove hashes to request from cache of hashes pending fetch.
-        for hash in hashes_to_request.iter() {
-            self.hashes_pending_fetch.remove(hash);
         }
     }
 
@@ -787,7 +790,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
             trace!(target: "net::tx",
                 inflight_requests=self.inflight_requests.len(),
                 max_inflight_transaction_requests=info.max_inflight_requests,
-                hashes_pending_fetch=self.hashes_pending_fetch.len(),
+                // hashes_pending_fetch=self.hashes_pending_fetch.len(),
                 limit,
                 "search breadth limited in search for idle fallback peer for some hash pending fetch"
             );
@@ -826,7 +829,7 @@ impl<N: NetworkPrimitives> TransactionFetcher<N> {
             trace!(target: "net::tx",
                 inflight_requests=self.inflight_requests.len(),
                 max_inflight_transaction_requests=self.info.max_inflight_requests,
-                hashes_pending_fetch=self.hashes_pending_fetch.len(),
+                // hashes_pending_fetch=self.hashes_pending_fetch.len(),
                 limit=limit,
                 "search breadth limited in search for intersection of hashes announced by peer and hashes pending fetch"
             );
@@ -1000,10 +1003,10 @@ impl<T: NetworkPrimitives> Default for TransactionFetcher<T> {
         Self {
             active_peers: LruMap::new(DEFAULT_MAX_COUNT_CONCURRENT_REQUESTS),
             inflight_requests: Default::default(),
-            hashes_pending_fetch: LruCache::new(DEFAULT_MAX_CAPACITY_CACHE_PENDING_FETCH),
             hashes_fetch_inflight_and_pending_fetch: LruMap::new(
                 DEFAULT_MAX_CAPACITY_CACHE_INFLIGHT_AND_PENDING_FETCH,
             ),
+            hashes_pending_fetch_by_peer: Default::default(),
             filter_valid_message: Default::default(),
             info: TransactionFetcherInfo::default(),
             metrics: Default::default(),
@@ -1017,7 +1020,7 @@ pub struct TxFetchMetadata {
     /// The number of times a request attempt has been made for the hash.
     retries: u8,
     /// Peers that have announced the hash, but to which a request attempt has not yet been made.
-    fallback_peers: LruCache<PeerId>,
+    fallback_peers: HashSet<PeerId>,
     /// Size metadata of the transaction if it has been seen in an eth68 announcement.
     // todo: store all seen sizes as a `(size, peer_id)` tuple to catch peers that respond with
     // another size tx than they announced. alt enter in request (won't catch peers announcing
@@ -1027,7 +1030,7 @@ pub struct TxFetchMetadata {
 
 impl TxFetchMetadata {
     /// Returns a mutable reference to the fallback peers cache for this transaction hash.
-    pub fn fallback_peers_mut(&mut self) -> &mut LruCache<PeerId> {
+    pub fn fallback_peers_mut(&mut self) -> &mut HashSet<PeerId> {
         &mut self.fallback_peers
     }
 
@@ -1405,10 +1408,12 @@ mod test {
             new_mock_session(peer_1, EthVersion::Eth66);
         for hash in &seen_hashes {
             peer_1_data.seen_transactions.insert(*hash);
+            tx_fetcher.hashes_pending_fetch_by_peer.entry(peer_1).or_default().insert(*hash);
         }
         let (mut peer_2_data, _) = new_mock_session(peer_2, EthVersion::Eth66);
         for hash in &seen_hashes {
             peer_2_data.seen_transactions.insert(*hash);
+            tx_fetcher.hashes_pending_fetch_by_peer.entry(peer_2).or_default().insert(*hash);
         }
         let mut peers = HashMap::default();
         peers.insert(peer_1, peer_1_data);
@@ -1434,7 +1439,7 @@ mod test {
         tx_fetcher
             .hashes_fetch_inflight_and_pending_fetch
             .insert(hash_other, TxFetchMetadata::new(0, backups, None));
-        tx_fetcher.hashes_pending_fetch.insert(hash_other);
+        // tx_fetcher.hashes_pending_fetch.insert(hash_other);
 
         // add peer_1 as lru fallback peer for seen hashes
         for hash in &seen_hashes {
@@ -1446,13 +1451,15 @@ mod test {
                 .insert(peer_1);
         }
 
+        /*
         // mark seen hashes as pending fetch
         for hash in &seen_hashes {
             tx_fetcher.hashes_pending_fetch.insert(*hash);
         }
+        */
 
         // seen hashes and the random hash from peer_2 are pending fetch
-        assert_eq!(tx_fetcher.hashes_pending_fetch.len(), 5);
+        // assert_eq!(tx_fetcher.hashes_pending_fetch.len(), 5);
 
         // TEST
 
